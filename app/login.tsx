@@ -8,6 +8,7 @@ import { AntDesign } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
 import { hapticLight } from '~/utils/haptics';
+import { appLog } from './helper/helper';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -70,7 +71,7 @@ export default function LoginScreen() {
       // Navigate to onboarding
       router.replace('/onboarding/1');
     } catch (error) {
-      console.log('Error starting journey:', error);
+      appLog('Error starting journey:', error);
       Alert.alert('Error', 'Could not start journey. Please try again.');
     }
   };

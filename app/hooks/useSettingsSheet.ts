@@ -32,6 +32,7 @@ import { usePathStore } from '../stores/pathStore';
 import { useDevotionalStore } from '../stores/devotionalStore';
 import { useCheckInStore } from '../stores/checkInStore';
 import { usePrayerStore } from '../stores/prayerStore';
+import { appLog } from '../helper/helper';
 
 export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
   const router = useRouter();
@@ -158,7 +159,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
         setNotificationsEnabled(false);
       }
     } catch (error) {
-      console.log('Error checking notification permissions:', error);
+      appLog('Error checking notification permissions:', error);
     }
   };
 
@@ -235,7 +236,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
       syncStreakDataToWidget(0, dayjs()?.toDate());
 
       await AsyncStorage.clear();
-      console.log('✅ All AsyncStorage data cleared on sign out');
+      appLog('✅ All AsyncStorage data cleared on sign out');
 
       bottomSheetRef.current?.close();
       setIsModalDimActive(false);
@@ -263,7 +264,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
     } finally {
       try {
         await AsyncStorage.clear();
-        console.log('✅ AsyncStorage cleared in finally block');
+        appLog('✅ AsyncStorage cleared in finally block');
       } catch (clearError) {
         console.error('❌ Error clearing AsyncStorage:', clearError);
       }
@@ -296,7 +297,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
       devotionalStore.setBibleVersion(tempSelectedTranslation);
 
       if (devotionalStore.currentDevotional || devotionalStore.dailyDevotional) {
-        console.log('🔄 Translation changed, refetching devotional with new translation:', tempSelectedTranslation);
+        appLog('🔄 Translation changed, refetching devotional with new translation:', tempSelectedTranslation);
         try {
           await devotionalStore.fetchTodaysDevotional();
         } catch (error) {
@@ -356,11 +357,11 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
 
     if (enableNotifications) {
       const { status } = await Notifications.getPermissionsAsync();
-      console.log(`Current notification permission status: ${status}`);
+      appLog(`Current notification permission status: ${status}`);
 
       if (status !== 'granted') {
         const { status: newStatus } = await Notifications.requestPermissionsAsync();
-        console.log(`New notification permission status after request: ${newStatus}`);
+        appLog(`New notification permission status after request: ${newStatus}`);
 
         if (newStatus !== 'granted') {
           Alert.alert(
@@ -536,7 +537,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
         );
 
         if (!dailyReminder) {
-          console.log('Daily reminder was not scheduled properly');
+          appLog('Daily reminder was not scheduled properly');
           throw new Error('Failed to schedule notification');
         }
 
@@ -559,7 +560,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
 
         hapticSuccess();
       } catch (error) {
-        console.log('Failed to update notification time:', error);
+        appLog('Failed to update notification time:', error);
         Alert.alert('Error', 'Failed to update notification time. Please try again.');
       }
     }
@@ -586,7 +587,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
   const handleOpenDiscord = useCallback(() => {
     hapticLight();
     Linking.openURL('https://discord.gg/W9MZdVaKBs').catch((err) => {
-      console.log('Error opening Discord link:', err);
+      appLog('Error opening Discord link:', err);
       Alert.alert('Could not open link', 'Please check your internet connection and try again.');
     });
   }, []);
@@ -623,7 +624,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
               }
 
               const userId = currentUser.uid;
-              console.log('Attempting to delete user:', userId);
+              appLog('Attempting to delete user:', userId);
 
               useUserStore.getState().resetUserStore();
               useDevotionalStore.getState().reset();
@@ -634,7 +635,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
               await useOnboardingStore.getState().clearResponses();
               useOnboardingStore.getState().clearSavedScreenNavigation();
               useSoundStore.getState().stopBackgroundMusic();
-              console.log('✅ All stores reset before deletion');
+              appLog('✅ All stores reset before deletion');
 
               try {
                 const batch = firestore().batch();
@@ -657,9 +658,9 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
                 });
                 
                 await batch.commit();
-                console.log('✅ All user data deleted from Firestore');
+                appLog('✅ All user data deleted from Firestore');
               } catch (firestoreError) {
-                console.log('❌ Error deleting Firestore data:', firestoreError);
+                appLog('❌ Error deleting Firestore data:', firestoreError);
                 Alert.alert(
                   'Firestore Error',
                   'Failed to delete Firestore data. Continuing with other deletion steps.'
@@ -668,9 +669,9 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
 
               try {
                 await AsyncStorage.clear();
-                console.log('✅ Local storage cleared successfully');
+                appLog('✅ Local storage cleared successfully');
               } catch (storageError) {
-                console.log('❌ Error clearing AsyncStorage:', storageError);
+                appLog('❌ Error clearing AsyncStorage:', storageError);
                 Alert.alert(
                   'Storage Error',
                   'Failed to clear local storage. Continuing with other deletion steps.'
@@ -682,13 +683,13 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
               try {
                 if (currentUser) {
                   await currentUser.delete();
-                  console.log('✅ User auth account deleted');
+                  appLog('✅ User auth account deleted');
                   await auth().signOut();
-                  console.log('✅ User signed out after account deletion');
+                  appLog('✅ User signed out after account deletion');
                   useSoundStore.getState().stopBackgroundMusic();
                 }
               } catch (authError: any) {
-                console.log('❌ Error with auth operations:', authError);
+                appLog('❌ Error with auth operations:', authError);
 
                 if (authError.code === 'auth/requires-recent-login') {
                   Alert.alert(
@@ -704,7 +705,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
                             bottomSheetRef.current?.close();
                             router.replace({ pathname: '/(auth)' });
                           } catch (e) {
-                            console.log('Failed to sign out:', e);
+                            appLog('Failed to sign out:', e);
                           }
                         },
                       },
@@ -727,7 +728,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
                 );
               }, 500);
             } catch (error) {
-              console.log('❌ Unhandled error in account deletion:', error);
+              appLog('❌ Unhandled error in account deletion:', error);
               Alert.alert(
                 'Error',
                 'Something went wrong during account deletion. The app will try to sign you out anyway.',
@@ -741,14 +742,14 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
                         bottomSheetRef.current?.close();
                         router.replace({ pathname: '/(auth)' });
                       } catch (e) {
-                        console.log('Final error handler signout failed:', e);
+                        appLog('Final error handler signout failed:', e);
                       }
                     },
                   },
                 ]
               );
             } finally {
-              console.log('Account deletion process completed');
+              appLog('Account deletion process completed');
             }
           },
         },
@@ -780,7 +781,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
       await Purchases.presentCodeRedemptionSheet();
       await getCustomerInfo();
     } catch (error) {
-      console.log('Error presenting promo code sheet:', error);
+      appLog('Error presenting promo code sheet:', error);
       Alert.alert('Error', 'Unable to open the redemption screen. Please try again later.');
     }
   }, [getCustomerInfo]);
@@ -835,7 +836,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
       const result = await checkStreakAndApplyPenalties();
       setStreakData(result);
     } catch (error) {
-      console.log('Error fetching streak data:', error);
+      appLog('Error fetching streak data:', error);
       Alert.alert('Error', 'Failed to fetch streak data');
     } finally {
       setDevPanelLoading(false);
@@ -909,7 +910,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
             frequencyGoal: duration,
             updatedAt: firestore.FieldValue.serverTimestamp(),
           });
-          console.log('Updated frequency goal in Firestore');
+          appLog('Updated frequency goal in Firestore');
         }
 
         setReadingTimeModalVisible(false);
@@ -934,7 +935,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
         const dailyCancelKey = `cancellation_used_${today}`;
         const cancelledToday = await AsyncStorage.getItem(dailyCancelKey);
         setHasCancelledToday(cancelledToday === 'true');
-        console.log(
+        appLog(
           `[SettingsSheet] User cancelled today (${today}): ${cancelledToday === 'true'}`
         );
       } catch (error) {
@@ -950,7 +951,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
     hapticMedium();
 
     if (hasCancelledToday) {
-      console.log('🚫 User already cancelled today, redirecting to Apple subscriptions');
+      appLog('🚫 User already cancelled today, redirecting to Apple subscriptions');
       analytics.logEvent('Settings_CancellationBlocked_DailyLimit', {
         userId: userId,
       });
@@ -998,10 +999,10 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
 
   // Handle cancellation submission
   const handleSubmitCancellation = useCallback(async () => {
-    console.log('🔄 Starting cancellation submission...');
-    console.log('📝 Cancellation reasons:', cancellationReasons);
-    console.log('💬 Cancellation feedback:', cancellationFeedback);
-    console.log('👤 User ID:', userId);
+    appLog('🔄 Starting cancellation submission...');
+    appLog('📝 Cancellation reasons:', cancellationReasons);
+    appLog('💬 Cancellation feedback:', cancellationFeedback);
+    appLog('👤 User ID:', userId);
 
     if (cancellationReasons.length === 0) {
       Alert.alert('Please select a reason', 'Please select at least one reason for cancelling.');
@@ -1011,7 +1012,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
     setIsSubmittingCancellation(true);
 
     try {
-      console.log('💾 Attempting to save feedback to Firestore...');
+      appLog('💾 Attempting to save feedback to Firestore...');
       const result = await saveFeedback({
         type: 'cancellation',
         reasons: cancellationReasons,
@@ -1020,15 +1021,15 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
         timestamp: new Date().toISOString(),
       });
 
-      console.log('✅ Feedback save result:', result);
+      appLog('✅ Feedback save result:', result);
 
       const today = new Date().toISOString().split('T')[0];
       const dailyCancelKey = `cancellation_used_${today}`;
       await AsyncStorage.setItem(dailyCancelKey, 'true');
       setHasCancelledToday(true);
-      console.log(`✅ Marked cancellation as used for today: ${today}`);
+      appLog(`✅ Marked cancellation as used for today: ${today}`);
 
-      console.log('📊 Logging analytics event...');
+      appLog('📊 Logging analytics event...');
       analytics.logEvent('Settings_Submitted_CancellationFeedback', {
         reasons: cancellationReasons,
         hasFeedback: cancellationFeedback.length > 0,
@@ -1047,16 +1048,16 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
 
       setCancellationModalVisible(false);
 
-      console.log('🎯 Showing half-off paywall...');
+      appLog('🎯 Showing half-off paywall...');
       const paywallResult = await presentHalfOffPaywall();
 
       if (paywallResult === PAYWALL_RESULT.CANCELLED || paywallResult === PAYWALL_RESULT.ERROR) {
-        console.log('💔 User cancelled paywall, redirecting to Apple subscriptions...');
+        appLog('💔 User cancelled paywall, redirecting to Apple subscriptions...');
       } else if (
         paywallResult === PAYWALL_RESULT.PURCHASED ||
         paywallResult === PAYWALL_RESULT.RESTORED
       ) {
-        console.log('🎉 User purchased or restored subscription!');
+        appLog('🎉 User purchased or restored subscription!');
       }
 
       hapticSuccess();
@@ -1065,7 +1066,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
       Alert.alert('Error', 'Failed to submit feedback. Please try again.');
     } finally {
       setIsSubmittingCancellation(false);
-      console.log('🏁 Cancellation submission completed');
+      appLog('🏁 Cancellation submission completed');
     }
   }, [cancellationReasons, cancellationFeedback, userId, presentHalfOffPaywall]);
 
@@ -1114,17 +1115,17 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
   }, []);
 
   const handleLanguageChange = async (lang: string) => {
-    console.log(`[SettingsSheet] Language changed to: ${lang}`);
+    appLog(`[SettingsSheet] Language changed to: ${lang}`);
     setLanguage(lang);
     setLanguageModalVisible(false);
 
     try {
       const chatLanguageSet = await AsyncStorage.getItem('shepherd_bible_chat_language_set');
-      console.log(`[SettingsSheet] Chat language set flag: ${chatLanguageSet}`);
+      appLog(`[SettingsSheet] Chat language set flag: ${chatLanguageSet}`);
 
       await AsyncStorage.removeItem('shepherd_bible_chat_language_set');
       await AsyncStorage.setItem('shepherd_bible_chat_language', lang);
-      console.log(`[SettingsSheet] Synced chat language with app language: ${lang}`);
+      appLog(`[SettingsSheet] Synced chat language with app language: ${lang}`);
     } catch (error) {
       console.error('Error syncing chat language with app language:', error);
     }

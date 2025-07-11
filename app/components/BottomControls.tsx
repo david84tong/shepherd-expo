@@ -10,6 +10,7 @@ import { useDevotionalStore } from '../stores/devotionalStore';
 import { useUserStore } from '../stores/userStore';
 import firestore from '@react-native-firebase/firestore';
 import analytics from '~/utils/analytics';
+import { appLog } from '../helper/helper';
 
 interface BottomControlsProps {
   bottomContentOpacity: Animated.Value;
@@ -83,7 +84,7 @@ export default function BottomControls({
 
   // Debug showDevotionalContent
   useEffect(() => {
-    console.log('🔍 BottomControls - showDevotionalContent changed:', showDevotionalContent);
+    appLog('🔍 BottomControls - showDevotionalContent changed:', showDevotionalContent);
   }, [showDevotionalContent]);
 
   const handleLikePress = async () => {
@@ -107,7 +108,7 @@ export default function BottomControls({
         // Create a unique document ID for the saved devotional
         const savedDevotionalId = `${currentUser.id}_${activeDevotional.id}`;
 
-        console.log('🔍 Saving devotional to savedDevotionals:', {
+        appLog('🔍 Saving devotional to savedDevotionals:', {
           id: savedDevotionalId,
           devotionalId: activeDevotional.id,
           userId: currentUser.id
@@ -126,7 +127,7 @@ export default function BottomControls({
         // Remove devotional from savedDevotionals collection
         const savedDevotionalId = `${currentUser.id}_${activeDevotional.id}`;
 
-        console.log('🔍 Removing devotional from savedDevotionals:', {
+        appLog('🔍 Removing devotional from savedDevotionals:', {
           id: savedDevotionalId,
           devotionalId: activeDevotional.id,
           userId: currentUser.id
@@ -158,7 +159,7 @@ export default function BottomControls({
     try {
       // Only update Firestore if we have an activeDevotional with an ID
       if (activeDevotional?.id) {
-        console.log('🔍 Updating Firestore share count for devotional:', activeDevotional.id);
+        appLog('🔍 Updating Firestore share count for devotional:', activeDevotional.id);
 
         // Determine which collection to update based on devotional type
         const isCustomDevotional = customDevotional?.id === activeDevotional.id;
@@ -180,14 +181,14 @@ export default function BottomControls({
           devotionalType: isCustomDevotional ? 'custom' : 'daily',
         });
       } else {
-        console.log('🔍 No activeDevotional ID, skipping Firestore update');
+        appLog('🔍 No activeDevotional ID, skipping Firestore update');
       }
 
       // Trigger full screen share card (this should always work)
       if (onSharePress) {
         onSharePress();
       } else {
-        console.log('🔍 onSharePress function is not provided');
+        appLog('🔍 onSharePress function is not provided');
       }
     } catch (error) {
       console.error("Error updating share:", error);

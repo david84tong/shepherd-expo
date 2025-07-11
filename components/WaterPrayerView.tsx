@@ -36,7 +36,7 @@ import SuccessMessage from './SuccessMessage';
 import PrayerSettingsModal from './PrayerSettingsModal';
 import { useSoundStore } from '~/app/stores/soundStore';
 import { hapticHeavy, hapticLight, hapticMedium } from '~/utils/haptics';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import { router } from 'expo-router';
 import { useLanguageStore } from '~/app/stores/languageStore';
 import i18n from '~/app/utils/i18n';
@@ -548,7 +548,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
           setPrayerDuration(parseInt(savedDuration, 10));
         }
 
-        console.log('🙏 Loaded prayer settings from AsyncStorage');
+        appLog('🙏 Loaded prayer settings from AsyncStorage');
       } catch (error) {
         console.error('🙏 Error loading prayer settings:', error);
       }
@@ -562,23 +562,23 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   // Split prayer into sentences when component loads
   useEffect(() => {
-    console.log('🙏 Processing prayer content');
-    console.log('🙏 Current devotional:', currentDevotional?.id, currentDevotional?.bibleReference);
-    console.log('🙏 Devotional prayer available:', !!currentDevotional?.prayer);
-    console.log('🙏 Prayer structure:', typeof currentDevotional?.prayer, currentDevotional?.prayer);
+    appLog('🙏 Processing prayer content');
+    appLog('🙏 Current devotional:', currentDevotional?.id, currentDevotional?.bibleReference);
+    appLog('🙏 Devotional prayer available:', !!currentDevotional?.prayer);
+    appLog('🙏 Prayer structure:', typeof currentDevotional?.prayer, currentDevotional?.prayer);
 
     const prayerText = generatePrayerContent();
-    console.log('🙏 Generated prayer text:', prayerText);
+    appLog('🙏 Generated prayer text:', prayerText);
 
     if (prayerText.trim().length > 0) {
       // Split by periods followed by space or end of string, keeping the period
       const sentences = prayerText
         .split(/(?<=[.!?])\s+/)
         .filter(s => s.trim().length > 0);
-      console.log('🙏 Split into sentences:', sentences);
+      appLog('🙏 Split into sentences:', sentences);
       setPrayerSentences(sentences);
     } else {
-      console.log('🙏 No valid prayer text, setting empty array');
+      appLog('🙏 No valid prayer text, setting empty array');
       setPrayerSentences([]);
     }
   }, [generatePrayerContent]);
@@ -609,7 +609,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   // Debug modal visibility changes
   useEffect(() => {
-    console.log('🔍 showSettingsModal changed to:', showSettingsModal);
+    appLog('🔍 showSettingsModal changed to:', showSettingsModal);
   }, [showSettingsModal]);
 
   // Cleanup timeout on unmount
@@ -782,7 +782,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     try {
       await AsyncStorage.setItem(PRAYER_HAPTICS_KEY, enabled.toString());
       setHapticsEnabled(enabled);
-      console.log('🙏 Saved haptics setting:', enabled);
+      appLog('🙏 Saved haptics setting:', enabled);
     } catch (error) {
       console.error('🙏 Error saving haptics setting:', error);
     }
@@ -792,7 +792,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     try {
       await AsyncStorage.setItem(PRAYER_DURATION_KEY, duration.toString());
       setPrayerDuration(duration);
-      console.log('🙏 Saved prayer duration setting:', duration);
+      appLog('🙏 Saved prayer duration setting:', duration);
     } catch (error) {
       console.error('🙏 Error saving prayer duration setting:', error);
     }
@@ -800,10 +800,10 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   const saveGuidedPrayerEnabled = useCallback(async (enabled: boolean) => {
     try {
-      console.log('🙏 Saving guided prayer setting:', enabled, 'Modal should stay open');
+      appLog('🙏 Saving guided prayer setting:', enabled, 'Modal should stay open');
       await AsyncStorage.setItem(PRAYER_GUIDED_MODE_KEY, enabled.toString());
       setGuidedPrayerEnabled(enabled);
-      console.log('🙏 Saved guided prayer setting:', enabled, 'Modal should still be open');
+      appLog('🙏 Saved guided prayer setting:', enabled, 'Modal should still be open');
     } catch (error) {
       console.error('🙏 Error saving guided prayer setting:', error);
     }
@@ -830,7 +830,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   // Function to show control row with auto-hide
   const toggleControlRow = useCallback(() => {
-    console.log('🎯 toggleControlRow called! showControlRow:', showControlRow);
+    appLog('🎯 toggleControlRow called! showControlRow:', showControlRow);
 
     // Haptic feedback for every tap
     if (hapticsEnabled) {
@@ -839,7 +839,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
     // Don't show controls if animation has been triggered (max time exceeded)
     if (animationTriggered) {
-      console.log('🎯 Animation triggered - not showing controls');
+      appLog('🎯 Animation triggered - not showing controls');
       return;
     }
 
@@ -880,13 +880,13 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   // Debug state changes
   useEffect(() => {
-    console.log('🎯 State changed - isHolding:', isHolding, 'animationTriggered:', animationTriggered);
+    appLog('🎯 State changed - isHolding:', isHolding, 'animationTriggered:', animationTriggered);
   }, [isHolding, animationTriggered]);
 
   // Trigger success state when water animation is complete
   useEffect(() => {
     if (animationTriggered) {
-      console.log('🎯 Water animation complete, triggering success state');
+      appLog('🎯 Water animation complete, triggering success state');
       // Trigger the success state after a short delay
       setTimeout(() => {
         setShowBreathingAnimation(false);
@@ -898,9 +898,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         if (riveRef?.current?.setInputState) {
           try {
             riveRef.current.setInputState('State Machine 1', 'Action-Number', 11);
-            console.log('🎯 Set Rive to drinking animation (action-number 11)');
+            appLog('🎯 Set Rive to drinking animation (action-number 11)');
           } catch (error) {
-            console.log('Error setting Rive drinking animation:', error);
+            appLog('Error setting Rive drinking animation:', error);
           }
         }
       }, 1000);
@@ -909,12 +909,12 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   // Handle press start for water animation
   const handlePressIn = useCallback(() => {
-    console.log('🎯 handlePressIn called');
+    appLog('🎯 handlePressIn called');
 
     const startTime = Date.now();
     setIsHolding(true);
     holdStartTimeRef.current = startTime;
-    console.log('🎯 Started holding, water will fill continuously');
+    appLog('🎯 Started holding, water will fill continuously');
 
     // Keep track of last haptic time for 1000ms intervals
     let lastHapticTime = startTime;
@@ -927,7 +927,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         const maxFillTime = prayerDuration;
         const progress = Math.min(totalTime / maxFillTime, 1);
 
-        console.log('🎯 Total hold time:', totalTime, 'ms, progress:', progress);
+        appLog('🎯 Total hold time:', totalTime, 'ms, progress:', progress);
 
         // Update water progress
         waterProgress.value = progress;
@@ -937,12 +937,12 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         if (hapticsEnabled && currentTime - lastHapticTime >= 1000) {
           hapticMedium();
           lastHapticTime = currentTime;
-          console.log('🎯 Triggered 1000ms interval haptic');
+          appLog('🎯 Triggered 1000ms interval haptic');
         }
 
         // Don't auto-trigger success when reaching 100% - wait for user to release
         if (progress >= 1) {
-          console.log('🎯 Water filled completely! Ready for success when user releases.');
+          appLog('🎯 Water filled completely! Ready for success when user releases.');
 
           // Note: Haptic feedback will continue every 1000ms even after reaching 100%
           // This is handled by the interval haptic logic above
@@ -956,7 +956,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   // Handle press end for water animation
   const handlePressOut = useCallback(() => {
-    console.log('🎯 handlePressOut called');
+    appLog('🎯 handlePressOut called');
     setIsHolding(false);
 
     // Calculate total hold time
@@ -965,14 +965,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       const currentHoldTime = Date.now() - holdStartTimeRef.current;
       newTotalHoldTime = totalHoldTime + currentHoldTime;
       setTotalHoldTime(newTotalHoldTime);
-      console.log('🎯 Total hold time accumulated:', newTotalHoldTime, 'ms');
+      appLog('🎯 Total hold time accumulated:', newTotalHoldTime, 'ms');
     }
 
     holdStartTimeRef.current = null;
 
     // Stop the water updates
     if (holdTimerRef.current) {
-      console.log('🎯 Stopping water updates');
+      appLog('🎯 Stopping water updates');
       clearInterval(holdTimerRef.current);
       holdTimerRef.current = null;
     }
@@ -982,7 +982,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     const progress = Math.min(newTotalHoldTime / maxFillTime, 1);
 
     if (progress >= 1 && !animationTriggered) {
-      console.log('🎯 User released after reaching threshold! Triggering success!');
+      appLog('🎯 User released after reaching threshold! Triggering success!');
       setAnimationTriggered(true);
 
       // Trigger haptic feedback for success
@@ -990,7 +990,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         hapticHeavy();
       }
     } else {
-      console.log('🎯 Water stays at current level, threshold not reached');
+      appLog('🎯 Water stays at current level, threshold not reached');
     }
   }, [totalHoldTime, animationTriggered, hapticsEnabled, prayerDuration]);
 
@@ -1012,9 +1012,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       if (riveRef?.current?.setInputState) {
         try {
           riveRef.current.setInputState('State Machine 1', 'Action-Number', 11);
-          console.log('🎯 Set Rive to drinking animation (action-number 11)');
+          appLog('🎯 Set Rive to drinking animation (action-number 11)');
         } catch (error) {
-          console.log('Error setting Rive drinking animation:', error);
+          appLog('Error setting Rive drinking animation:', error);
         }
       }
 
@@ -1070,7 +1070,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       });
     },
     handleSettings: () => {
-      console.log('⚙️ Settings button pressed');
+      appLog('⚙️ Settings button pressed');
       // Clear any hide timers when opening settings
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current);
@@ -1085,9 +1085,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   // Prepare cards to show (up to current index)
   const cardsToShow = [];
 
-  console.log('📋 Preparing prayer cards to show. Current index:', currentIndex);
-  console.log('📋 Total prayer sentences:', prayerSentences.length);
-  console.log('📋 Prayer sentences:', prayerSentences);
+  appLog('📋 Preparing prayer cards to show. Current index:', currentIndex);
+  appLog('📋 Total prayer sentences:', prayerSentences.length);
+  appLog('📋 Prayer sentences:', prayerSentences);
 
   // Add prayer sentences based on current index
   for (let i = 0; i <= currentIndex && i < prayerSentences.length; i++) {
@@ -1097,7 +1097,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     });
   }
 
-  console.log('📋 Prayer cards to show:', cardsToShow.length, cardsToShow);
+  appLog('📋 Prayer cards to show:', cardsToShow.length, cardsToShow);
 
   return (
     <Reanimated.View style={[{ flex: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: '#FDEBB8' }, componentAnimatedStyle, { overflow: 'hidden' }]}>
@@ -1284,7 +1284,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                     ) : (
                       <>
                         {cardsToShow.map((card, index) => {
-                          console.log('🎨 Rendering prayer card:', index, card.type, card.content.substring(0, 50));
+                          appLog('🎨 Rendering prayer card:', index, card.type, card.content.substring(0, 50));
                           return (
                             <PrayerCard
                               key={index}
@@ -1341,9 +1341,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                       if (riveRef?.current?.setInputState) {
                         try {
                           riveRef.current.setInputState('State Machine 1', 'Action-Number', 11);
-                          console.log('🎯 Set Rive to drinking animation (action-number 11)');
+                          appLog('🎯 Set Rive to drinking animation (action-number 11)');
                         } catch (error) {
-                          console.log('Error setting Rive drinking animation:', error);
+                          appLog('Error setting Rive drinking animation:', error);
                         }
                       }
 

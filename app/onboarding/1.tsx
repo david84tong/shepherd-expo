@@ -21,7 +21,7 @@ import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 
 import analytics from '../../utils/analytics';
 import { IS_ANDROID } from '../utils/utils';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 import { hapticHeavy, hapticLight, hapticRigid } from '~/utils/haptics';
 
 const FIRST_WELCOME_TEXT = 'Every Shepherd starts with one lost lamb...';
@@ -40,7 +40,7 @@ const triggerTypeHaptic = () => {
     hapticRigid();
   } catch (error) {
     // Safely ignore haptic errors
-    console.log('Haptics not available');
+    appLog('Haptics not available');
   }
 };
 
@@ -65,7 +65,7 @@ export default function OnboardingWelcomeScreen() {
         // Save to AsyncStorage
         await AsyncStorage.setItem(AB_TEST_KEY, abTestValue.toString());
 
-        console.log('[OnboardingScreen1] Assigned new A/B test value:', abTestValue);
+        appLog('[OnboardingScreen1] Assigned new A/B test value:', abTestValue);
 
         // Log analytics event for A/B test assignment
         analytics.logEvent('ABTest_Assigned', {
@@ -73,7 +73,7 @@ export default function OnboardingWelcomeScreen() {
           screenName: 'OnboardingWelcomeScreen',
         });
       } else {
-        console.log('[OnboardingScreen1] Existing A/B test value found:', existingAbTest);
+        appLog('[OnboardingScreen1] Existing A/B test value found:', existingAbTest);
       }
     } catch (error) {
       console.error('[OnboardingScreen1] Error handling A/B test assignment:', error);
@@ -303,7 +303,7 @@ export default function OnboardingWelcomeScreen() {
 
   // Handle tapping the lamb in the second stage
   const handleLambTap = () => {
-    console.log('handleLambTap2');
+    appLog('handleLambTap2');
     // Set the tap input to true to trigger the state machine
 
     hapticHeavy();
@@ -500,7 +500,7 @@ export default function OnboardingWelcomeScreen() {
                       ref={riveRef}
                       // resourceName={assets[0].uri}
                       onError={(error) => {
-                        console.log('------>', error);
+                        appLog('------>', error);
                       }}
                       resourceName={'baby_lamb_waking'}
                       // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
@@ -515,7 +515,7 @@ export default function OnboardingWelcomeScreen() {
                       ref={riveRef}
                       // resourceName={assets[0].uri}
                       onError={(error) => {
-                        console.log('------>', error);
+                        appLog('------>', error);
                       }}
                       url={assets[0].uri!} // Use url prop with localUri
                       // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"

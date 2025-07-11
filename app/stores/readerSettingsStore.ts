@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { appLog } from '../helper/helper';
 
 // Constants shared between both reader components
 export const FONT_SIZE_KEY = 'userBibleFontSize';
@@ -60,7 +61,7 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
       set({ fontSize: size });
       try {
         await AsyncStorage.setItem(FONT_SIZE_KEY, size?.toString?.());
-        console.log(`📐 Font size saved: ${size}`);
+        appLog(`📐 Font size saved: ${size}`);
       } catch (e) {
         console.error('Failed to save font size to AsyncStorage', e);
       }
@@ -73,7 +74,7 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
     try {
       const lineHeight = LINE_HEIGHT_PRESETS[preset];
       await AsyncStorage.setItem(LINE_HEIGHT_KEY, lineHeight?.toString?.());
-      console.log(`📏 Line height preset saved: ${preset} (${lineHeight})`);
+      appLog(`📏 Line height preset saved: ${preset} (${lineHeight})`);
     } catch (e) {
       console.error('Failed to save line height to AsyncStorage', e);
     }
@@ -84,7 +85,7 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
     set({ theme });
     try {
       await AsyncStorage.setItem(THEME_COLOR_KEY, theme);
-      console.log(`🎨 Theme saved: ${theme}`);
+      appLog(`🎨 Theme saved: ${theme}`);
     } catch (e) {
       console.error('Failed to save theme to AsyncStorage', e);
     }
@@ -96,7 +97,7 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
     try {
       const value = enabled ? 'new' : 'default';
       await AsyncStorage.setItem(READER_PREFERENCE_KEY, value);
-      console.log(`📱 Reader preference saved: ${value}`);
+      appLog(`📱 Reader preference saved: ${value}`);
     } catch (e) {
       console.error('Failed to save reader preference to AsyncStorage', e);
     }
@@ -146,7 +147,7 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
 
       // Mark as initialized
       set({ initialized: true });
-      console.log('✅ Reader settings initialized from AsyncStorage');
+      appLog('✅ Reader settings initialized from AsyncStorage');
     } catch (e) {
       console.error('Failed to initialize settings from AsyncStorage', e);
     }

@@ -40,7 +40,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
 import i18n from '../utils/i18n';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 import { AppFonts } from '../constants/appFonts';
 import { hapticLight } from '~/utils/haptics';
 
@@ -96,8 +96,8 @@ export default function SaveProgressScreen() {
   // const { showEmailPassword, hideGoogleLogin } = useRemoteConfig();
   const showEmailPassword = (global as any).showEmailPassword;
   const hideGoogleLogin = (global as any).hideGoogleLogin;
-  console.log('hideGoogleLogin ==>', hideGoogleLogin);
-  console.log('showEmailPassword ==>', showEmailPassword);
+  appLog('hideGoogleLogin ==>', hideGoogleLogin);
+  appLog('showEmailPassword ==>', showEmailPassword);
 
   const { clearResponses, responses, getAllResponses } = useOnboardingStore();
   const { createUser } = useUserStore();
@@ -195,7 +195,7 @@ export default function SaveProgressScreen() {
         }, 2000);
       }, 400);
     } catch (error) {
-      console.log('Error completing onboarding:', error);
+      appLog('Error completing onboarding:', error);
     }
   };
 
@@ -269,7 +269,7 @@ export default function SaveProgressScreen() {
       const isProFromOnboarding = useUserStore.getState().isProFromOnboarding;
       // Get all responses from store to ensure we have latest data
       const allResponses = getAllResponses();
-      console.log('Onboarding responses:', JSON.stringify(allResponses));
+      appLog('Onboarding responses:', JSON.stringify(allResponses));
 
       // Get A/B test value from AsyncStorage (set in onboarding screen 1)
       let abTestValue = 0; // Default value
@@ -277,9 +277,9 @@ export default function SaveProgressScreen() {
         const storedAbTest = await AsyncStorage.getItem('abTest');
         if (storedAbTest !== null) {
           abTestValue = parseInt(storedAbTest, 10);
-          console.log('[OnboardingScreen11] Retrieved A/B test value:', abTestValue);
+          appLog('[OnboardingScreen11] Retrieved A/B test value:', abTestValue);
         } else {
-          console.log('[OnboardingScreen11] No A/B test value found, using default:', abTestValue);
+          appLog('[OnboardingScreen11] No A/B test value found, using default:', abTestValue);
         }
       } catch (abTestError) {
         console.error('[OnboardingScreen11] Error retrieving A/B test value:', abTestError);
@@ -348,7 +348,7 @@ export default function SaveProgressScreen() {
         completedMapPaths: [],
       };
 
-      console.log('Creating user data:', JSON.stringify(userData));
+      appLog('Creating user data:', JSON.stringify(userData));
       // We are checking if user have premium in this mobile also user if purchased before signup from onboarding or user restored from paywall in onboarding before signup.
       if (isPremium && !isProFromOnboarding) {
         userData.isPro = true;
@@ -394,13 +394,13 @@ export default function SaveProgressScreen() {
 
       // Create user in Firestore
       const success = await createUser(uid, userData);
-      console.log('uid, userData =>', { uid, userData });
+      appLog('uid, userData =>', { uid, userData });
 
       if (!success) {
         throw new Error('Failed to create user document');
       }
     } catch (error) {
-      console.log('Error creating user:', error);
+      appLog('Error creating user:', error);
       throw error;
     }
   };
@@ -413,13 +413,13 @@ export default function SaveProgressScreen() {
     try {
       hapticLight();
       setLoading(true);
-      console.log('Starting Apple sign in process...');
+      appLog('Starting Apple sign in process...');
 
       // Pass the isLoginMode flag to the signInWithApple method
       const user = await signInWithApple(isLoginMode);
 
       if (user) {
-        console.log('Apple sign in successful');
+        appLog('Apple sign in successful');
 
         if (isLoginMode) {
           const isPremium = await checkPremiumStatus();
@@ -456,15 +456,15 @@ export default function SaveProgressScreen() {
           }
         } else {
           // In onboarding mode, create new user from responses
-          console.log('Creating user...');
+          appLog('Creating user...');
           await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
-          console.log('User created from responses');
+          appLog('User created from responses');
           await completeOnboarding();
-          console.log('Onboarding completed');
+          appLog('Onboarding completed');
         }
       }
     } catch (error: any) {
-      console.log('Apple sign in error:', error);
+      appLog('Apple sign in error:', error);
 
       // Provide more specific feedback based on the error
       let errorMessage = 'There was a problem signing in with Apple.';
@@ -528,14 +528,14 @@ export default function SaveProgressScreen() {
     try {
       hapticLight();
       setLoading(true);
-      console.log('Starting Google sign in process...');
+      appLog('Starting Google sign in process...');
 
       // Pass the isLoginMode flag to the signInWithGoogle method
       const user = await signInWithGoogle(isLoginMode);
-      console.log('user ==>', user);
+      appLog('user ==>', user);
 
       if (user) {
-        console.log('Google sign in successful');
+        appLog('Google sign in successful');
 
         if (isLoginMode) {
           const isPremium = await checkPremiumStatus();
@@ -562,15 +562,15 @@ export default function SaveProgressScreen() {
           }
         } else {
           // In onboarding mode, create new user from responses
-          console.log('Creating user...');
+          appLog('Creating user...');
           await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
-          console.log('User created from responses');
+          appLog('User created from responses');
           await completeOnboarding();
-          console.log('Onboarding completed');
+          appLog('Onboarding completed');
         }
       }
     } catch (error: any) {
-      console.log('Google sign in error:', error);
+      appLog('Google sign in error:', error);
 
       // Provide more specific feedback based on the error
       let errorMessage = 'There was a problem signing in with Google.';
@@ -662,7 +662,7 @@ export default function SaveProgressScreen() {
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
           router.replace('/(tabs)');
         } catch (loginError: any) {
-          console.log('Login error:', loginError.message);
+          appLog('Login error:', loginError.message);
           let errorMessage = 'Unable to sign in. Please try again.';
 
           if (loginError.code === 'auth/user-not-found') {
@@ -697,16 +697,16 @@ export default function SaveProgressScreen() {
           const allResponses = getAllResponses();
           const displayName = allResponses.username || 'Anonymous User';
 
-          console.log("CALLED API");
+          appLog("CALLED API");
           user = await signUpWithEmailPassword(email, password, displayName);
-          console.log("user ====>", user);
+          appLog("user ====>", user);
 
           analytics.logEvent('OnboardingSignUp_Success_Email');
 
           await createUserFromResponses(user.uid, displayName);
           await completeOnboarding();
         } catch (signupError: any) {
-          console.log('Signup error:', signupError.message);
+          appLog('Signup error:', signupError.message);
           let errorMessage = 'Unable to create account. Please try again.';
 
           if (signupError.message?.includes('Would you like to login instead?')) {
@@ -747,7 +747,7 @@ export default function SaveProgressScreen() {
         }
       }
     } catch (error: any) {
-      console.log('General auth error:', error.message);
+      appLog('General auth error:', error.message);
       Alert.alert(
         isLoginMode ? 'Sign In Failed' : 'Sign Up Failed',
         'An unexpected error occurred. Please try again later.',
@@ -796,7 +796,7 @@ export default function SaveProgressScreen() {
         await completeOnboarding();
       }
     } catch (error) {
-      console.log('Anonymous sign in error:', error);
+      appLog('Anonymous sign in error:', error);
       Alert.alert('Error', 'There was a problem creating anonymous account. Please try again.', [
         { text: 'OK' },
       ]);

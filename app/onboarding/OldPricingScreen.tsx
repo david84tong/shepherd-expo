@@ -25,14 +25,13 @@ import Animated, {
 import { useAssets } from 'expo-asset';
 import Rive from 'rive-react-native';
 import PrimaryButton from '~/components/PrimaryButton';
-import analytics from '../../../utils/analytics';
-import { isSignedIn } from '../../hooks/authHook';
+import analytics from '~/utils/analytics';
+import { isSignedIn } from '../hooks/authHook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IS_ANDROID } from '../../utils/utils';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import i18n from '~/app/utils/i18n';
-import { ONBOARDING_COMPLETED_KEY } from '../../models/Onboarding';
+import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
-import { appLog } from '~/app/helper/helper';
 // Key for tracking daily first load
 const DAILY_FIRST_LOAD_KEY = 'daily_first_load_';
 
@@ -113,7 +112,7 @@ const OldPricingScreen = () => {
         const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
         const dailyKey = DAILY_FIRST_LOAD_KEY + today;
         await AsyncStorage.setItem(dailyKey, 'true');
-        appLog(`[PricingScreen] Set daily first load to true for ${today}`);
+        console.log(`[PricingScreen] Set daily first load to true for ${today}`);
       } catch (error) {
         console.error('[PricingScreen] Error setting daily first load:', error);
       }
@@ -142,7 +141,7 @@ const OldPricingScreen = () => {
   const { presentFreeTrialPaywall } = useSubscriptionStore();
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../../../assets/riveAnimations/goldLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/goldLamb.riv')]);
 
   const toggleSwitch = () => {
     hapticLight();
@@ -161,7 +160,7 @@ const OldPricingScreen = () => {
       });
       await showPaywall();
     } catch (error) {
-      appLog('Error during subscription process:', error);
+      console.log('Error during subscription process:', error);
       setIsLoading(false);
     }
   };
@@ -214,7 +213,7 @@ const OldPricingScreen = () => {
 
       // Adapty implementation
     } catch (error) {
-      appLog('Error presenting paywall:', error);
+      console.log('Error presenting paywall:', error);
       analytics.logEvent('PricingScreen_Paywall_Error', {
         errorMessage: (error as Error)?.message || 'Unknown error',
       });
@@ -228,7 +227,7 @@ const OldPricingScreen = () => {
     return (
       <>
         {/* Header */}
-        {IS_ANDROID || __DEV__ && (
+        {IS_IOS && (
           <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
             <View className="flex-row items-center justify-between px-5 py-3 mb-3">
               <Animated.View entering={FadeIn.duration(600)}>
@@ -289,7 +288,7 @@ const OldPricingScreen = () => {
                 {i18n.t('pricing_draw_closer_to_god')}
               </Text>
               <Image
-                source={require('../../../assets/onboarding/reviews.png')}
+                source={require('../../assets/onboarding/reviews.png')}
                 className="w-96 h-20"
                 resizeMode="contain"
               />
@@ -589,7 +588,7 @@ const OldPricingScreen = () => {
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <ImageBackground
-        source={require('../../../assets/backgrounds/godBackground.png')}
+        source={require('../../assets/backgrounds/godBackground.png')}
         className="flex-1"
         resizeMode="cover">
         <LinearGradient

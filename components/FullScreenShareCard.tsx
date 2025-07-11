@@ -17,7 +17,7 @@ import { Devotional } from '~/app/models/Devotional';
 import { ImageBackground } from 'expo-image';
 import PrimaryButton from './PrimaryButton';
 import i18n from '../app/utils/i18n';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import firestore from '@react-native-firebase/firestore';
 import { useUserStore } from '~/app/stores/userStore';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
@@ -147,7 +147,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                     originalId: devotionalData.id,
                 };
 
-                console.log('🔍 Saving devotional to savedDevotionals from FullScreenShareCard:', {
+                appLog('🔍 Saving devotional to savedDevotionals from FullScreenShareCard:', {
                     id: savedDevotionalId,
                     devotionalId: devotionalData.id,
                     userId: currentUser.id
@@ -156,7 +156,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                 await firestore().collection('savedDevotionals').doc(savedDevotionalId).set(savedDevotionalData);
             } else {
                 // Remove devotional from savedDevotionals collection
-                console.log('🔍 Removing devotional from savedDevotionals from FullScreenShareCard:', {
+                appLog('🔍 Removing devotional from savedDevotionals from FullScreenShareCard:', {
                     id: savedDevotionalId,
                     devotionalId: devotionalData.id,
                     userId: currentUser.id
@@ -291,13 +291,13 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                             });
                             useDevotionalStore.getState().incrementShareCount(devotionalData.id);
                             const shareResult = await Share.open(shareOptions);
-                            console.log('Share successful:', shareResult);
+                            appLog('Share successful:', shareResult);
 
                             // Update share count and analytics
 
 
                         } catch (shareError) {
-                            console.log('Share cancelled or failed:', shareError);
+                            appLog('Share cancelled or failed:', shareError);
                             // Don't update share count if user cancelled
                         }
 

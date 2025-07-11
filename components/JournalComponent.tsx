@@ -34,7 +34,7 @@ import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '~/utils/analytics';
 import { getLevelData } from '~/utils/levelUtils';
 import SuccessMessage from './SuccessMessage';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import PrimaryButton from './PrimaryButton';
 import CircleButton from './Shared/CircleButton';
 import i18n from '../app/utils/i18n';
@@ -169,12 +169,12 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
   // Ensure devotional is fetched when component mounts
   useEffect(() => {
-    console.log('📝 JournalComponent mounted, checking devotional...');
+    appLog('📝 JournalComponent mounted, checking devotional...');
     if (!currentDevotional) {
-      console.log('📝 No current devotional, fetching...');
+      appLog('📝 No current devotional, fetching...');
       fetchTodaysDevotional();
     } else {
-      console.log('📝 Current devotional exists:', currentDevotional.id);
+      appLog('📝 Current devotional exists:', currentDevotional.id);
     }
   }, []);
 
@@ -217,7 +217,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     if (currentDevotional?.reflectionPrompt) {
       if (typeof currentDevotional.reflectionPrompt === 'string') {
       
-        console.log('📝 Using string reflection prompt:', currentDevotional.reflectionPrompt);
+        appLog('📝 Using string reflection prompt:', currentDevotional.reflectionPrompt);
         return currentDevotional.reflectionPrompt;
       } else if (typeof currentDevotional.reflectionPrompt === 'object') {
         const promptObj = currentDevotional.reflectionPrompt as any;
@@ -255,14 +255,14 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     }
 
     // Fallback to default prompt
-    console.log('📝 Using fallback prompt');
+    appLog('📝 Using fallback prompt');
     return i18n.t('reflection_prompt_fallback');
   };
 
   // Get appropriate placeholder text based on whether this is verse reflection
   const getPlaceholderText = () => {
     if (tappedReflectAboutVerse && currentPath) {
-      console.log('currentPath =', currentPath.bookId);
+      appLog('currentPath =', currentPath.bookId);
       // Get book name from book ID
       const bookName = currentPath.bookId ? getBookNameFromId(currentPath.bookId) : 'this passage';
       const chapterText = currentPath.startChapter
@@ -338,7 +338,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       currentPath.reflection &&
       reflectionContent === ''
     ) {
-      console.log('Setting initial reflection content from currentPath');
+      appLog('Setting initial reflection content from currentPath');
       // We set this as a suggestion/starter but don't count it toward the minimum character count
       const initialContent = currentPath.reflection;
       setReflectionContent('');
@@ -347,14 +347,14 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
   // Entry and exit animations
   useEffect(() => {
-    console.log('JournalComponent: visible =', visible);
+    appLog('JournalComponent: visible =', visible);
 
     if (visible) {
-      console.log('JournalComponent: Showing journal component');
-      console.log('tappedReflectAboutVerse =', tappedReflectAboutVerse);
-      console.log('📝 Current devotional:', currentDevotional?.id, currentDevotional?.bibleReference);
-      console.log('📝 Devotional reflection prompt available:', !!currentDevotional?.reflectionPrompt);
-      console.log('📝 Using reflection prompt:', getReflectionPrompt());
+      appLog('JournalComponent: Showing journal component');
+      appLog('tappedReflectAboutVerse =', tappedReflectAboutVerse);
+      appLog('📝 Current devotional:', currentDevotional?.id, currentDevotional?.bibleReference);
+      appLog('📝 Devotional reflection prompt available:', !!currentDevotional?.reflectionPrompt);
+      appLog('📝 Using reflection prompt:', getReflectionPrompt());
 
       // Set path in progress when component becomes visible
       setPathInProgress(true);
@@ -444,31 +444,31 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   // Delayed progress animation for success view
   useEffect(() => {
     if (success) {
-      console.log('🔍 JOURNAL SUCCESS - Setting success state, journalViewVisible should remain true');
+      appLog('🔍 JOURNAL SUCCESS - Setting success state, journalViewVisible should remain true');
       // Hide global buttons/tab bar during success state
       useHomeStore.getState().setShowGlobalButtons(false);
 
       // Keep journalViewVisible true during success state to hide tab bar
       // Don't set journalViewVisible to false here - it will be set to false when success message is dismissed
       const currentJournalViewVisible = useHomeStore.getState().journalViewVisible;
-      console.log('🔍 JOURNAL SUCCESS - Current journalViewVisible state:', currentJournalViewVisible);
+      appLog('🔍 JOURNAL SUCCESS - Current journalViewVisible state:', currentJournalViewVisible);
 
       // Ensure journalViewVisible is true during success state
       if (!currentJournalViewVisible) {
-        console.log('🔍 JOURNAL SUCCESS - Setting journalViewVisible to true to hide tab bar');
+        appLog('🔍 JOURNAL SUCCESS - Setting journalViewVisible to true to hide tab bar');
         useHomeStore.getState().setJournalViewVisible(true);
       }
 
       // Don't reset showJournalContent here - keep the component visible during success state
       // It will be reset when actually navigating away
-      console.log('🔍 JOURNAL SUCCESS - Keeping showJournalContent true during success state');
+      appLog('🔍 JOURNAL SUCCESS - Keeping showJournalContent true during success state');
 
       // Use a small delay to allow snapPoints to recalculate before snapping
       setTimeout(() => {
         const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
         if (bottomSheetRef?.current) {
           bottomSheetRef.current.snapToIndex(0); // Index 0 is 60% in snapPoints array
-          console.log('🔍 JOURNAL SUCCESS - Bottom sheet snapped to 60%');
+          appLog('🔍 JOURNAL SUCCESS - Bottom sheet snapped to 60%');
         }
       }, 100);
 
@@ -577,7 +577,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   useImperativeHandle(ref, () => ({
     handleSave: () => {
       useHomeStore.getState().setShowGlobalButtons(false);
-      console.log('handleSave called');
+      appLog('handleSave called');
       // Don't save if not enough characters
       if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
 
@@ -630,13 +630,13 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
       // Reset tappedReflectAboutVerse flag
       useHomeStore.getState().setTappedReflectAboutVerse(false);
-      console.log('Reset tappedReflectAboutVerse flag to false');
+      appLog('Reset tappedReflectAboutVerse flag to false');
 
       // Create current timestamp
       const now = firestore.Timestamp.now();
 
       // Save reflection to userStore
-      console.log('Saving reflection data to userStore');
+      appLog('Saving reflection data to userStore');
       try {
         // Save the reflection content
         addCompletedReflection({
@@ -651,11 +651,11 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         // Update last reflection date
         setLastReflectionDate(now);
 
-        console.log('Reflection saved successfully');
+        appLog('Reflection saved successfully');
       } catch (error) {
-        console.log('Error saving reflection data:', error);
+        appLog('Error saving reflection data:', error);
       }
-      console.log('🔍 JOURNAL SUCCESS - Setting success state to true');
+      appLog('🔍 JOURNAL SUCCESS - Setting success state to true');
       setSuccess(true);
     },
     handleCancel: () => {
@@ -677,7 +677,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         bibleReference: currentDevotional?.bibleReference || null,
       });
       useHomeStore.getState().setTappedReflectAboutVerse(false);
-      console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
+      appLog('Reset tappedReflectAboutVerse flag to false (from back button)');
 
       // Don't change reflection completion state - preserve existing state
       onClose({});
@@ -688,9 +688,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         if (riveRef?.current?.setInputState) {
           try {
             riveRef.current.setInputState('State Machine 1', 'Action-Number', 0); // 0 = Idle
-            console.log('Reset Rive animation to idle state after cancel delay');
+            appLog('Reset Rive animation to idle state after cancel delay');
           } catch (error) {
-            console.log('Could not reset Rive state after cancel:', error);
+            appLog('Could not reset Rive state after cancel:', error);
           }
         }
       }, 800); // Shorter delay for cancel since it's just going back to home
@@ -733,27 +733,27 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             useSoundStore.getState().playJournalingSuccessSound();
           }}
           onGoHome={() => {
-            console.log('🔍 JOURNAL SUCCESS - onGoHome called, delaying navigation for animation');
+            appLog('🔍 JOURNAL SUCCESS - onGoHome called, delaying navigation for animation');
 
             // Delay the actual navigation/close to allow success animation to play
             setTimeout(() => {
-              console.log('🔍 JOURNAL SUCCESS - Now executing navigation after delay');
+              appLog('🔍 JOURNAL SUCCESS - Now executing navigation after delay');
               setTimeout(() => {
                 setFinishReading(false)
               }, 2000);
 
               // Set journalViewVisible to false to show tab bar again
               useHomeStore.getState().setJournalViewVisible(false);
-              console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onGoHome');
+              appLog('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onGoHome');
 
               // Reset showJournalContent when actually navigating
               if (setShowJournalContent) {
                 setShowJournalContent(false);
-                console.log('🔍 JOURNAL SUCCESS - Set showJournalContent to false when navigating');
+                appLog('🔍 JOURNAL SUCCESS - Set showJournalContent to false when navigating');
               }
 
               // Ensure reflection completion state is maintained
-              console.log('🔍 JOURNAL SUCCESS - Ensuring reflection completion state is maintained');
+              appLog('🔍 JOURNAL SUCCESS - Ensuring reflection completion state is maintained');
               setReflectionCompleted(true);
 
               const sawStreakToday = useHomeStore.getState().sawStreakToday;
@@ -763,7 +763,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               const isBonusAvailable = freshState.readingCompleted && freshState.prayerCompleted && freshState.reflectionCompleted && isFirstReadingOfDay && !freshState.sawDailyBonus;
 
               const freshHomeState = useHomeStore.getState();
-              console.log('🔍 JOURNAL SUCCESS - Bonus check (onGoHome):', {
+              appLog('🔍 JOURNAL SUCCESS - Bonus check (onGoHome):', {
                 readingCompleted: freshHomeState.readingCompleted,
                 prayerCompleted: freshHomeState.prayerCompleted,
                 reflectionCompleted: reflectionCompleted,
@@ -797,9 +797,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                       };
                       const targetStateInput = moodToStateInput[currentMood] || 0;
                       riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-                      console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
+                      appLog(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
                     } catch (error) {
-                      console.log('Could not reset Rive state after navigation:', error);
+                      appLog('Could not reset Rive state after navigation:', error);
                     }
                   }
                 }, 1000); // 1 second delay after navigation
@@ -825,9 +825,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                       };
                       const targetStateInput = moodToStateInput[currentMood] || 0;
                       riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-                      console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
+                      appLog(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
                     } catch (error) {
-                      console.log('Could not reset Rive state after navigation:', error);
+                      appLog('Could not reset Rive state after navigation:', error);
                     }
                   }
                 }, 1000); // 1 second delay after navigation
@@ -835,7 +835,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             }, 2500); // Wait 2.5 seconds for success animation to play
           }}
           onPray={() => {
-            console.log('🔍 JOURNAL SUCCESS - onPray called');
+            appLog('🔍 JOURNAL SUCCESS - onPray called');
 
             // Handle bonus collection if available
             const sawStreakToday = useHomeStore.getState().sawStreakToday;
@@ -843,10 +843,10 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             // Check current state from homeStore to get the most up-to-date values
             const currentHomeState = useHomeStore.getState();
             // Check if bonus is available after reflection completion
-            const isBonusAvailable = currentHomeState.readingCompleted && currentHomeState.prayerCompleted && currentHomeState.reflectionCompleted && isFirstReadingOfDay && !currentHomeState.sawDailyBonus;
+            const isBonusAvailable = currentHomeState.readingCompleted && currentHomeState.prayerCompleted && currentHomeState.reflectionCompleted  && !currentHomeState.sawDailyBonus;
 
             const freshHomeState = useHomeStore.getState();
-            console.log('🔍 JOURNAL SUCCESS - Bonus check (onPray):', {
+            appLog('🔍 JOURNAL SUCCESS - Bonus check (onPray):', {
               readingCompleted: freshHomeState.readingCompleted,
               prayerCompleted: freshHomeState.prayerCompleted,
               reflectionCompleted: reflectionCompleted,
@@ -857,16 +857,16 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
             if (isBonusAvailable) {
               // For bonus collection, navigate immediately without delay
-              console.log('🔍 JOURNAL SUCCESS - Bonus available, navigating immediately');
+              appLog('🔍 JOURNAL SUCCESS - Bonus available, navigating immediately');
               setSuccessType(SuccessAnimationType.BONUS);
               // Set journalViewVisible to false to show tab bar again
               useHomeStore.getState().setJournalViewVisible(false);
-              console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onPray (bonus)');
+              appLog('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onPray (bonus)');
 
               // Reset showJournalContent when navigating
               if (setShowJournalContent) {
                 setShowJournalContent(false);
-                console.log('🔍 JOURNAL SUCCESS - Set showJournalContent to false when navigating to bonus');
+                appLog('🔍 JOURNAL SUCCESS - Set showJournalContent to false when navigating to bonus');
               }
 
               router.push({
@@ -891,25 +891,25 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                     };
                     const targetStateInput = moodToStateInput[currentMood] || 0;
                     riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-                    console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
+                    appLog(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
                   } catch (error) {
-                    console.log('Could not reset Rive state after navigation:', error);
+                    appLog('Could not reset Rive state after navigation:', error);
                   }
                 }
               }, 1000);
             } else {
               // Normal prayer flow - delay to allow success animation to play
-              console.log('🔍 JOURNAL SUCCESS - Normal prayer flow, delaying navigation for animation');
+              appLog('🔍 JOURNAL SUCCESS - Normal prayer flow, delaying navigation for animation');
               setTimeout(() => {
-                console.log('🔍 JOURNAL SUCCESS - Now executing navigation after delay');
+                appLog('🔍 JOURNAL SUCCESS - Now executing navigation after delay');
                 // Normal prayer flow - close journal and signal to open prayer view
                 useHomeStore.getState().setJournalViewVisible(false);
-                console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onPray (no bonus)');
+                appLog('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onPray (no bonus)');
 
                 // Reset showJournalContent when actually navigating
                 if (setShowJournalContent) {
                   setShowJournalContent(false);
-                  console.log('🔍 JOURNAL SUCCESS - Set showJournalContent to false when navigating to prayer');
+                  appLog('🔍 JOURNAL SUCCESS - Set showJournalContent to false when navigating to prayer');
                 }
 
                 onClose({ isReflectPresses: true }); // Pass flag to trigger prayer navigation
@@ -969,9 +969,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                 if (riveRef?.current?.setInputState) {
                   try {
                     riveRef.current.setInputState('State Machine 1', 'Action-Number', 10); // 10 = Writing
-                    console.log('Set Rive animation to writing state (10) on input focus');
+                    appLog('Set Rive animation to writing state (10) on input focus');
                   } catch (error) {
-                    console.log('Could not set Rive to writing state on focus:', error);
+                    appLog('Could not set Rive to writing state on focus:', error);
                   }
                 }
 
@@ -1000,9 +1000,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                     };
                     const targetStateInput = moodToStateInput[currentMood] || 0;
                     riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-                    console.log(`Set Rive animation back to mood state: ${targetStateInput} (${currentMood}) on input blur`);
+                    appLog(`Set Rive animation back to mood state: ${targetStateInput} (${currentMood}) on input blur`);
                   } catch (error) {
-                    console.log('Could not reset Rive state on blur:', error);
+                    appLog('Could not reset Rive state on blur:', error);
                   }
                 }
               }}
@@ -1037,7 +1037,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                   bibleReference: currentDevotional?.bibleReference || null,
                 });
                 useHomeStore.getState().setTappedReflectAboutVerse(false);
-                console.log('Reset tappedReflectAboutVerse flag to false (from cancel button)');
+                appLog('Reset tappedReflectAboutVerse flag to false (from cancel button)');
 
                 // Don't change reflection completion state - preserve existing state
                 onClose({});
@@ -1048,9 +1048,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                   if (riveRef?.current?.setInputState) {
                     try {
                       riveRef.current.setInputState('State Machine 1', 'Action-Number', 0); // 0 = Idle
-                      console.log('Reset Rive animation to idle state after cancel delay');
+                      appLog('Reset Rive animation to idle state after cancel delay');
                     } catch (error) {
-                      console.log('Could not reset Rive state after cancel:', error);
+                      appLog('Could not reset Rive state after cancel:', error);
                     }
                   }
                 }, 800); // Shorter delay for cancel since it's just going back to home
@@ -1064,7 +1064,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                   if (isButtonEnabled) {
                     // Directly call the internal method implementation instead of using the ref
                     useHomeStore.getState().setShowGlobalButtons(false);
-                    console.log('handleSave called');
+                    appLog('handleSave called');
                     // Don't save if not enough characters
                     if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
 
@@ -1117,13 +1117,13 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
                     // Reset tappedReflectAboutVerse flag
                     useHomeStore.getState().setTappedReflectAboutVerse(false);
-                    console.log('Reset tappedReflectAboutVerse flag to false');
+                    appLog('Reset tappedReflectAboutVerse flag to false');
 
                     // Create current timestamp
                     const now = firestore.Timestamp.now();
 
                     // Save reflection to userStore
-                    console.log('Saving reflection data to userStore');
+                    appLog('Saving reflection data to userStore');
                     try {
                       // Save the reflection content
                       addCompletedReflection({
@@ -1138,11 +1138,11 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                       // Update last reflection date
                       setLastReflectionDate(now);
 
-                      console.log('Reflection saved successfully');
+                      appLog('Reflection saved successfully');
                     } catch (error) {
-                      console.log('Error saving reflection data:', error);
+                      appLog('Error saving reflection data:', error);
                     }
-                    console.log('🔍 JOURNAL SUCCESS - Setting success state to true');
+                    appLog('🔍 JOURNAL SUCCESS - Setting success state to true');
                     setSuccess(true);
 
                     // Snap bottom sheet to lowest point after saving
@@ -1150,7 +1150,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                     const bottomSheetRef = homeStore.bottomSheetRef;
                     if (bottomSheetRef?.current) {
                       bottomSheetRef.current.snapToIndex(0); // Snap to lowest point (60%)
-                      console.log('🔍 JOURNAL - Snapped bottom sheet to lowest point after save');
+                      appLog('🔍 JOURNAL - Snapped bottom sheet to lowest point after save');
                     }
 
                     // Set Rive to celebration animation
@@ -1159,7 +1159,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                       try {
                         riveRef.current.setInputState('State Machine 1', 'Action-Number', 12); // 12 = Achievement
                       } catch (error) {
-                        console.log('Could not set Rive to achievement state:', error);
+                        appLog('Could not set Rive to achievement state:', error);
                       }
                     }
                   }

@@ -12,6 +12,7 @@ import {
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import { appLog } from '../app/helper/helper';
 import { useUserStore } from '~/app/stores/userStore';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { useShopStore } from '~/app/stores/shopStore';
@@ -83,7 +84,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     if (isProMember) {
       // Add the skin if they don't have it
       if (!hasSkin('99')) {
-        console.log('🔄 Adding Annointed Lamb skin to Pro user\'s collection');
+        appLog('🔄 Adding Annointed Lamb skin to Pro user\'s collection');
         addSkin('99');
       }
       // Do NOT auto-equip - let users choose their skin
@@ -242,7 +243,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         `You need ${item.price} gems to purchase ${item.name}. You currently have ${userGems} gems.`,
         [{ text: 'OK', style: 'default' }]
       );
-      console.log('❌ Not enough gems to purchase:', item.name);
+      appLog('❌ Not enough gems to purchase:', item.name);
       return;
     }
 
@@ -258,7 +259,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         `${item.name} unlocks at level ${item.unlockLevel}. You are currently level ${userLevel}.`,
         [{ text: 'OK', style: 'default' }]
       );
-      console.log('❌ Level requirement not met for:', item.name);
+      appLog('❌ Level requirement not met for:', item.name);
       return;
     }
 
@@ -271,7 +272,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           text: 'Cancel',
           style: 'cancel',
           onPress: () => {
-            console.log('❌ Purchase cancelled by user:', item.name);
+            appLog('❌ Purchase cancelled by user:', item.name);
             analytics.logEvent('Store_Purchase_Cancelled', {
               item: item.id,
               price: item.price
@@ -288,13 +289,13 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               const success = await purchaseSkin(skinId, item.price);
 
               if (success) {
-                console.log('✅ [StoreScreen] Purchase successful for:', item.name);
+                appLog('✅ [StoreScreen] Purchase successful for:', item.name);
                 analytics.logEvent('Store_Purchase_Success', {
                   item: item.id,
                   skinId: skinId,
                   price: item.price
                 });
-                console.log('✅ Successfully purchased skin:', item.name);
+                appLog('✅ Successfully purchased skin:', item.name);
 
                 // Haptic feedback for successful purchase
                 hapticSuccess()
@@ -310,7 +311,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                   item: item.id,
                   reason: 'purchase_failed'
                 });
-                console.log('❌ Failed to purchase skin:', item.name);
+                appLog('❌ Failed to purchase skin:', item.name);
 
                 // Show failure alert
                 Alert.alert(
@@ -352,7 +353,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     // Update home store to persist the current skin
     setCurrentSkin(skinId);
 
-    console.log('🔄 Updated equipped skin to:', skinId);
+    appLog('🔄 Updated equipped skin to:', skinId);
 
     // Update Rive animation if ref is available
     // Note: The automatic golden skin for pro users in useHomeScreen.ts will override this
@@ -361,14 +362,14 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       try {
         // Use the skin that the user selected
         const skinNumber = item.skinNumber || 0;
-        console.log('🎯 Setting Rive skin from store:', skinNumber, isProMember ? '(Pro user - golden skin)' : '');
+        appLog('🎯 Setting Rive skin from store:', skinNumber, isProMember ? '(Pro user - golden skin)' : '');
         riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
-        console.log('✅ Successfully updated Rive skin to:', skinNumber);
+        appLog('✅ Successfully updated Rive skin to:', skinNumber);
       } catch (error) {
         console.error('❌ Error updating Rive skin:', error);
       }
     } else {
-      console.log('⚠️ Rive ref not available for skin update');
+      appLog('⚠️ Rive ref not available for skin update');
     }
 
     analytics.logEvent('Store_Skin_Equipped', {
@@ -387,7 +388,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       visibilityTime: 3000,
     });
 
-    console.log('✅ Equipped skin:', item.name, 'with skin number:', item.skinNumber);
+    appLog('✅ Equipped skin:', item.name, 'with skin number:', item.skinNumber);
   }, [equipSkin, setCurrentSkin, riveRef, isProMember]);
 
   // Handle upgrade to pro (for Annointed Lamb)
@@ -408,7 +409,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         analytics.logEvent('Store_AnointedLamb_Upgraded', {
           fromScreen: 'store'
         });
-        console.log('✅ Successfully upgraded to pro from Annointed Lamb card');
+        appLog('✅ Successfully upgraded to pro from Annointed Lamb card');
 
         // Show success message
         Toast.show({
@@ -436,7 +437,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
     // Debug logging for Annointed Lamb
     if (isAnointedLamb) {
-      console.log('🔍 Annointed Lamb Debug:', {
+      appLog('🔍 Annointed Lamb Debug:', {
         skinId,
         equippedSkin,
         isEquipped,

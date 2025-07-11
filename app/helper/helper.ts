@@ -20,5 +20,11 @@ export const RPH = (height: number) => {
   return Dimensions.get('window').height * height / 100;
 }
 
+export function appLog(log: any, ...optionalParams: any[]) {
+  if (__DEV__) {
+    console.log(log, ...optionalParams);
+  }
+}
+
 // Default export for Expo Router compatibility
 export default {}

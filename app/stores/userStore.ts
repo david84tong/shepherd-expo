@@ -8,6 +8,7 @@ import { updateField, createUserDocument, removeFunctions } from '../../utils/fi
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
 import { UserDoc, Lamb, UserStore, MapPathCompletion, CheckIn } from '../models/User';
 import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
+import { appLog } from '../helper/helper';
 
 // Constants
 
@@ -137,7 +138,7 @@ const cleanupStoreMethodsFromFirestore = async (userId: string, data: any) => {
       });
 
       await firestore().collection('users').doc(userId).update(deleteUpdates);
-      console.log(`Cleaned up ${keysToDelete.length} store method keys from Firestore:`, keysToDelete);
+      appLog(`Cleaned up ${keysToDelete.length} store method keys from Firestore:`, keysToDelete);
     } catch (error) {
       console.error('Error cleaning up store methods from Firestore:', error);
     }
@@ -258,7 +259,7 @@ export const useUserStore = create<UserStore>()(
           await cleanupStoreMethodsFromFirestore(firestoreData.id, firestoreData);
         }
         
-        console.log('Syncing filtered Firestore data to local store:', filteredData);
+        appLog('Syncing filtered Firestore data to local store:', filteredData);
         set((state) => {
           // Ensure we keep local data if Firestore data is undefined
           return {
@@ -315,7 +316,7 @@ export const useUserStore = create<UserStore>()(
             checkIns: Array.isArray(firestoreData.checkIns) ? firestoreData.checkIns : (state.checkIns || []),
           };
         });
-        console.log('Firestore data sync complete');
+        appLog('Firestore data sync complete');
       },
 
       createUser: async (id: string, userData: Partial<UserDoc>) => {
@@ -373,6 +374,7 @@ export const useUserStore = create<UserStore>()(
       getDenomination: () => get().denomination || initialState.denomination,
       getDisplayName: () => get().displayName || initialState.displayName,
       getSelectedPathId: () => get().selectedPathId || initialState.selectedPathId,
+      getAgeRange: () => get().ageRange || initialState.ageRange,
       getLamb: () => get().lamb || initialState.lamb,
       getStreakCount: () => get().streakCount || initialState.streakCount,
       getLastActivityDate: () => get().lastActivityDate || initialState.lastActivityDate,
@@ -675,7 +677,7 @@ export const useUserStore = create<UserStore>()(
       },
 
       setCheckIns: async (checkIns: UserDoc['checkIns']) => {
-        console.log('[setCheckIns] Called with:', checkIns);
+        appLog('[setCheckIns] Called with:', checkIns);
         set({ checkIns });
         if (isAuthenticated()) {
           updateUserData({ checkIns });

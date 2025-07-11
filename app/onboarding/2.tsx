@@ -19,7 +19,7 @@ import { validateName } from '../../utils/validation';
 import CustomAnimatedView from '../components/CustomAnimatedView';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import i18n from '../utils/i18n';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 
 export default function OnboardingLambNameScreen() {
   const router = useRouter();
@@ -228,9 +228,9 @@ export default function OnboardingLambNameScreen() {
                       if (riveRef.current?.setInputState) {
                         try {
                           riveRef.current.setInputState('State Machine 1', 'Level-Number', 1);
-                          console.log('Set Rive Level-Number to 1 for onboarding');
+                          appLog('Set Rive Level-Number to 1 for onboarding');
                         } catch (e) {
-                          console.log('Error setting Level-Number:', e);
+                          appLog('Error setting Level-Number:', e);
                         }
                       }
                     }, 100);
@@ -257,9 +257,9 @@ export default function OnboardingLambNameScreen() {
                         if (riveRef.current?.setInputState) {
                           try {
                             riveRef.current.setInputState('State Machine 1', 'Level-Number', 1);
-                            console.log('Set Rive Level-Number to 1 for onboarding');
+                            appLog('Set Rive Level-Number to 1 for onboarding');
                           } catch (e) {
-                            console.log('Error setting Level-Number:', e);
+                            appLog('Error setting Level-Number:', e);
                           }
                         }
                       }, 100);

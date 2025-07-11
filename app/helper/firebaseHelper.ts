@@ -4,6 +4,8 @@ import { UserDoc } from '../models/User';
 import { syncUserDocument, batchUpdate, removeFunctions } from '../../utils/firestore';
 import { useUserStore } from '../stores/userStore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
+import { appLog } from './helper';
+import { configureAnalyticsFromUserData } from '../../utils/analyticsConfig';
 
 // Constants
 const USER_FETCH_CACHE_DURATION = 5000; // 5 seconds
@@ -100,27 +102,27 @@ export const fetchFromFirestore = async ({
   lastUserFetchTime = now;
   lastUserFetch = (async () => {
     const currentUser = currentLoggedUser || auth?.()?.currentUser;
-    console.log('currentUser ===>', currentUser);
+    appLog('currentUser ===>', currentUser);
     if (!currentUser) {
-      console.log('User not authenticated, skipping Firestore fetch');
+      appLog('User not authenticated, skipping Firestore fetch');
       return { success: false };
     }
 
     try {
       if (!currentUser?.uid) {
-        console.log('No valid user ID available');
+        appLog('No valid user ID available');
         return { success: false };
       }
 
       const userDoc = await firestore().collection('users').doc(currentUser?.uid).get();
 
       if (!userDoc.exists) {
-        console.log('User document does not exist');
+        appLog('User document does not exist');
         return { success: false };
       }
 
       const userData = userDoc.data() as UserDoc;
-      console.log('userData ======>', userData);
+      appLog('userData ======>', userData);
 
       if (userData) {
         // Ensure we have all required fields
@@ -132,10 +134,19 @@ export const fetchFromFirestore = async ({
         };
 
         const convertedUserData = convertTimestamps(updatedUserData);
-        console.log('Syncing user data to store:', convertedUserData);
+        appLog('Syncing user data to store:', convertedUserData);
 
         // Sync the data to store
         await useUserStore.getState().syncFirestoreData(convertedUserData);
+
+        // Configure analytics based on user age range
+        await configureAnalyticsFromUserData(convertedUserData.ageRange);
+        
+        // Debug: Log current user age range from store
+        const { getCurrentUserAgeRange } = require('../../utils/analyticsConfig');
+        const currentUserAgeRange = getCurrentUserAgeRange();
+        console.log('🔍 [Sign-In Debug] User age range from Firestore:', convertedUserData.ageRange);
+        console.log('🔍 [Sign-In Debug] Current user age range from store:', currentUserAgeRange);
 
         // Sync streak data to widget
         const syncStreakWithWidget = (streakCount: number, lastActivityDate: any) => {
@@ -146,7 +157,7 @@ export const fetchFromFirestore = async ({
           }
           if(streakCount === 0) return
           syncStreakDataToWidget(streakCount, activityDate).catch((error: Error) =>
-            console.log('Failed to sync streak with widget:', error)
+            appLog('Failed to sync streak with widget:', error)
           );
         };
 

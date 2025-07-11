@@ -202,7 +202,7 @@ import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { MaterialIcons } from '@expo/vector-icons';
 import { IS_ANDROID } from './utils/utils';
 import { THEME_COLORS } from './constants/theme';
-import { RPH } from './helper/helper';
+import { appLog, RPH } from './helper/helper';
 import { hapticLight, hapticMedium, hapticWarning } from '~/utils/haptics';
 
 // Add at the top of the file, after imports
@@ -338,9 +338,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       setLoading(true);
       setError(null);
 
-      console.log('🔄 BibleReader: Loading initial data');
+      appLog('🔄 BibleReader: Loading initial data');
       if (!isEmbedded) {
-        console.log('📋 URL Params:', effectiveParams);
+        appLog('📋 URL Params:', effectiveParams);
       }
 
       // Get route params from useLocalSearchParams if not embedded
@@ -364,7 +364,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           ? urlChapters[0]
           : currentChapter);
 
-      console.log(`🎯 Loading: bookId: ${bookIdToLoad}, chapter: ${chapterToLoad}`);
+      appLog(`🎯 Loading: bookId: ${bookIdToLoad}, chapter: ${chapterToLoad}`);
 
       // Load from determined values, not default state
       // Force load to ensure chapter loads when switching from card view
@@ -387,7 +387,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       const bookName = Object.keys(BIBLE_BOOK_IDS).find(key => BIBLE_BOOK_IDS[key] === initialBookId);
 
       if (bookName && (initialBookId !== currentBookId || initialChapter !== currentChapter)) {
-        console.log(`🔄 BibleReader: Props changed - Loading bookId: ${initialBookId}, chapter: ${initialChapter}`);
+        appLog(`🔄 BibleReader: Props changed - Loading bookId: ${initialBookId}, chapter: ${initialChapter}`);
 
         // Update local state to match props
         setCurrentBookId(initialBookId);
@@ -403,7 +403,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
 
   useEffect(() => {
-    console.log(
+    appLog(
       `[AnimationEffect] hasScrolledToBottom changed to: ${hasScrolledToBottom}. Animating buttons.`
     );
     RNAnimated.timing(buttonsAnim, {
@@ -422,7 +422,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       const threshold = 100;
       if (contentHeight && containerHeight) {
         if (contentHeight <= containerHeight + threshold && !hasScrolledToBottom) {
-          console.log('[AutoBottom] Content fits on screen – showing bottom buttons.');
+          appLog('[AutoBottom] Content fits on screen – showing bottom buttons.');
           setHasScrolledToBottom(true);
         }
       }
@@ -434,7 +434,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Reset hasScrolledToBottom when chapter, bookId or version changes.
   // This will trigger the animation to hide the buttons via the other useEffect.
   useEffect(() => {
-    console.log(
+    appLog(
       '[ChapterChangeEffect] Chapter, BookID, or Version changed. Setting hasScrolledToBottom = false.'
     );
     setHasScrolledToBottom(false);
@@ -445,7 +445,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   useEffect(() => {
     // Only reload if we're not already loading and we have chapter data
     if (!loading && chapterData && currentVersion !== savedTranslation) {
-      console.log(
+      appLog(
         `📚 Translation changed from ${currentVersion} to ${savedTranslation}. Reloading chapter.`
       );
       setCurrentVersion(savedTranslation);
@@ -481,7 +481,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     setSelectedVerses(savedSelections ? new Set(savedSelections) : new Set());
     setIsSelectionMode(savedSelections ? savedSelections.size > 0 : false);
 
-    console.log(`📚 LOADING CHAPTER - version:${version}, book:${book}, bookId:${bookId}, chapter:${chapter}`);
+    appLog(`📚 LOADING CHAPTER - version:${version}, book:${book}, bookId:${bookId}, chapter:${chapter}`);
 
     try {
       // Check cache first
@@ -489,7 +489,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       let result;
 
       if (chapterCache.has(cacheKey)) {
-        console.log('📚 Using cached chapter data');
+        appLog('📚 Using cached chapter data');
         result = chapterCache.get(cacheKey);
       } else {
         // Add a small delay to prevent rapid API calls
@@ -509,7 +509,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         setError(result.message);
         setChapterData(null);
       } else {
-        console.log(`✅ Successfully loaded: ${result.book} ${result.chapter}`);
+        appLog(`✅ Successfully loaded: ${result.book} ${result.chapter}`);
         setChapterData(result);
 
         // Update the UI state with actual data
@@ -561,12 +561,12 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         const previousBookName = bookNames[previousBookId] || 'Previous Book';
         const lastChapterInPreviousBook = BIBLE_CHAPTER_COUNTS[previousBookId];
 
-        console.log(
+        appLog(
           `At first chapter of ${currentBook}. Navigating to ${previousBookName} ${lastChapterInPreviousBook}`
         );
         loadChapter(currentVersion, previousBookName, previousBookId, lastChapterInPreviousBook);
       } else {
-        console.log('Already at the beginning of the Bible');
+        appLog('Already at the beginning of the Bible');
         // Provide user feedback
         hapticWarning()
         Alert.alert(
@@ -578,9 +578,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   };
 
   const navigateToNextChapter = () => {
-    console.log('Next button pressed, current chapter:', currentChapter);
+    appLog('Next button pressed, current chapter:', currentChapter);
     if (loading || !chapterData) {
-      console.log('Loading or no chapter data, skipping navigation');
+      appLog('Loading or no chapter data, skipping navigation');
       return;
     }
     analytics.logEvent('BibleReader_Tapped_NextChapter', {
@@ -605,10 +605,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         );
         const nextBookName = bookNames[nextBookId] || 'Next Book';
 
-        console.log(`End of ${currentBook} reached. Navigating to ${nextBookName} 1`);
+        appLog(`End of ${currentBook} reached. Navigating to ${nextBookName} 1`);
         loadChapter(currentVersion, nextBookName, nextBookId, 1);
       } else {
-        console.log('Reached the end of the Bible');
+        appLog('Reached the end of the Bible');
         // Provide user feedback
         hapticWarning()
         Alert.alert(
@@ -658,7 +658,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     // Add haptic feedback - medium for completion
     hapticMedium();
 
-    console.log('Finish Reading Pressed - Updating completion status');
+    appLog('Finish Reading Pressed - Updating completion status');
     let nextUnit: Unit | null = null;
     let shouldStayInPath = false;
 
@@ -666,7 +666,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     const now = firestore.Timestamp.now();
 
     // Save reading data to userStore
-    console.log('Saving reading data to userStore');
+    appLog('Saving reading data to userStore');
     try {
       // Create a proper Reading object with the correct structure
       addCompletedReading({
@@ -691,14 +691,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       // If we are in a path and at the end chapter, mark the UNIT as completed
       // and track it in Firestore
       if (pathInProgress && currentPath && isAtEndChapter) {
-        console.log(`✅ Unit ${currentPath.unitId} completed! Attempting to mark...`);
-        console.log('[BibleReader] Current path details:', JSON.stringify(currentPath, null, 2));
-        console.log('[BibleReader] Debug - Unit ID being marked:', currentPath.unitId);
-        console.log('[BibleReader] Debug - Path ID:', currentPath.pathId);
-        console.log('[BibleReader] Debug - Unit Title:', currentPath.unitTitle);
-        console.log('[BibleReader] Debug - Book ID:', currentPath.bookId);
-        console.log('[BibleReader] Debug - Start Chapter:', currentPath.startChapter);
-        console.log('[BibleReader] Debug - End Chapter:', currentPath.endChapter);
+        appLog(`✅ Unit ${currentPath.unitId} completed! Attempting to mark...`);
+        appLog('[BibleReader] Current path details:', JSON.stringify(currentPath, null, 2));
+        appLog('[BibleReader] Debug - Unit ID being marked:', currentPath.unitId);
+        appLog('[BibleReader] Debug - Path ID:', currentPath.pathId);
+        appLog('[BibleReader] Debug - Unit Title:', currentPath.unitTitle);
+        appLog('[BibleReader] Debug - Book ID:', currentPath.bookId);
+        appLog('[BibleReader] Debug - Start Chapter:', currentPath.startChapter);
+        appLog('[BibleReader] Debug - End Chapter:', currentPath.endChapter);
         markUnitAsCompleted(currentPath.unitId);
 
         // Add completed map path to Firestore
@@ -726,14 +726,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             // Check if there's a next unit in the current path
             if (currentUnitIndex < currentPathData.units.length - 1) {
               nextUnit = currentPathData.units[currentUnitIndex + 1];
-              console.log(`🔜 Next unit in same path found: ${nextUnit.title}`);
+              appLog(`🔜 Next unit in same path found: ${nextUnit.title}`);
             } else {
               // Check if there's a next path
               if (currentPathIndex < BIBLE_PATHS.length - 1) {
                 const nextPath = BIBLE_PATHS[currentPathIndex + 1];
                 if (nextPath.units.length > 0) {
                   nextUnit = nextPath.units[0];
-                  console.log(`⏭️ Next unit in next path found: ${nextUnit.title}`);
+                  appLog(`⏭️ Next unit in next path found: ${nextUnit.title}`);
                 }
               }
             }
@@ -743,13 +743,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
       if (nextUnit) {
         shouldStayInPath = true;
-        console.log(`🚀 Setting next unit preview and staying in path.`);
+        appLog(`🚀 Setting next unit preview and staying in path.`);
       } else {
-        console.log(`🏁 Reached the end of all paths.`);
+        appLog(`🏁 Reached the end of all paths.`);
       }
 
-      console.log(`Reading saved successfully. Added ${versesInChapter} verses and 1 chapter.`);
-      console.log(
+      appLog(`Reading saved successfully. Added ${versesInChapter} verses and 1 chapter.`);
+      appLog(
         `New totals: ${currentVerses + versesInChapter} verses, ${currentChapters + 1} chapters`
       );
     } catch (error) {
@@ -771,10 +771,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       setSuccessType(SuccessAnimationType.READING);
     } else if (prayerCompleted && reflectionCompleted) {
       // Only show BONUS type if the daily bonus hasn't been seen yet
-      console.log('All disciplines completed - showing BONUS');
+      appLog('All disciplines completed - showing BONUS');
       setSuccessType(SuccessAnimationType.BONUS);
     } else {
-      console.log('Regular reading completion - showing READING');
+      appLog('Regular reading completion - showing READING');
       setSuccessType(SuccessAnimationType.READING);
     }
 
@@ -799,13 +799,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Check if the current chapter is the end chapter of the selected path
   const isAtEndChapter = useMemo(() => {
     if (!pathInProgress || !currentPath) {
-      console.log('[isAtEndChapter] Not in path or no currentPath data. Returning false.');
+      appLog('[isAtEndChapter] Not in path or no currentPath data. Returning false.');
       return false;
     }
 
     const isActuallyAtEnd =
       currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
-    console.log(
+    appLog(
       `[isAtEndChapter] Calculation: pathInProgress=${pathInProgress}, currentPath.bookId=${currentPath.bookId}, currentBookId=${currentBookId}, currentPath.endChapter=${currentPath.endChapter}, currentChapter=${currentChapter}. Result: ${isActuallyAtEnd}`
     );
     return isActuallyAtEnd;
@@ -814,13 +814,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Check if the current chapter is the start chapter of the selected path
   const isAtStartChapter = useMemo(() => {
     if (!pathInProgress || !currentPath) {
-      console.log('[isAtStartChapter] Not in path or no currentPath data. Returning false.');
+      appLog('[isAtStartChapter] Not in path or no currentPath data. Returning false.');
       return false;
     }
 
     const isActuallyAtStart =
       currentBookId === currentPath.bookId && currentChapter === currentPath.startChapter;
-    console.log(
+    appLog(
       `[isAtStartChapter] Calculation: pathInProgress=${pathInProgress}, currentPath.bookId=${currentPath.bookId}, currentBookId=${currentBookId}, currentPath.startChapter=${currentPath.startChapter}, currentChapter=${currentChapter}. Result: ${isActuallyAtStart}`
     );
     return isActuallyAtStart;
@@ -855,7 +855,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     const bottomReached = layoutMeasurement.height + contentOffset.y >= scrolledToBottomThreshold;
 
     if (bottomReached && !hasScrolledToBottom) {
-      console.log(
+      appLog(
         `[handleScroll] Bottom of current view reached. pathInProgress: ${pathInProgress}, isAtEndChapter: ${isAtEndChapter}. Setting hasScrolledToBottom = true.`
       );
       setHasScrolledToBottom(true);
@@ -1105,7 +1105,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     // Add haptic feedback
     hapticLight();
 
-    console.log('🔍 DEBUG: Opening selector');
+    appLog('🔍 DEBUG: Opening selector');
     showBookChapterSelector(currentBookId, currentChapter, handleSelectBookChapter);
   }, 300);
 
@@ -1113,7 +1113,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     // Add haptic feedback
     hapticLight();
 
-    console.log(`📖 New selection: Book ID ${bookId}, Chapter ${chapter}`);
+    appLog(`📖 New selection: Book ID ${bookId}, Chapter ${chapter}`);
     // Find book name from reverse map for logging/UI update (optional here)
     const bookNames: Record<number, string> = Object.fromEntries(
       Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])
@@ -1143,7 +1143,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       onNavigateBack();
     } else if (!isEmbedded && effectiveParams?.source === 'map') {
       // Navigation back to map when coming from map
-      console.log('📱 Navigating back to map, pathInProgress set to false');
+      appLog('📱 Navigating back to map, pathInProgress set to false');
 
       // Allow state update to complete before navigation
       setTimeout(() => {
@@ -1171,7 +1171,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   };
 
   const handlePresentModal = useCallback(() => {
-    console.log('[BibleReader] Present Settings Modal triggered');
+    appLog('[BibleReader] Present Settings Modal triggered');
     setIsModalVisible(true);
     hapticLight();
     RNAnimated.timing(slideAnim, {
@@ -1183,7 +1183,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   }, []);
 
   const handleCloseModal = useCallback(() => {
-    console.log('[BibleReader] Close Settings Modal');
+    appLog('[BibleReader] Close Settings Modal');
     RNAnimated.timing(slideAnim, {
       toValue: 0,
       duration: 200,
@@ -1195,7 +1195,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   }, []);
 
   const handleFontSizeChange = useCallback((value: number) => {
-    console.log('[BibleReader] Font size slider value:', value);
+    appLog('[BibleReader] Font size slider value:', value);
     const newSize = Math.round(value);
     debouncedUpdateFontSize(newSize);
   }, [debouncedUpdateFontSize]);
@@ -1226,7 +1226,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Update card view toggle handler to use the store directly
   const handleCardViewToggle = useCallback(
     async (value: boolean) => {
-      console.log('[BibleReader] CardViewToggle value', value);
+      appLog('[BibleReader] CardViewToggle value', value);
       // Add haptic feedback
       hapticMedium();
       analytics.logEvent('BibleReader_Tapped_CardViewToggle', {
@@ -1270,7 +1270,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Function to receive chapter data from Card View before switching
   const handleHandoffChapterData = useCallback((data: ChapterResponse | null) => {
-    console.log('[BibleReader] Received handoff chapter data:', data?.book, data?.chapter);
+    appLog('[BibleReader] Received handoff chapter data:', data?.book, data?.chapter);
     if (data) {
       setPendingChapterData(data);
       setChapterData(data);
@@ -1289,8 +1289,8 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Function to switch from card view back to default reader
   const handleSwitchToDefaultReader = useCallback(async () => {
     setIsModalVisible(false);
-    console.log('[BibleReader] Explicitly closing settings modal when switching to default reader');
-    console.log('[BibleReader] Debug - Before switch: useCardView=' + useCardView);
+    appLog('[BibleReader] Explicitly closing settings modal when switching to default reader');
+    appLog('[BibleReader] Debug - Before switch: useCardView=' + useCardView);
     analytics.logEvent('DefaultReader_Tapped_ToggleDefaultReader');
     try {
       // Switch from card to default reader

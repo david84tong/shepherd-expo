@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { useAssets } from 'expo-asset';
 import { useEffect } from 'react';
+import { appLog } from '../helper/helper';
 
 // List of assets used in the app (copied from HomeScreen)
 const imageAssets = [
@@ -79,7 +80,7 @@ export function usePreloadRiveAssets() {
     if (riveAssets) {
       setRiveAssets(riveAssets);
       setRiveLoaded(true);
-      console.log('🎬 Rive assets preloaded successfully');
+      appLog('🎬 Rive assets preloaded successfully');
     }
     if (error) {
       setError(error);

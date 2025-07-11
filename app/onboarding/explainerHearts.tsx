@@ -15,7 +15,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { IS_ANDROID } from '../utils/utils';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 import { hapticLight } from '~/utils/haptics';
 
 export default function OnboardingExplainerHeartsScreen({
@@ -90,9 +90,9 @@ export default function OnboardingExplainerHeartsScreen({
             // Set Level-Number to 1 and Action-Number to appropriate state
             ref.setInputState('State Machine 1', 'Level-Number', 1);
             ref.setInputState('State Machine 1', 'Action-Number', state.actionNumber);
-            console.log(`Set Level-Number to 1 and Action-Number to ${state.actionNumber} for ${state.hearts} hearts`);
+            appLog(`Set Level-Number to 1 and Action-Number to ${state.actionNumber} for ${state.hearts} hearts`);
           } catch (e) {
-            console.log(`Error setting inputs for lamb ${index}:`, e);
+            appLog(`Error setting inputs for lamb ${index}:`, e);
           }
         }
       });
@@ -107,7 +107,7 @@ export default function OnboardingExplainerHeartsScreen({
     try {
       hapticLight();
     } catch (error) {
-      console.log('Haptics not available');
+      appLog('Haptics not available');
     }
 
     // Log continue button press

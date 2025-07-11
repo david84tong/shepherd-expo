@@ -7,6 +7,7 @@ import { useUserStore } from '../stores/userStore';
 import { useNotificationStore } from '../stores/notificationStore';
 import analytics from '../../utils/analytics';
 import { fetchFromFirestore, syncWithFirestore } from '../helper/firebaseHelper';
+import { appLog } from '../helper/helper';
 // Penalties for missing activities (hearts lost per day)
 const PENALTIES = {
   READING: 3, // -3 hearts per day missing Bible reading
@@ -36,7 +37,7 @@ const getDaysDifference = (date1: Date, date2: Date): number => {
 
 // Check if two dates fall on different local calendar days
 const isNewCalendarDay = (date1: Date, date2: Date): boolean => {
-  console.log('isNewCalendarDay (local)', date1?.toString?.(), date2?.toString?.());
+  appLog('isNewCalendarDay (local)', date1?.toString?.(), date2?.toString?.());
   if (!date1 || !date2) return false;
   return !isSameLocalCalendarDay(date1, date2);
 };
@@ -64,7 +65,7 @@ export function getDateFromTimestamp(timestamp: any): Date | null {
     }
     return null;
   } catch (error) {
-    console.log('DEBUG - Error converting timestamp:', error);
+    appLog('DEBUG - Error converting timestamp:', error);
     return null;
   }
 }
@@ -77,15 +78,15 @@ const isAuthenticated = () => {
 // Sync local changes back to Firestore
 const syncUserDataToFirestore = async () => {
   if (!isAuthenticated()) {
-    console.log('User not authenticated, skipping Firestore sync');
+    appLog('User not authenticated, skipping Firestore sync');
     return false;
   }
 
   try {
-    console.log('Syncing user data to Firestore');
+    appLog('Syncing user data to Firestore');
     return await syncWithFirestore?.();
   } catch (error) {
-    console.log('Error syncing user data to Firestore:', error);
+    appLog('Error syncing user data to Firestore:', error);
     return false;
   }
 };
@@ -151,7 +152,7 @@ function calculateStreakAndPenalties({
   const lastPrayerPenaltyDateObj = getDateFromTimestamp(lastPrayerPenaltyDate);
   const lastReflectionPenaltyDateObj = getDateFromTimestamp(lastReflectionPenaltyDate);
 
-  console.log('lastActivityDateObj', lastActivityDateObj);
+  appLog('lastActivityDateObj', lastActivityDateObj);
   // Calculate days since last activities
   const daysSinceActivity = lastActivityDateObj ? getDaysDifference(now, lastActivityDateObj) : 0;
   const daysSinceReading = lastReadingDateObj
@@ -165,8 +166,8 @@ function calculateStreakAndPenalties({
     : daysSinceActivity;
   
   // Debug: Log the actual calculation
-  console.log(`[Day Calculation] Now: ${now.toDateString()}, Last Activity: ${lastActivityDateObj?.toDateString()}`);
-  console.log(`[Day Calculation] Days since activity: ${daysSinceActivity}, Days missed: ${Math.max(0, daysSinceActivity - 1)}`);
+  appLog(`[Day Calculation] Now: ${now.toDateString()}, Last Activity: ${lastActivityDateObj?.toDateString()}`);
+  appLog(`[Day Calculation] Days since activity: ${daysSinceActivity}, Days missed: ${Math.max(0, daysSinceActivity - 1)}`);
 
   // Calculate days since last penalties were applied
   const daysSinceReadingPenalty = lastReadingPenaltyDateObj
@@ -186,12 +187,12 @@ function calculateStreakAndPenalties({
   // Reset streak immediately if reading streak is broken (missed a full calendar day)
   if (isReadingStreakBroken && streakCount > 0) {
     if (debug)
-      console.log(`🔄 Resetting streak to 0: missed ${daysSinceReading - 1} calendar day(s)`);
+      appLog(`🔄 Resetting streak to 0: missed ${daysSinceReading - 1} calendar day(s)`);
     setStreakCount(0);
   }
 
   if (debug) {
-    console.log('DEBUG - Converted date objects:', {
+    appLog('DEBUG - Converted date objects:', {
       lastActivityDateObj,
       lastReadingDateObj,
       lastPrayerDateObj,
@@ -200,17 +201,17 @@ function calculateStreakAndPenalties({
       lastPrayerPenaltyDateObj,
       lastReflectionPenaltyDateObj,
     });
-    console.log(`⏰ Days since last activity: ${daysSinceActivity}`);
-    console.log(
+    appLog(`⏰ Days since last activity: ${daysSinceActivity}`);
+    appLog(
       `📚 Days since reading: ${daysSinceReading}, Days since reading penalty: ${daysSinceReadingPenalty}`
     );
-    console.log(
+    appLog(
       `🙏 Days since prayer: ${daysSincePrayer}, Days since prayer penalty: ${daysSincePrayerPenalty}`
     );
-    console.log(
+    appLog(
       `✍️ Days since reflection: ${daysSinceReflection}, Days since reflection penalty: ${daysSinceReflectionPenalty}`
     );
-    console.log(`⚠️ Reading streak broken (missed full day): ${isReadingStreakBroken}`);
+    appLog(`⚠️ Reading streak broken (missed full day): ${isReadingStreakBroken}`);
   }
 
   setLambMood?.(getLambMoodByHearts(lambHearts));
@@ -218,10 +219,10 @@ function calculateStreakAndPenalties({
   // Check if we need to reset completion states for a new calendar day
   const isNewDay = shouldResetCompletions(lastReadingDate, now);
   if (isNewDay) {
-    if (debug) console.log('📅 New calendar day detected - resetting completion states');
+    if (debug) appLog('📅 New calendar day detected - resetting completion states');
     resetCompletionStates();
   } else if (debug) {
-    console.log('📅 Same calendar day - keeping completion states');
+    appLog('📅 Same calendar day - keeping completion states');
   }
 
   // Skip if user was active today (based on calendar day)
@@ -250,11 +251,11 @@ function calculateStreakAndPenalties({
     heartPenalty += daysSinceReadingPenalty * PENALTIES.READING;
     applyReadingPenalty = true;
     if (debug)
-      console.log(
+      appLog(
         `💔 Reading penalty applied: ${daysSinceReadingPenalty * PENALTIES.READING} hearts`
       );
   } else if (debug) {
-    console.log(
+    appLog(
       `⏹️ No reading penalty: readingStreakBroken = ${isReadingStreakBroken}, days since penalty = ${daysSinceReadingPenalty}`
     );
   }
@@ -263,9 +264,9 @@ function calculateStreakAndPenalties({
     // heartPenalty += daysSincePrayerPenalty * PENALTIES.PRAYER;
     // applyPrayerPenalty = true;
     if (debug)
-      console.log(`💔 Prayer penalty applied: ${daysSincePrayer * PENALTIES.PRAYER} hearts`);
+      appLog(`💔 Prayer penalty applied: ${daysSincePrayer * PENALTIES.PRAYER} hearts`);
   } else if (debug) {
-    console.log(
+    appLog(
       `⏹️ No prayer penalty: days since prayer = ${daysSincePrayer}, days since penalty = ${daysSincePrayerPenalty}`
     );
   }
@@ -274,11 +275,11 @@ function calculateStreakAndPenalties({
     // heartPenalty += daysSinceReflectionPenalty * PENALTIES.REFLECTION;
     // applyReflectionPenalty = true;
     if (debug)
-      console.log(
+      appLog(
         `💔 Reflection penalty applied: ${daysSinceReflection * PENALTIES.REFLECTION} hearts`
       );
   } else if (debug) {
-    console.log(
+    appLog(
       `⏹️ No reflection penalty: days since reflection = ${daysSinceReflection}, days since penalty = ${daysSinceReflectionPenalty}`
     );
   }
@@ -293,7 +294,7 @@ function calculateStreakAndPenalties({
     // Reset streak if reading streak is broken
     if (isReadingStreakBroken && streakCount > 0) {
       if (debug)
-        console.log(`🔄 Resetting streak to 0: missed ${daysSinceReading - 1} calendar day(s)`);
+        appLog(`🔄 Resetting streak to 0: missed ${daysSinceReading - 1} calendar day(s)`);
       setStreakCount(0);
     }
 
@@ -340,12 +341,12 @@ export const checkStreakAndApplyPenalties = async () => {
     // First, try to fetch latest data from Firestore if user is authenticated
     if (isAuthenticated()) {
       try {
-        console.log(
+        appLog(
           'User is authenticated, fetching latest data from Firestore before checking streak'
         );
         await fetchFromFirestore?.({});
       } catch (fetchError) {
-        console.log('Error fetching from Firestore, continuing with local data:', fetchError);
+        appLog('Error fetching from Firestore, continuing with local data:', fetchError);
         // Continue with local data if fetch fails
       }
     }
@@ -357,7 +358,7 @@ export const checkStreakAndApplyPenalties = async () => {
 
     // Validate that we have the required data from userStore
     if (!userStore.lamb || typeof userStore.lamb !== 'object') {
-      console.log('Invalid lamb object in userStore:', userStore.lamb);
+      appLog('Invalid lamb object in userStore:', userStore.lamb);
       return {
         streakBroken: false,
         heartPenalty: 0,
@@ -373,7 +374,7 @@ export const checkStreakAndApplyPenalties = async () => {
     // Check if we need to reset completion states for a new day
     const lastActivityDate = userStore.lastActivityDate;
     if (shouldResetCompletions(lastActivityDate, now)) {
-      console.log(
+      appLog(
         '📅 New day detected in checkStreakAndApplyPenalties - resetting completion states'
       );
       homeStore.resetCompletionStates();
@@ -414,19 +415,19 @@ export const checkStreakAndApplyPenalties = async () => {
     // Sync changes back to Firestore if authenticated and there were significant changes
     if (isAuthenticated() && (result.heartPenalty > 0 || result.streakBroken || result.newDay)) {
       try {
-        console.log('Syncing streak changes back to Firestore');
+        appLog('Syncing streak changes back to Firestore');
         await syncUserDataToFirestore();
       } catch (syncError) {
-        console.log('Error syncing streak changes to Firestore:', syncError);
+        appLog('Error syncing streak changes to Firestore:', syncError);
         // Continue even if sync fails - changes are still applied locally
       }
     }
 
     return result;
   } catch (error) {
-    console.log('❌ Error checking streak and applying penalties:', error);
-    console.log('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    console.log('❌ Error stack:', (error as Error).stack);
+    appLog('❌ Error checking streak and applying penalties:', error);
+    appLog('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    appLog('❌ Error stack:', (error as Error).stack);
     return {
       error,
       streakBroken: false,
@@ -465,7 +466,7 @@ export const useStreakManager = () => {
 
       // Check if we need to reset completion states for a new day
       if (shouldResetCompletions(lastActivityDate, now)) {
-        console.log('📅 New day detected in useStreakManager - resetting completion states');
+        appLog('📅 New day detected in useStreakManager - resetting completion states');
         analytics.logEvent('StreakManager_ResettingCompletitionStates');
         homeStore.resetCompletionStates();
       }
@@ -494,15 +495,15 @@ export const useStreakManager = () => {
 
       // Sync changes back to Firestore if authenticated and there were significant changes
       if (isAuthenticated() && (result.heartPenalty > 0 || result.streakBroken || result.newDay)) {
-        console.log('Syncing streak changes back to Firestore');
+        appLog('Syncing streak changes back to Firestore');
         await syncWithFirestore?.();
       }
 
       return result;
     } catch (error) {
-      console.log('❌ Error checking streak and applying penalties:', error);
-      console.log('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-      console.log('❌ Error stack:', (error as Error).stack);
+      appLog('❌ Error checking streak and applying penalties:', error);
+      appLog('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      appLog('❌ Error stack:', (error as Error).stack);
       return {
         error,
         streakBroken: false,

@@ -19,6 +19,7 @@ import PrimaryButton from './PrimaryButton';
 import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '../utils/analytics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { appLog } from '~/app/helper/helper';
 
 const screenHeight = Dimensions.get('window').height;
 
@@ -97,7 +98,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const generatePrayerText = () => {
     // If we're praying about the verse (coming from reading success)
     if (tappedPrayAboutVerse && currentPath && currentPath.prayer) {
-      console.log('Using path-specific prayer text from currentPath');
+      appLog('Using path-specific prayer text from currentPath');
       return currentPath.prayer;
     }
 
@@ -119,40 +120,40 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
   // Run animation when component becomes visible
   useEffect(() => {
-    console.log('PrayerComponent: visible =', visible);
+    appLog('PrayerComponent: visible =', visible);
 
     if (visible) {
-      console.log('PrayerComponent: Showing prayer component');
+      appLog('PrayerComponent: Showing prayer component');
 
       // Get the CURRENT value from the store, not the one from the hook
       // This ensures we have the latest value after GlobalPrayerSheet might have set it to false
       const currentTappedPrayAboutVerse = useHomeStore.getState().tappedPrayAboutVerse;
-      console.log('Current tappedPrayAboutVerse from store =', currentTappedPrayAboutVerse);
+      appLog('Current tappedPrayAboutVerse from store =', currentTappedPrayAboutVerse);
 
       // DEBUG: Print ALL recent prayers in the store
       const allRecentPrayers = usePrayerStore.getState().recentPrayers;
-      console.log('DEBUG - All recent prayers in store:', allRecentPrayers);
+      appLog('DEBUG - All recent prayers in store:', allRecentPrayers);
 
       let newPrayerText = '';
 
       // Check if this is a scripture-specific prayer - using current store value
       if (currentTappedPrayAboutVerse && currentPath && currentPath.prayer) {
-        console.log('Using scripture-specific prayer:', currentPath.prayer);
+        appLog('Using scripture-specific prayer:', currentPath.prayer);
         newPrayerText = currentPath.prayer;
       } else {
         // Get latest prayer topic and generate prayer text
         const currentPrayerTopic = usePrayerStore.getState().recentPrayers[0] || '';
-        console.log('DEBUG - Current prayer topic:', currentPrayerTopic);
-        console.log('DEBUG - Direct recentPrayers[0]:', usePrayerStore.getState().recentPrayers[0]);
+        appLog('DEBUG - Current prayer topic:', currentPrayerTopic);
+        appLog('DEBUG - Direct recentPrayers[0]:', usePrayerStore.getState().recentPrayers[0]);
 
         // Generate fresh prayer text based on the current topic
         if (currentPrayerTopic) {
           newPrayerText = `Dear God, I come before you today with a humble heart. Please help me with ${currentPrayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
-          console.log('Generated custom prayer text for:', currentPrayerTopic);
-          console.log('DEBUG - Generated prayer text:', newPrayerText);
+          appLog('Generated custom prayer text for:', currentPrayerTopic);
+          appLog('DEBUG - Generated prayer text:', newPrayerText);
         } else {
-          console.log('No prayer topic found, using default prayer');
-          console.log('DEBUG - Using DEFAULT_PRAYER_TEMPLATE');
+          appLog('No prayer topic found, using default prayer');
+          appLog('DEBUG - Using DEFAULT_PRAYER_TEMPLATE');
           newPrayerText = DEFAULT_PRAYER_TEMPLATE;
         }
       }
@@ -276,7 +277,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const renderPrayerText = () => {
     // Only log when typing is complete, not on every character
     if (typedText && typedText.length === prayerText.length) {
-      console.log('Typing completed.');
+      appLog('Typing completed.');
     }
 
     if (!typedText) {
@@ -343,7 +344,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   if (!visible) return null;
 
   const handleDonePress = () => {
-    console.log('Prayer completed');
+    appLog('Prayer completed');
 
     // Disable Button while praying
     if (isTimerActive) return;
@@ -356,7 +357,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
     // Reset tappedPrayAboutVerse flag
     useHomeStore.getState().setTappedPrayAboutVerse(false);
-    console.log('Reset tappedPrayAboutVerse flag to false');
+    appLog('Reset tappedPrayAboutVerse flag to false');
 
     // Flip isPraying in the HomeStore to hide this component
     setPrayerCompleted(true);
@@ -365,7 +366,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     const now = firestore.Timestamp.now();
 
     // Save prayer data to userStore
-    console.log('Saving prayer data to userStore');
+    appLog('Saving prayer data to userStore');
     try {
       // Get current value from store 
       const currentTappedPrayAboutVerse = useHomeStore.getState().tappedPrayAboutVerse;
@@ -382,9 +383,9 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       // Update last prayer date
       setLastPrayerDate(now);
 
-      console.log('Prayer data saved successfully');
+      appLog('Prayer data saved successfully');
     } catch (error) {
-      console.log('Error saving prayer data:', error);
+      appLog('Error saving prayer data:', error);
     }
 
     // Navigate to success screen, or trigger animation on home
@@ -400,12 +401,12 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
   // New handler specifically for back button
   const handleBackPress = () => {
-    console.log('Back button pressed - canceling prayer');
+    appLog('Back button pressed - canceling prayer');
     setPathInProgress(false);
 
     // Reset tappedPrayAboutVerse flag when canceling
     useHomeStore.getState().setTappedPrayAboutVerse(false);
-    console.log('Reset tappedPrayAboutVerse flag to false (from back button)');
+    appLog('Reset tappedPrayAboutVerse flag to false (from back button)');
 
     // Invoke the callback provided by the parent
     onClose();

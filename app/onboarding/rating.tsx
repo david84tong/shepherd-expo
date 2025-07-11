@@ -22,7 +22,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import { useRouter } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
-import { RPH, RPW } from '../helper/helper';
+import { appLog, RPH, RPW } from '../helper/helper';
 import { TestimonialList } from '../components/TestimonialList';
 
 const Rating = () => {
@@ -146,11 +146,11 @@ const Rating = () => {
       } else {
         // Fallback if review not available
         analytics.logEvent('RatingScreen_ReviewUnavailable');
-        console.log('Store review not available');
+        appLog('Store review not available');
       }
     } catch (error) {
       analytics.logEvent('RatingScreen_ReviewError');
-      console.log('Error requesting review:', error);
+      appLog('Error requesting review:', error);
     }
   };
 

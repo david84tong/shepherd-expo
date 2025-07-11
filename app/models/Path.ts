@@ -3,6 +3,7 @@
 // revert too this later
 
 import { ImageSourcePropType } from 'react-native';
+import { appLog } from '../helper/helper';
 
 // Represents a range of chapters within a specific book
 export interface BibleReference {
@@ -2007,7 +2008,7 @@ const chunk = <T,>(arr: T[], size: number): T[][] => {
  * suffix added to the title & id.
  */
 const splitUnit = (unit: Unit, chaptersPerUnit = 2): Unit[] => {
-  console.log("splitting unit", unit.id, "with chaptersPerUnit:", chaptersPerUnit);
+  appLog("splitting unit", unit.id, "with chaptersPerUnit:", chaptersPerUnit);
   
   // Handle array of references
   if (Array.isArray(unit.reference)) {
@@ -2084,20 +2085,20 @@ export const generateShorterBiblePaths = (
   paths: Path[],
   chaptersPerUnit = 2
 ): Path[] => {
-  console.log('generating shorter bible paths with chaptersPerUnit:', chaptersPerUnit);
+  appLog('generating shorter bible paths with chaptersPerUnit:', chaptersPerUnit);
   
   return paths.map((p) => {
-    console.log(`Processing path: ${p.id} with ${p.units.length} units`);
+    appLog(`Processing path: ${p.id} with ${p.units.length} units`);
     
     const newUnits: Unit[] = p.units.flatMap((u) => {
       const splitUnits = splitUnit(u, chaptersPerUnit);
       if (splitUnits.length > 1) {
-        console.log(`Split unit ${u.id} into ${splitUnits.length} parts`);
+        appLog(`Split unit ${u.id} into ${splitUnits.length} parts`);
       }
       return splitUnits;
     });
     
-    console.log(`Path ${p.id}: ${p.units.length} original units → ${newUnits.length} new units`);
+    appLog(`Path ${p.id}: ${p.units.length} original units → ${newUnits.length} new units`);
     return { ...p, units: newUnits };
   });
 };

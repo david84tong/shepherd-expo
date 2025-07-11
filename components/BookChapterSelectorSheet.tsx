@@ -10,6 +10,7 @@ import {
   Pressable,
   Dimensions,
 } from 'react-native';
+import { appLog } from '../app/helper/helper';
 
 import { BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from '../app/models/Path';
 
@@ -56,12 +57,12 @@ const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
 
   useEffect(() => {
     if (visible) {
-      console.log(`📖 [BookChapterSelector] Opening with currentBookId: ${currentBookId}, currentChapter: ${currentChapter}`);
+      appLog(`📖 [BookChapterSelector] Opening with currentBookId: ${currentBookId}, currentChapter: ${currentChapter}`);
       setIsVisible(true);
       // Initialize the selection state when opening the modal
       setSelectedBookId(currentBookId); 
       setSelectedChapter(currentChapter);
-      console.log(`📖 [BookChapterSelector] Set selectedBookId: ${currentBookId}, selectedChapter: ${currentChapter}`);
+      appLog(`📖 [BookChapterSelector] Set selectedBookId: ${currentBookId}, selectedChapter: ${currentChapter}`);
       
       Animated.timing(sheetAnim, {
         toValue: 0,
@@ -80,18 +81,18 @@ const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
   }, [visible, currentBookId, currentChapter]);
 
   const handleSelectChapter = (chapter: number) => {
-    console.log(`📖 [BookChapterSelector] handleSelectChapter called with chapter: ${chapter}, selectedBookId: ${selectedBookId}`);
+    appLog(`📖 [BookChapterSelector] handleSelectChapter called with chapter: ${chapter}, selectedBookId: ${selectedBookId}`);
     setSelectedChapter(chapter);
     onSelect(selectedBookId, chapter);
     handleClose();
   };
 
   const handleSelectBook = (bookId: number) => {
-    console.log(`📖 [BookChapterSelector] handleSelectBook called with bookId: ${bookId}`);
+    appLog(`📖 [BookChapterSelector] handleSelectBook called with bookId: ${bookId}`);
     setSelectedBookId(bookId);
     // Reset to chapter 1 when switching books
     setSelectedChapter(1);
-    console.log(`📖 [BookChapterSelector] Set selectedBookId: ${bookId}, selectedChapter: 1`);
+    appLog(`📖 [BookChapterSelector] Set selectedBookId: ${bookId}, selectedChapter: 1`);
   };
 
   // Handle close with animation
@@ -106,8 +107,8 @@ const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
   };
 
   // Debug logging
-  console.log(`📖 [BookChapterSelector] Rendering with selectedBookId: ${selectedBookId}, selectedChapter: ${selectedChapter}, currentBookId: ${currentBookId}, currentChapter: ${currentChapter}`);
-  console.log(`📖 [BookChapterSelector] BookList length: ${bookList.length}, first few books:`, bookList.slice(0, 5));
+  appLog(`📖 [BookChapterSelector] Rendering with selectedBookId: ${selectedBookId}, selectedChapter: ${selectedChapter}, currentBookId: ${currentBookId}, currentChapter: ${currentChapter}`);
+  appLog(`📖 [BookChapterSelector] BookList length: ${bookList.length}, first few books:`, bookList.slice(0, 5));
 
   return (
     <Modal

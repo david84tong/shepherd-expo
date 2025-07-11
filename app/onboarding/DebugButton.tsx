@@ -3,6 +3,7 @@ import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert } from 'react-native';
 
 import { HalfModalType } from '../../app/halfModal';
+import { appLog } from '../helper/helper';
 
 // ... existing code ...
 
@@ -30,7 +31,7 @@ export function DebugButton({ }: DebugButtonProps) {
     if (typeof global !== 'undefined' && (global as any).showHalfModal) {
       (global as any).showHalfModal(params);
     } else {
-      console.log('showHalfModal not available on global object');
+      appLog('showHalfModal not available on global object');
     }
   }, []);
 

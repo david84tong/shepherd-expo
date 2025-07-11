@@ -11,7 +11,7 @@ import { useAssets } from 'expo-asset';
 
 import PrimaryButton from './PrimaryButton';
 import { hapticMedium } from '~/utils/haptics';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import analytics from '~/utils/analytics';
 import { useCheckInStore } from '~/app/stores/checkInStore';
 import { createDevotionalFromCheckIn } from '~/app/api/ai';
@@ -25,6 +25,7 @@ import { Timestamp } from '@react-native-firebase/firestore';
 import { IS_ANDROID } from '~/app/utils/utils';
 import { useSoundStore } from '~/app/stores/soundStore';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
+import dayjs from 'dayjs';
 
 // Import gem icon
 import gemIcon from '../assets/icons/greenGemIcon.png';
@@ -42,6 +43,63 @@ interface GlobalCheckInProps {
 type CheckInScreen = 'mood' | 'focus' | 'struggle' | 'success';
 
 const { width: screenWidth } = Dimensions.get('window');
+
+// Helper function to get responsive card dimensions using RPH and RPW
+const getResponsiveCardDimensions = () => {
+  // Device size breakpoints
+  const isSmallDevice = screenWidth <= 375;
+  const isMediumDevice = screenWidth > 375 && screenWidth < 414;
+  const isLargeDevice = screenWidth >= 414 && screenWidth < 768;
+  const isTablet = screenWidth >= 768;
+
+  // Calculate items per row based on device size
+  const getMoodItemsPerRow = () => {
+    if (isSmallDevice) return 2;
+    if (isMediumDevice) return 3;
+    if (isLargeDevice) return 3;
+    if (isTablet) return 4;
+    return 3;
+  };
+  const getFocusItemsPerRow = () => 3;
+
+  // Responsive gap
+  const gap = 12;
+  // Account for container padding (20px each side = 40px total)
+  const containerPadding = 40;
+  const availableWidth = screenWidth - containerPadding;
+  const focusItemsPerRow = getFocusItemsPerRow();
+  
+  // For iPhone 16 Pro Max (440px), ensure 3 cards fit by using a more aggressive calculation
+  let focusBoxWidth;
+  if (screenWidth >= 440) {
+    // For iPhone 16 Pro Max and larger, use a fixed width that ensures 3 cards fit
+    focusBoxWidth = 120; // Fixed width that works for 3 cards
+  } else {
+    // For other devices, use the calculated width
+    focusBoxWidth = Math.min(
+      (availableWidth - gap * (focusItemsPerRow - 1)) / focusItemsPerRow,
+      isTablet ? 160 : 9999 // cap at 160px for tablets, no cap for phones
+    );
+  }
+
+  return {
+    mood: {
+      width: RPH(12),
+      height: RPH(14),
+      itemsPerRow: getMoodItemsPerRow()
+    },
+    focus: {
+      width: focusBoxWidth,
+      height: RPH(11),
+      itemsPerRow: focusItemsPerRow
+    },
+    gap,
+    isSmallDevice,
+    isMediumDevice,
+    isLargeDevice,
+    isTablet
+  };
+};
 
 const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -105,23 +163,23 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
   // Log when component mounts/unmounts
   useEffect(() => {
-    console.log('[GlobalCheckIn] Component mounted at:', new Date().toISOString());
+    appLog('[GlobalCheckIn] Component mounted at:', new Date().toISOString());
     return () => {
-      console.log('[GlobalCheckIn] Component unmounted at:', new Date().toISOString());
+      appLog('[GlobalCheckIn] Component unmounted at:', new Date().toISOString());
     };
   }, []);
 
   // Complete check-in and save to both stores
   const handleCompleteCheckIn = useCallback(async () => {
-    console.log('[GlobalCheckIn] handleCompleteCheckIn started');
+    appLog('[GlobalCheckIn] handleCompleteCheckIn started');
 
     // Prevent double-saving
     if (checkInSaved) {
-      console.log('[GlobalCheckIn] Check-in already saved, skipping...');
+      appLog('[GlobalCheckIn] Check-in already saved, skipping...');
       return;
     }
 
-    console.log('[GlobalCheckIn] handleCompleteCheckIn called with:', {
+    appLog('[GlobalCheckIn] handleCompleteCheckIn called with:', {
       mood: currentMood,
       focus: currentFocus,
       struggle: currentStruggle,
@@ -129,7 +187,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
     try {
       // Complete check-in in checkInStore
-      console.log('[GlobalCheckIn] Completing check-in in checkInStore...');
+      appLog('[GlobalCheckIn] Completing check-in in checkInStore...');
       completeCheckIn();
 
       // Save to userStore for Firestore sync
@@ -144,10 +202,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       const now = new Date();
       const timestamp = now.getTime(); // milliseconds since epoch
       const dateKey = `${timestamp}`; // Use timestamp as key for uniqueness
-      console.log('[GlobalCheckIn] Saving check-in data to userStore:', checkInData);
+      appLog('[GlobalCheckIn] Saving check-in data to userStore:', checkInData);
       await addCheckIn(dateKey, checkInData);
 
-      console.log('[GlobalCheckIn] Check-in completed and saved to both stores');
+      appLog('[GlobalCheckIn] Check-in completed and saved to both stores');
       setCheckInSaved(true);
     } catch (error) {
       console.error('[GlobalCheckIn] Error in handleCompleteCheckIn:', error);
@@ -160,7 +218,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       setGens(currentGems + 20);
       setGemsAwarded(true);
       setShowRewardAnimation(true);
-      console.log(`Awarded +20 Gems for check-in. New total: ${currentGems + 20}`);
+      appLog(`Awarded +20 Gems for check-in. New total: ${currentGems + 20}`);
 
       // Log analytics
       analytics.logEvent('checkin_gems_awarded', {
@@ -174,18 +232,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
     // Verify the check-in was saved
     const verifyCheckIn = useCheckInStore.getState().getTodaysCheckIn();
-    console.log("[GlobalCheckIn] Verification - Today's check-in after save:", verifyCheckIn);
-  }, [
-    currentMood,
-    currentFocus,
-    currentStruggle,
-    completeCheckIn,
-    addCheckIn,
-    checkInSaved,
-    gemsAwarded,
-    getGens,
-    setGens,
-  ]);
+    appLog('[GlobalCheckIn] Verification - Today\'s check-in after save:', verifyCheckIn);
+  }, [currentMood, currentFocus, currentStruggle, completeCheckIn, addCheckIn, checkInSaved, gemsAwarded, getGens, setGens]);
 
   // Handle dismiss
   const handleDismiss = useCallback(() => {
@@ -225,7 +273,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
   // Handle custom devotional generation
   const handleGenerateCustomDevotional = useCallback(async () => {
-    console.log('[GlobalCheckIn] handleGenerateCustomDevotional started');
+    appLog('[GlobalCheckIn] handleGenerateCustomDevotional started');
     const currentUser = auth().currentUser;
     if (!currentUser) {
       console.error('No authenticated user available for generating devotional');
@@ -235,7 +283,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     // Check if user is pro
     const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore.getState();
     if (!isProMember) {
-      console.log('[GlobalCheckIn] User is not pro, presenting free trial paywall');
+      appLog('[GlobalCheckIn] User is not pro, presenting free trial paywall');
       await presentFreeTrialPaywall();
       return;
     }
@@ -253,7 +301,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         struggle: currentStruggle,
       };
 
-      console.log('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
+      appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
 
       // Generate the custom devotional
       const customDevotional = await createDevotionalFromCheckIn(checkInData, idToken);
@@ -275,22 +323,22 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         likes: 0,
         shares: 0,
         completed: 0,
-        date: new Date().toISOString().split('T')[0],
+        date: dayjs().format('YYYY-MM-DD') || new Date().toISOString().split('T')[0],
         imageURL: randomBackground,
         verse: customDevotional.verse || '',
       };
 
-      console.log('GlobalCheckIn: Full devotional object:', fullDevotional);
-      console.log('GlobalCheckIn: Verse field:', fullDevotional.verse);
-      console.log('GlobalCheckIn: BibleReference field:', fullDevotional.bibleReference);
+      appLog('GlobalCheckIn: Full devotional object:', fullDevotional);
+      appLog('GlobalCheckIn: Verse field:', fullDevotional.verse);
+      appLog('GlobalCheckIn: BibleReference field:', fullDevotional.bibleReference);
 
       // Use the new function to save to Firestore
       await createCustomDevotionalFromCheckIn(fullDevotional);
 
       // Complete the check-in and save to both stores
-      console.log('[GlobalCheckIn] About to save check-in...');
+      appLog('[GlobalCheckIn] About to save check-in...');
       await handleCompleteCheckIn();
-      console.log('[GlobalCheckIn] Check-in saved successfully');
+      appLog('[GlobalCheckIn] Check-in saved successfully');
 
       // Log analytics
       analytics.logEvent('checkin_custom_devotional_generated', {
@@ -301,7 +349,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
       // Don't navigate here - it's already handled in the button onPress
     } catch (error) {
-      console.log('Error generating custom devotional:', error);
+      appLog('Error generating custom devotional:', error);
       setIsGenerating(false);
       // You might want to show an error toast here
     }
@@ -398,11 +446,11 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     checkInRef,
     () => ({
       expand: () => {
-        console.log('[GlobalCheckIn] expand() called, isSheetVisible:', isSheetVisible, 'isClosing:', isClosing);
+        appLog('[GlobalCheckIn] expand() called, isSheetVisible:', isSheetVisible, 'isClosing:', isClosing);
         
         // If currently closing, wait and retry
         if (isClosing) {
-          console.log('[GlobalCheckIn] Sheet is closing, waiting to expand...');
+          appLog('[GlobalCheckIn] Sheet is closing, waiting to expand...');
           expandAttempts.current++;
           if (expandAttempts.current < 3) {
             setTimeout(() => {
@@ -446,12 +494,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         });
       },
       close: () => {
-        console.log('[GlobalCheckIn] close() called');
+        appLog('[GlobalCheckIn] close() called');
         setIsClosing(true);
         bottomSheetRef.current?.close();
       },
       forceShow: () => {
-        console.log('[GlobalCheckIn] forceShow() called');
+        appLog('[GlobalCheckIn] forceShow() called');
         
         // Reset expand attempts
         expandAttempts.current = 0;
@@ -674,202 +722,217 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     },
   ];
 
-  const renderMoodScreen = () => (
-    <Animated.View
-      style={{
-        flex: 1,
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingTop: RPH(2),
-        transform: [{ translateX: moodAnim }],
-      }}>
-      <Text className="font-feather text-3xl text-textPrimary mb-8 text-center px-4 max-w-[300px]">
-        How are you feeling right now?
-      </Text>
-      <Text className="font-feather text-xl mb-6 text-center px-1 text-textPrimary/70 max-w-[300px]">
-        Select a mood to help you grow.
-      </Text>
-      <View className="flex-1 w-full flex-row flex-wrap justify-center gap-4 px-2">
-        {moods.map((mood) => (
-          <Pressable
-            key={mood.value}
-            onPress={() => {
-              setSelectedMood(mood.value);
-              setMood(mood.value);
-              hapticMedium();
-              analytics.logEvent('checkin_mood_selected', { mood: mood.value });
-              setTimeout(() => {
-                animateToScreen('focus');
-              }, 200);
-            }}
-            className={`w-[30%] rounded-3xl border-[2.5px] items-center justify-center 
-              ${
-                selectedMood === mood.value
-                  ? 'border-orange bg-white/90'
-                  : 'border-accentGold bg-white/60'
-              }`}>
-            <Image
-              source={mood.image}
-              style={{ width: RPH(8), height: RPH(8) }}
-              resizeMode="contain"
-              className="mb-2"
-            />
-            <Text className="font-din text-base text-textPrimary">{mood.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-    </Animated.View>
-  );
-
-  const renderFocusScreen = () => (
-    <Animated.View
-      style={{
-        flex: 1,
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingTop: RPH(2),
-        transform: [{ translateX: focusAnim }],
-      }}>
-      <Text className="font-feather text-3xl text-textPrimary mb-3 text-center px-4 max-w-[300px]">
-        What would you like to focus on?
-      </Text>
-      <Text className="font-feather text-xl mb-6 text-center px-4 text-textPrimary/70 max-w-[300px]">
-        Select a focus to help you grow.
-      </Text>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: RPH(2) }}
-        className="flex-1 w-full">
-        <View className="flex-row flex-wrap justify-center gap-3 px-2">
-          {focusAreas.map((focus) => (
+  const renderMoodScreen = () => {
+    const dimensions = getResponsiveCardDimensions();
+    const imageSize = RPH(9); // Responsive image size
+    
+    return (
+      <Animated.View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          paddingHorizontal: 20,
+          paddingTop: RPH(2),
+          transform: [{ translateX: moodAnim }],
+        }}>
+        <Text className="font-feather text-3xl text-textPrimary mb-8 text-center px-4 max-w-[300px]">
+          How are you feeling right now?
+        </Text>
+        <Text className="font-feather text-xl mb-6 text-center px-1 text-textPrimary/70 max-w-[300px]">
+          Select a mood to help you grow.
+        </Text>
+        <View className="flex-1 w-full flex-row flex-wrap justify-center gap-4 px-2">
+          {moods.map((mood) => (
             <Pressable
-              key={focus.value}
+              key={mood.value}
               onPress={() => {
-                setSelectedFocus(focus.value);
-                setFocus(focus.value);
+                setSelectedMood(mood.value);
+                setMood(mood.value);
                 hapticMedium();
-                analytics.logEvent('checkin_focus_selected', { focus: focus.value });
+                analytics.logEvent('checkin_mood_selected', { mood: mood.value });
                 setTimeout(() => {
-                  animateToScreen('struggle');
-                }, 100);
+                  animateToScreen('focus');
+                }, 200);
               }}
-              className={`w-[31%] rounded-3xl border-[2.5px] items-center justify-center p-2
+              className={`w-[30%] rounded-3xl border-[2.5px] items-center justify-center 
                 ${
-                  selectedFocus === focus.value
+                  selectedMood === mood.value
                     ? 'border-orange bg-white/90'
                     : 'border-accentGold bg-white/60'
                 }`}>
-              <View className={`${focus.bgColor} rounded-2xl p-3`}>
-                {focus.iconType === 'fontawesome6' ? (
-                  <FontAwesome6 name={focus.icon as any} size={RPH(3)} color={focus.color} />
-                ) : (
-                  <Ionicons name={focus.icon as any} size={RPH(3)} color={focus.color} />
-                )}
-              </View>
-              <Text className="font-din text-sm text-textPrimary text-center mt-2">
-                {focus.label}
-              </Text>
+              <Image
+                source={mood.image}
+                style={{ width: imageSize, height: imageSize }}
+                resizeMode="contain"
+                className="mb-2"
+              />
+              <Text className="font-din text-base text-textPrimary">{mood.label}</Text>
             </Pressable>
           ))}
         </View>
-      </ScrollView>
-      <View className="w-full px-4 pb-4">
-        <Pressable
-          onPress={() => {
-            skipFocus();
-            hapticMedium();
-            analytics.logEvent('checkin_focus_skipped');
-            setTimeout(() => {
-              animateToScreen('struggle');
-            }, 100);
-          }}
-          className="border-accentGold/40">
-          <Text className="font-din text-base text-gray-600 text-center underline">
-            Skip this step
-          </Text>
-        </Pressable>
-      </View>
-    </Animated.View>
-  );
+      </Animated.View>
+    );
+  };
 
-  const renderStruggleScreen = () => (
-    <Animated.View
-      style={{
-        flex: 1,
-        alignItems: 'center',
-        paddingHorizontal: 2,
-        justifyContent: 'center',
-        transform: [{ translateX: struggleAnim }],
-      }}>
-      <Text className="font-feather  text-3xl text-textPrimary  text-center px-2 max-w-[300px] mb-2">
-        What are you struggling with?
-      </Text>
-      <Text className="font-feather text-xl text-center mb-6  text-textPrimary/70 max-w-[300px]">
-        Select a struggle to help you grow.
-      </Text>
-
-      <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
-        <View className="flex-row flex-wrap justify-center gap-4">
-          {struggleAreas.map((struggle) => (
-            <Pressable
-              key={struggle.value}
-              onPress={() => {
-                setSelectedStruggle(struggle.value);
-                setStruggle(struggle.value);
-                hapticMedium();
-                analytics.logEvent('checkin_struggle_selected', { struggle: struggle.value });
-                setTimeout(async () => {
-                  await handleCompleteCheckIn();
-                  animateToScreen('success');
-                }, 100);
-              }}
-              className={`w-[31%] rounded-3xl border-[2.5px] items-center justify-center p-2
-                ${
-                  selectedStruggle === struggle.value
-                    ? 'border-orange bg-white/90'
-                    : 'border-accentGold bg-white/60'
-                }`}>
-              <View className={`${struggle.bgColor} rounded-2xl p-2.5 mb-1.5`}>
-                {struggle.iconType === 'fontawesome6' ? (
-                  <FontAwesome6
-                    name={struggle.icon as any}
-                    size={RPH(2.8)}
-                    color={struggle.color}
-                  />
-                ) : (
-                  <Ionicons name={struggle.icon as any} size={RPH(2.8)} color={struggle.color} />
-                )}
-              </View>
-              <Text className="font-din text-sm text-textPrimary text-center mb-1">
-                {struggle.label}
-              </Text>
-              <Text className="font-din text-[10px] text-gray-500 text-center">
-                {struggle.verse}
-              </Text>
-            </Pressable>
-          ))}
+  const renderFocusScreen = () => {
+    const dimensions = getResponsiveCardDimensions();
+    const iconSize = dimensions.isSmallDevice ? RPH(2.8) : RPH(3.5);
+    
+    return (
+      <Animated.View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingTop: RPH(2),
+          transform: [{ translateX: focusAnim }],
+        }}>
+        <Text className="font-feather text-3xl text-textPrimary mb-3 text-center px-4 max-w-[300px]">
+          What would you like to focus on?
+        </Text>
+        <Text className="font-feather text-xl mb-6 text-center px-4 text-textPrimary/70 max-w-[300px]">
+          Select a focus to help you grow.
+        </Text>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: RPH(2) }}
+          className="flex-1 w-full">
+          <View className="flex-row flex-wrap justify-center gap-3 px-2">
+            {focusAreas.map((focus) => (
+              <Pressable
+                key={focus.value}
+                onPress={() => {
+                  setSelectedFocus(focus.value);
+                  setFocus(focus.value);
+                  hapticMedium();
+                  analytics.logEvent('checkin_focus_selected', { focus: focus.value });
+                  setTimeout(() => {
+                    animateToScreen('struggle');
+                  }, 100);
+                }}
+                className={`w-[31%] rounded-3xl border-[2.5px] items-center justify-center p-2
+                  ${
+                    selectedFocus === focus.value
+                      ? 'border-orange bg-white/90'
+                      : 'border-accentGold bg-white/60'
+                  }`}>
+                <View className={`${focus.bgColor} rounded-2xl p-3`}>
+                  {focus.iconType === 'fontawesome6' ? (
+                    <FontAwesome6 name={focus.icon as any} size={iconSize} color={focus.color} />
+                  ) : (
+                    <Ionicons name={focus.icon as any} size={iconSize} color={focus.color} />
+                  )}
+                </View>
+                <Text className="font-din text-sm text-textPrimary text-center mt-2">
+                  {focus.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+        <View className="w-full px-4 pb-4">
+          <Pressable
+            onPress={() => {
+              skipFocus();
+              hapticMedium();
+              analytics.logEvent('checkin_focus_skipped');
+              setTimeout(() => {
+                animateToScreen('struggle');
+              }, 100);
+            }}
+            className="border-accentGold/40">
+            <Text className="font-din text-base text-gray-600 text-center underline">
+              Skip this step
+            </Text>
+          </Pressable>
         </View>
-      </ScrollView>
+      </Animated.View>
+    );
+  };
 
-      <View className="px-4 pb-4">
-        <Pressable
-          onPress={() => {
-            skipStruggle();
-            hapticMedium();
-            analytics.logEvent('checkin_struggle_skipped');
-            setTimeout(async () => {
-              await handleCompleteCheckIn();
-              animateToScreen('success');
-            }, 100);
-          }}
-          className="border-accentGold/40">
-          <Text className="font-din text-base text-gray-600 text-center underline">
-            Skip this step
-          </Text>
-        </Pressable>
-      </View>
-    </Animated.View>
-  );
+  const renderStruggleScreen = () => {
+    const dimensions = getResponsiveCardDimensions();
+    const iconSize = dimensions.isSmallDevice ? RPH(4.2) : RPH(3.7);
+    
+    return (
+      <Animated.View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          paddingHorizontal: 2,
+          justifyContent: 'center',
+          transform: [{ translateX: struggleAnim }],
+        }}>
+        <Text className="font-feather text-3xl text-textPrimary text-center px-2 max-w-[300px] mb-2">
+          What are you struggling with?
+        </Text>
+        <Text className="font-feather text-xl text-center mb-6 text-textPrimary/70 max-w-[300px]">
+          Select a struggle to help you grow.
+        </Text>
+
+        <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+          <View className="flex-row flex-wrap justify-center gap-4">
+            {struggleAreas.map((struggle) => (
+              <Pressable
+                key={struggle.value}
+                onPress={() => {
+                  setSelectedStruggle(struggle.value);
+                  setStruggle(struggle.value);
+                  hapticMedium();
+                  analytics.logEvent('checkin_struggle_selected', { struggle: struggle.value });
+                  setTimeout(async () => {
+                    await handleCompleteCheckIn();
+                    animateToScreen('success');
+                  }, 100);
+                }}
+                className={`w-[28%] rounded-3xl border-[2.5px] items-center justify-center p-2
+                  ${
+                    selectedStruggle === struggle.value
+                      ? 'border-orange bg-white/90'
+                      : 'border-accentGold bg-white/60'
+                  }`}>
+                <View className={`${struggle.bgColor} rounded-2xl p-2.5 mb-1.5`}>
+                  {struggle.iconType === 'fontawesome6' ? (
+                    <FontAwesome6
+                      name={struggle.icon as any}
+                      size={iconSize}
+                      color={struggle.color}
+                    />
+                  ) : (
+                    <Ionicons name={struggle.icon as any} size={iconSize} color={struggle.color} />
+                  )}
+                </View>
+                <Text className="font-din text-sm text-textPrimary text-center mb-1">
+                  {struggle.label}
+                </Text>
+                <Text className="font-din text-[10px] text-gray-500 text-center">
+                  {struggle.verse}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+
+        <View className="px-4 pb-4">
+          <Pressable
+            onPress={() => {
+              skipStruggle();
+              hapticMedium();
+              analytics.logEvent('checkin_struggle_skipped');
+              setTimeout(async () => {
+                await handleCompleteCheckIn();
+                animateToScreen('success');
+              }, 100);
+            }}
+            className="border-accentGold/40">
+            <Text className="font-din text-base text-gray-600 text-center underline">
+              Skip this step
+            </Text>
+          </Pressable>
+        </View>
+      </Animated.View>
+    );
+  };
 
   // Trigger animations when success screen is shown
   useEffect(() => {
@@ -926,7 +989,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         paddingTop: RPH(2),
         transform: [{ translateX: successAnim }],
       }}>
-      <Text className="font-feather text-4xl text-textPrimary text-center  px-4">
+      <Text className="font-feather text-4xl text-textPrimary text-center px-4">
         Check-in Complete!
       </Text>
       {showRewardAnimation && riveAssets ? (
@@ -990,13 +1053,13 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               // Check if user is pro before generating custom devotional
               const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore.getState();
               if (!isProMember) {
-                console.log('[GlobalCheckIn] User is not pro, presenting free trial paywall');
+                appLog('[GlobalCheckIn] User is not pro, presenting free trial paywall');
                 await presentFreeTrialPaywall();
                 return;
               }
               // Log the current check-in state
               const checkInState = useCheckInStore.getState();
-              console.log('[GlobalCheckIn] Before navigation - check-in state:', {
+              appLog('[GlobalCheckIn] Before navigation - check-in state:', {
                 todaysCheckIn: checkInState.getTodaysCheckIn(),
                 hasCompletedToday: checkInState.hasCompletedTodaysCheckIn(),
                 lastCheckInTime: checkInState.lastCheckInTime,
@@ -1114,13 +1177,13 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               });
 
               // Log the check-in completion
-              console.log('Starting worldwide devotional check-in completion...');
+              appLog('Starting worldwide devotional check-in completion...');
 
               // Check-in already saved when struggle was selected/skipped
 
               // Verify the check-in was saved
               const checkInState = useCheckInStore.getState();
-              console.log('Check-in state after completion:', {
+              appLog('Check-in state after completion:', {
                 lastCheckInTime: checkInState.lastCheckInTime,
                 hasBeenOneHour: checkInState.hasBeenOneHourSinceLastCheckIn(),
               });
@@ -1145,7 +1208,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 // Trigger the daily bread devotional
                 const triggerDailyBread = (global as any).triggerDailyBread;
                 if (triggerDailyBread && typeof triggerDailyBread === 'function') {
-                  console.log('Triggering daily bread from check-in...');
+                  appLog('Triggering daily bread from check-in...');
                   triggerDailyBread();
                 } else {
                   console.error('triggerDailyBread function not found on global');
@@ -1205,7 +1268,42 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         width: 60,
         borderRadius: 3,
       }}
-      backdropComponent={renderBackdrop}>
+      backdropComponent={renderBackdrop}
+      onChange={(index) => {
+        appLog('[GlobalCheckIn] BottomSheet changed to index:', index);
+        
+        // Update visibility state
+        const wasVisible = isSheetVisible;
+        const isNowVisible = index >= 0;
+        setIsSheetVisible(isNowVisible);
+        
+        // If sheet just closed
+        if (wasVisible && !isNowVisible) {
+          appLog('[GlobalCheckIn] Sheet closed, marking as not closing');
+          setIsClosing(false);
+          
+          // Reset states after close
+          setTimeout(() => {
+            setCurrentScreen('mood');
+            setSelectedMood(null);
+            setSelectedFocus(null);
+            setSelectedStruggle(null);
+            clearCurrentSession();
+            setIsGenerating(false);
+            setCheckInSaved(false);
+            setGemsAwarded(false);
+            setShowRewardAnimation(false);
+            // Reset animations
+            moodAnim.setValue(0);
+            focusAnim.setValue(screenWidth);
+            struggleAnim.setValue(screenWidth);
+            successAnim.setValue(screenWidth);
+            rewardCardOpacity.setValue(0);
+            rewardCardScale.setValue(0.8);
+            gemTextOpacity.setValue(0);
+          }, 300);
+        }
+      }}>
       <BottomSheetView
         style={{
           width: '100%',

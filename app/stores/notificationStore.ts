@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore from '@react-native-firebase/firestore';
 import { Platform } from 'react-native';
 import { useUserStore } from './userStore';
+import { appLog } from '../helper/helper';
 
 // Define notification IDs for easier management
 export const NOTIFICATION_IDS = {
@@ -134,14 +135,14 @@ export const useNotificationStore = create<NotificationState>()(
       // Initialize notification system
       initializeNotifications: async () => {
         try {
-          console.log('📱 Initializing notification system...');
+          appLog('📱 Initializing notification system...');
 
           // Configure notification behavior
           await configureNotifications();
 
           // Request notification permissions if not already granted
           const { status: existingStatus } = await Notifications.getPermissionsAsync();
-          console.log(`📱 Notification permission status: ${existingStatus}`);
+          appLog(`📱 Notification permission status: ${existingStatus}`);
 
           // Schedule notifications only if permissions are granted
           if (existingStatus === 'granted') {
@@ -150,11 +151,11 @@ export const useNotificationStore = create<NotificationState>()(
             const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD
             const lastScheduled = get().lastScheduledDate;
 
-            console.log(`📱 Last notification schedule date: ${lastScheduled || 'never'}`);
-            console.log(`📱 Today's date: ${todayString}`);
+            appLog(`📱 Last notification schedule date: ${lastScheduled || 'never'}`);
+            appLog(`📱 Today's date: ${todayString}`);
 
             if (get().lastScheduledDate !== todayString) {
-              console.log(
+              appLog(
                 "📱 Scheduling streak reminders because they haven't been scheduled today"
               );
               await get().scheduleStreakReminders();
@@ -169,28 +170,28 @@ export const useNotificationStore = create<NotificationState>()(
               );
 
               if (!hasAdaptiveNotifications) {
-                console.log('📱 No adaptive notifications found, scheduling them now');
+                appLog('📱 No adaptive notifications found, scheduling them now');
                 await get().scheduleAdaptiveNotifications();
               }
             } else {
-              console.log('📱 Streak reminders already scheduled today, skipping');
+              appLog('📱 Streak reminders already scheduled today, skipping');
             }
 
             // Re-schedule the daily reminder if needed
             const preferredTime = get().preferredNotificationTime;
             if (preferredTime && preferredTime !== 'none') {
-              console.log(`📱 Scheduling daily reminder with preferred time: ${preferredTime}`);
+              appLog(`📱 Scheduling daily reminder with preferred time: ${preferredTime}`);
               await get().scheduleDailyReminder(preferredTime);
             } else {
-              console.log('📱 No preferred notification time set or notifications disabled');
+              appLog('📱 No preferred notification time set or notifications disabled');
             }
           } else {
-            console.log(
+            appLog(
               '📱 Notification permissions not granted, skipping notification scheduling'
             );
           }
 
-          console.log('📱 Notification system initialization complete');
+          appLog('📱 Notification system initialization complete');
         } catch (error) {
           console.error('Failed to initialize notifications:', error);
         }
@@ -201,7 +202,7 @@ export const useNotificationStore = create<NotificationState>()(
         try {
           const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
 
-          console.log(
+          appLog(
             `--- Currently scheduled notifications: ${scheduledNotifications.length} ---`
           );
           scheduledNotifications.forEach((notification, index) => {
@@ -211,12 +212,12 @@ export const useNotificationStore = create<NotificationState>()(
               triggerDate = new Date(notification.trigger.date).toLocaleString();
             }
 
-            console.log(`[${index + 1}] ID: ${notification.identifier}`);
-            console.log(`    Title: ${notification.content.title}`);
-            console.log(`    Trigger: ${triggerDate}`);
-            console.log(`    Data: ${JSON.stringify(notification.content.data)}`);
+            appLog(`[${index + 1}] ID: ${notification.identifier}`);
+            appLog(`    Title: ${notification.content.title}`);
+            appLog(`    Trigger: ${triggerDate}`);
+            appLog(`    Data: ${JSON.stringify(notification.content.data)}`);
           });
-          console.log('--- End of scheduled notifications ---');
+          appLog('--- End of scheduled notifications ---');
         } catch (error) {
           console.error('Failed to list scheduled notifications:', error);
         }
@@ -227,7 +228,7 @@ export const useNotificationStore = create<NotificationState>()(
         try {
           // Skip if user selected 'none'
           if (timeOption === 'none') {
-            console.log('User opted out of daily reminders');
+            appLog('User opted out of daily reminders');
             await get().cancelDailyReminder();
             return;
           }
@@ -235,7 +236,7 @@ export const useNotificationStore = create<NotificationState>()(
           // Get permission
           const { status } = await Notifications.getPermissionsAsync();
           if (status !== 'granted') {
-            console.log('Notification permission not granted');
+            appLog('Notification permission not granted');
             return;
           }
 
@@ -260,7 +261,7 @@ export const useNotificationStore = create<NotificationState>()(
               .map((part) => parseInt(part, 10));
             hour = hours;
             minute = minutes;
-            console.log(`📱 Using custom time from userStore: ${hour}:${minute}`);
+            appLog(`📱 Using custom time from userStore: ${hour}:${minute}`);
           } else {
             // Parse time ranges into hours for notifications
             switch (timeOption) {
@@ -282,7 +283,7 @@ export const useNotificationStore = create<NotificationState>()(
                   const [hours, minutes] = timeOption.split(':').map((part) => parseInt(part, 10));
                   hour = hours;
                   minute = minutes;
-                  console.log(`📱 Using provided custom time: ${hour}:${minute}`);
+                  appLog(`📱 Using provided custom time: ${hour}:${minute}`);
                 } else {
                   hour = 8; // Default to 8 AM
                 }
@@ -299,14 +300,14 @@ export const useNotificationStore = create<NotificationState>()(
             scheduledTime.setDate(scheduledTime.getDate() + 1);
           }
 
-          console.log(
+          appLog(
             `📱 Scheduling daily reminder for ${timeOption} at ${scheduledTime.toLocaleString()}`
           );
 
           // Calculate hours until notification
           const hoursUntilNotification =
             (scheduledTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-          console.log(`📱 Daily reminder will fire in ${hoursUntilNotification.toFixed(1)} hours`);
+          appLog(`📱 Daily reminder will fire in ${hoursUntilNotification.toFixed(1)} hours`);
 
           // Schedule daily notification
           await Notifications.scheduleNotificationAsync({
@@ -324,11 +325,11 @@ export const useNotificationStore = create<NotificationState>()(
             identifier: NOTIFICATION_IDS.DAILY_REMINDER,
           });
 
-          console.log(
+          appLog(
             `📱 Daily reminder notification scheduled for ${hour}:${minute?.toString?.().padStart(2, '0')}`
           );
-          console.log(`📱 Notification ID: ${NOTIFICATION_IDS.DAILY_REMINDER}`);
-          console.log(`📱 Notification trigger type: DAILY`);
+          appLog(`📱 Notification ID: ${NOTIFICATION_IDS.DAILY_REMINDER}`);
+          appLog(`📱 Notification trigger type: DAILY`);
 
           // Save the selected time preference
           set({ preferredNotificationTime: timeOption });
@@ -353,7 +354,7 @@ export const useNotificationStore = create<NotificationState>()(
       cancelDailyReminder: async () => {
         try {
           await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.DAILY_REMINDER);
-          console.log('Daily reminder notification canceled');
+          appLog('Daily reminder notification canceled');
         } catch (error) {
           console.error('Failed to cancel daily reminder notification:', error);
         }
@@ -362,12 +363,12 @@ export const useNotificationStore = create<NotificationState>()(
       scheduleStreakReminders: async (test = false) => {
         try {
           if (!get().notificationsEnabled) {
-            console.log('Notifications are disabled in the store');
+            appLog('Notifications are disabled in the store');
             return;
           }
           const { status } = await Notifications.getPermissionsAsync();
           if (status !== 'granted') {
-            console.log('Notification permission not granted');
+            appLog('Notification permission not granted');
             return;
           }
 
@@ -381,23 +382,23 @@ export const useNotificationStore = create<NotificationState>()(
             const warningTimeTest = new Date(now.getTime() + WARNING_DELAY_SEC * 1000);
             const brokenStreakTimeTest = new Date(now.getTime() + BROKEN_DELAY_SEC * 1000);
 
-            console.log(
+            appLog(
               `[TEST] Scheduling streak warning notification in ${WARNING_DELAY_SEC}s → ${warningTimeTest.toLocaleTimeString()}`
             );
-            console.log(
+            appLog(
               `[TEST] Scheduling broken streak notification in ${BROKEN_DELAY_SEC}s → ${brokenStreakTimeTest.toLocaleTimeString()}`
             );
 
             // Add more detailed logging about timing
-            console.log(
+            appLog(
               `[TEST] 🔔 Streak Warning test notification will fire in ${(WARNING_DELAY_SEC / 60).toFixed(1)} minutes`
             );
-            console.log(
+            appLog(
               `[TEST] ⚠️ Streak Broken test notification will fire in ${(BROKEN_DELAY_SEC / 60).toFixed(1)} minutes`
             );
 
             await Notifications.cancelAllScheduledNotificationsAsync();
-            console.log(
+            appLog(
               '[TEST] All existing notifications cleared. Scheduling test notifications...'
             );
 
@@ -446,7 +447,7 @@ export const useNotificationStore = create<NotificationState>()(
               identifier: `${NOTIFICATION_IDS.MISSED_REMINDER}-test`,
             });
 
-            console.log(
+            appLog(
               '[TEST] Verifying scheduled notifications (after test scheduling has completed)...'
             );
             await get().listScheduledNotifications();
@@ -470,10 +471,10 @@ export const useNotificationStore = create<NotificationState>()(
               brokenStreakTimeProd.setDate(brokenStreakTimeProd.getDate() + 1);
             }
 
-            console.log(
+            appLog(
               `Scheduling streak warning notification for: ${warningTimeProd.toLocaleString()}`
             );
-            console.log(
+            appLog(
               `Scheduling broken streak notification for: ${brokenStreakTimeProd.toLocaleString()}`
             );
 
@@ -494,10 +495,10 @@ export const useNotificationStore = create<NotificationState>()(
             // Calculate and log hours from now
             const warningHoursFromNow =
               (warningTimeProd.getTime() - now.getTime()) / (1000 * 60 * 60);
-            console.log(
+            appLog(
               `Scheduled streak warning notification for ${warningTimeProd.toLocaleString()}`
             );
-            console.log(
+            appLog(
               `🔔 Streak Warning scheduled in ${warningHoursFromNow.toFixed(1)} hours from now`
             );
 
@@ -519,10 +520,10 @@ export const useNotificationStore = create<NotificationState>()(
             // Calculate and log hours from now
             const brokenHoursFromNow =
               (brokenStreakTimeProd.getTime() - now.getTime()) / (1000 * 60 * 60);
-            console.log(
+            appLog(
               `Scheduled broken streak notification for ${brokenStreakTimeProd.toLocaleString()}`
             );
-            console.log(
+            appLog(
               `⚠️ Streak Broken scheduled in ${brokenHoursFromNow.toFixed(1)} hours from now`
             );
 
@@ -547,10 +548,10 @@ export const useNotificationStore = create<NotificationState>()(
             // Calculate and log hours from now for missed reminder
             const missedHoursFromNow =
               (missedReminderTimeProd.getTime() - now.getTime()) / (1000 * 60 * 60);
-            console.log(
+            appLog(
               `Scheduled missed reminder notification for ${missedReminderTimeProd.toLocaleString()}`
             );
-            console.log(
+            appLog(
               `🍞 Missed Reminder scheduled in ${missedHoursFromNow.toFixed(1)} hours from now`
             );
 
@@ -567,7 +568,7 @@ export const useNotificationStore = create<NotificationState>()(
           await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.STREAK_WARNING);
           await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.STREAK_BROKEN);
           await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.MISSED_REMINDER);
-          console.log('Streak notifications canceled');
+          appLog('Streak notifications canceled');
         } catch (error) {
           console.error('Failed to cancel streak notifications:', error);
         }
@@ -577,14 +578,14 @@ export const useNotificationStore = create<NotificationState>()(
         try {
           // If notifications are disabled, don't proceed
           if (!get().notificationsEnabled) {
-            console.log('📱 Notifications are disabled, skipping check and reschedule');
+            appLog('📱 Notifications are disabled, skipping check and reschedule');
             return;
           }
 
           // Get current date in YYYY-MM-DD format
           const today = new Date();
           const todayString = today.toISOString().split('T')[0];
-          console.log(`📱 Checking notifications status for today (${todayString})`);
+          appLog(`📱 Checking notifications status for today (${todayString})`);
 
           // Check if user has read today
           let hasReadToday = false;
@@ -595,19 +596,19 @@ export const useNotificationStore = create<NotificationState>()(
             lastReadingDateString = lastReadingDateObj.toISOString().split('T')[0];
             hasReadToday = lastReadingDateString === todayString;
 
-            console.log(`📱 Last reading date: ${lastReadingDateString}`);
-            console.log(`📱 User has read today: ${hasReadToday ? 'YES' : 'NO'}`);
+            appLog(`📱 Last reading date: ${lastReadingDateString}`);
+            appLog(`📱 User has read today: ${hasReadToday ? 'YES' : 'NO'}`);
           } else {
-            console.log(`📱 No last reading date available`);
+            appLog(`📱 No last reading date available`);
           }
 
           // Get the date when notifications were last scheduled
           const lastScheduledDate = get().lastScheduledDate;
-          console.log(`📱 Last notifications scheduled date: ${lastScheduledDate || 'never'}`);
+          appLog(`📱 Last notifications scheduled date: ${lastScheduledDate || 'never'}`);
 
           // If user has read today, cancel today's notifications and schedule for tomorrow
           if (hasReadToday) {
-            console.log(
+            appLog(
               '📱 User has read today - cancelling streak notifications and rescheduling for tomorrow'
             );
 
@@ -619,12 +620,12 @@ export const useNotificationStore = create<NotificationState>()(
           }
           // If notifications haven't been scheduled today yet, schedule them
           else if (lastScheduledDate !== todayString) {
-            console.log(
+            appLog(
               "📱 Notifications haven't been scheduled today - scheduling streak notifications"
             );
             await get().scheduleStreakReminders();
           } else {
-            console.log('📱 No action needed - streak notifications already scheduled for today');
+            appLog('📱 No action needed - streak notifications already scheduled for today');
           }
         } catch (error) {
           console.error('Failed to check and reschedule notifications:', error);
@@ -636,14 +637,14 @@ export const useNotificationStore = create<NotificationState>()(
         try {
           // Check if notifications are enabled
           if (!get().notificationsEnabled) {
-            console.log('📱 Adaptive notifications: Notifications are disabled');
+            appLog('📱 Adaptive notifications: Notifications are disabled');
             return;
           }
 
           // Get permission
           const { status } = await Notifications.getPermissionsAsync();
           if (status !== 'granted') {
-            console.log('📱 Adaptive notifications: Permission not granted');
+            appLog('📱 Adaptive notifications: Permission not granted');
             return;
           }
 
@@ -653,7 +654,7 @@ export const useNotificationStore = create<NotificationState>()(
           adaptiveTime.setDate(adaptiveTime.getDate() + 1); // Set to tomorrow
           adaptiveTime.setMinutes(adaptiveTime.getMinutes() - 30); // 30 minutes earlier
 
-          console.log(
+          appLog(
             `📱 Adaptive notifications: Setting time to ${adaptiveTime.toLocaleString()}`
           );
 
@@ -665,7 +666,7 @@ export const useNotificationStore = create<NotificationState>()(
 
           // Cancel the daily reminder notifications (but not streak warnings)
           await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.DAILY_REMINDER);
-          console.log('📱 Cancelled existing daily reminder notifications');
+          appLog('📱 Cancelled existing daily reminder notifications');
 
           // Schedule notification for tomorrow at the adaptive time
           await Notifications.scheduleNotificationAsync({
@@ -682,7 +683,7 @@ export const useNotificationStore = create<NotificationState>()(
             identifier: NOTIFICATION_IDS.ADAPTIVE_REMINDER,
           });
 
-          console.log(`📱 Adaptive notification scheduled for ${adaptiveTime.toLocaleString()}`);
+          appLog(`📱 Adaptive notification scheduled for ${adaptiveTime.toLocaleString()}`);
 
           // Schedule notifications for the rest of the week at the same time
           const daysToSchedule = 6; // Schedule for the next 6 days (week total)
@@ -704,7 +705,7 @@ export const useNotificationStore = create<NotificationState>()(
               identifier: `${NOTIFICATION_IDS.ADAPTIVE_REMINDER}-day-${i}`,
             });
 
-            console.log(
+            appLog(
               `📱 Adaptive notification scheduled for day ${i + 1}: ${futureDate.toLocaleString()}`
             );
           }
@@ -729,7 +730,7 @@ export const useNotificationStore = create<NotificationState>()(
           // This will replace the daily reminders but keep streak warnings
           await get().scheduleAdaptiveNotifications();
 
-          console.log(
+          appLog(
             '📱 Streak notifications and adaptive notifications rescheduled for the next day'
           );
           return true;

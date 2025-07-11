@@ -33,6 +33,7 @@ import { useRiveAnimation } from './useRiveAnimation';
 import i18n from '../utils/i18n';
 import { useSoundStore } from '../stores/soundStore';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
+import { appLog } from '../helper/helper';
 
 // Constants
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -51,7 +52,7 @@ const moodToStateInput: Record<string, number> = {
 };
 
 export const useHomeScreen = () => {
-  console.log('🎯 useHomeScreen hook called!');
+  appLog('🎯 useHomeScreen hook called!');
   const router = useRouter();
   const { isPrayPresses, isReflectPresses, showDevotional } = useLocalSearchParams();
   
@@ -91,6 +92,7 @@ export const useHomeScreen = () => {
   const [showShareCard, setShowShareCard] = useState(false);
   const [riveError, setRiveError] = useState<any>(null);
   const [riveSkinInitialized, setRiveSkinInitialized] = useState(false);
+  const [riveInitialized, setRiveInitialized] = useState(false);
   const clearParamTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Store hooks  
@@ -98,8 +100,6 @@ export const useHomeScreen = () => {
   const setMode = useHomeStore((state) => state.setMode);
   const setDevotionalReaderVisible = useUIStore((state) => state.setDevotionalReaderVisible);
   const devotionalReaderVisible = useUIStore((state) => state.devotionalReaderVisible);
-  const hasHandledDevotionalParam = useHomeStore((state) => state.hasHandledDevotionalParam);
-  const setHasHandledDevotionalParam = useHomeStore.getState().setHasHandledDevotionalParam;
   const setReflectionCompleted = useHomeStore((state) => state.setReflectionCompleted);
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
@@ -121,11 +121,11 @@ export const useHomeScreen = () => {
   
   // Debug: Log whenever currentDevotional changes
   useEffect(() => {
-    console.log('📱 CurrentDevotional updated in useHomeScreen:', currentDevotional?.id, currentDevotional?.bibleReference);
+    appLog('📱 CurrentDevotional updated in useHomeScreen:', currentDevotional?.id, currentDevotional?.bibleReference);
   }, [currentDevotional]);
   
   // Add immediate console log to see store state
-  console.log('🔍 Store state at hook init:', {
+  appLog('🔍 Store state at hook init:', {
     currentDevotional: currentDevotional?.id,
     isLoadingDevotional,
     devotionalError,
@@ -173,6 +173,7 @@ export const useHomeScreen = () => {
   const controlRowOpacity = useRef(new Animated.Value(0)).current;
   const pan = useRef(new Animated.ValueXY()).current;
   const translateY = useRef(new Animated.Value(0)).current;
+  const riveEntranceAnim = useRef(new Animated.Value(0)).current;
 
   const MAX_HEARTS = 100;
   // Rive animation hook
@@ -195,9 +196,9 @@ export const useHomeScreen = () => {
       
       riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
       setCurrentStateInput(targetStateInput);
-      console.log(`Reset Rive to default state: ${targetStateInput} (${currentMood || 'idle'})`);
+      appLog(`Reset Rive to default state: ${targetStateInput} (${currentMood || 'idle'})`);
     } catch (error) {
-      console.log('Error resetting Rive to default state:', error);
+      appLog('Error resetting Rive to default state:', error);
     }
   }, [riveRef, setCurrentStateInput]);
 
@@ -255,54 +256,41 @@ export const useHomeScreen = () => {
   const buttonTitle = useMemo(() => devotionalReaderVisible ? i18n.t('continue_button') : i18n.t('amen_button'), [devotionalReaderVisible]);
   const isDarkContant = useMemo(() => new Date().getHours() >= 19, []);
 
-  // Effects
-  useEffect(() => {
-
-    if (showDevotional === 'true' && !hasHandledDevotionalParam) {
-      console.log('[useHomeScreen] Opening devotional reader from navigation param');
-      setTimeout(() => {
-        // alert('opening devotional reader from navigation param')
-        setDevotionalReaderVisible(true);
-        
-        // Snap to 60% (index 0) when opening devotional from LoadingScreen
-        if (bottomSheetRef.current) {
-          bottomSheetRef.current.snapToIndex(0);
+    // Effects
+    useEffect(() => {
+      if (showDevotional === 'true') {
+        appLog('[useHomeScreen] Opening devotional reader from navigation param');
+        setTimeout(() => {
+          if (riveRef.current) {
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
+          }
+        }, 100);
+        // Clear any existing timer
+        if (clearParamTimerRef.current) {
+          clearTimeout(clearParamTimerRef.current);
         }
-        
-        if (riveRef.current) {
-        
-          riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
-        }
-      }, 100);
-
-      // Clear any existing timer
-      if (clearParamTimerRef.current) {
-        clearTimeout(clearParamTimerRef.current);
+  
+        // Set new timer to clear the parameter
+        clearParamTimerRef.current = setTimeout(() => {
+          if (router?.setParams) {
+            router.setParams({ showDevotional: undefined });
+          }
+          clearParamTimerRef.current = null;
+        }, 1000);
       }
-
-      // Set new timer to clear the parameter
-      clearParamTimerRef.current = setTimeout(() => {
-        if (router?.setParams) {
-          router.setParams({ showDevotional: undefined });
+      // Cleanup function to clear timer on unmount or dependency change
+      return () => {
+        if (clearParamTimerRef.current) {
+          clearTimeout(clearParamTimerRef.current);
+          clearParamTimerRef.current = null;
         }
-        clearParamTimerRef.current = null;
-      }, 1000);
-
-      setHasHandledDevotionalParam(true);
-    }
-
-    // Cleanup function to clear timer on unmount or dependency change
-    return () => {
-      if (clearParamTimerRef.current) {
-        clearTimeout(clearParamTimerRef.current);
-        clearParamTimerRef.current = null;
-      }
-    };
-  }, [showDevotional]);
+      };
+    }, [showDevotional]);
+  
 
   // Sync devotional data from store
   useEffect(() => {
-    console.log('📱 Syncing devotional from store:', currentDevotional?.id);
+    appLog('📱 Syncing devotional from store:', currentDevotional?.id);
     if (currentDevotional) {
       setDevotionalData(currentDevotional);
     }
@@ -352,9 +340,9 @@ export const useHomeScreen = () => {
       const skinNumber = currentSkin ? parseInt(currentSkin, 10) : 0;
       try {
         riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
-        console.log(`Applied skin change: ${skinNumber} (${isPro ? 'golden pro' : currentSkin || 'normal'} skin)`);
+        appLog(`Applied skin change: ${skinNumber} (${isPro ? 'golden pro' : currentSkin || 'normal'} skin)`);
       } catch (error) {
-        console.log('Error applying skin change:', error);
+        appLog('Error applying skin change:', error);
       }
     }
   }, [currentSkin, riveSkinInitialized, isPro]);
@@ -515,7 +503,7 @@ export const useHomeScreen = () => {
 
     const fallbackTimeout = setTimeout(() => {
       if (!riveSkinInitialized) {
-        console.log('Fallback: Setting skin to initialized after timeout');
+        appLog('Fallback: Setting skin to initialized after timeout');
         setRiveSkinInitialized(true);
       }
       
@@ -524,15 +512,15 @@ export const useHomeScreen = () => {
         const currentLevel = levelInfo.level || 1;
         const levelNumber = currentLevel < 10 ? 1 : 0;
         try {
-          console.log(`[ForceLevelSet] Setting Level-Number to ${levelNumber} for level ${currentLevel}`);
+          appLog(`[ForceLevelSet] Setting Level-Number to ${levelNumber} for level ${currentLevel}`);
           riveRef.current.setInputState('State Machine 1', 'Level-Number', levelNumber);
           
           // Apply the user's selected skin from store
           const skinNumber = currentSkin ? parseInt(currentSkin, 10) : 0;
           riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
-          console.log(`[ForceLevelSet] Also set Skin-Number to ${skinNumber} (${currentSkin || 'normal'} skin)`);
+          appLog(`[ForceLevelSet] Also set Skin-Number to ${skinNumber} (${currentSkin || 'normal'} skin)`);
         } catch (e) {
-          console.log('[ForceLevelSet] Error:', e);
+          appLog('[ForceLevelSet] Error:', e);
         }
       }
     }, 1000); // 1 second fallback
@@ -547,7 +535,7 @@ export const useHomeScreen = () => {
     }
 
     return () => {
-      console.log('Cleaning up Home component');
+      appLog('Cleaning up Home component');
       clearTimeout(fallbackTimeout);
     };
   }, [riveSkinInitialized, isFirstLoad, isPro, currentSkin, levelInfo]);
@@ -558,39 +546,27 @@ export const useHomeScreen = () => {
   const handleDevotionalFinishPress = useCallback(() => {
     if (devotionalReaderRef.current) devotionalReaderRef.current.onFinishPress();
   }, []);
-
+function resetOpenedDevotionalFromParam(){
+  if(devotionalReaderVisible){
+    useUIStore.getState().setDevotionalReaderVisible(false);
+  }
+}
   const handleDevotionalClose = useCallback(({ isPrayPresses }: { isPrayPresses?: boolean }) => {
-    
-    console.log('[useHomeScreen] handleDevotionalClose called, isPrayPresses:', isPrayPresses);
-    console.log('[useHomeScreen] Current state:', {
-      devotionalReaderVisible,
-      hasHandledDevotionalParam,
-      showDevotional
-    });
+    resetOpenedDevotionalFromParam()
     
     if (devotionalReaderRef.current) {
       // Cancel any pending parameter clear timer
       if (clearParamTimerRef.current) {
-        console.log('[useHomeScreen] Canceling parameter clear timer');
+        appLog('[useHomeScreen] Canceling parameter clear timer');
         clearTimeout(clearParamTimerRef.current);
         clearParamTimerRef.current = null;
       }
       
       // Clear the showDevotional param immediately to prevent re-opening
       if (router?.setParams) {
-        console.log('[useHomeScreen] Clearing showDevotional parameter');
+        appLog('[useHomeScreen] Clearing showDevotional parameter');
         router.setParams({ showDevotional: undefined });
       }
-      // Keep the handled flag as true until navigation completes
-      // This prevents re-opening if there's a race condition with the parameter clearing
-      // setHasHandledDevotionalParam(true);
-      
-      // Reset the flag after a longer delay to prevent race conditions
-      // This ensures the parameter is fully cleared from navigation state
-      // setTimeout(() => {
-      //   console.log('[useHomeScreen] Resetting hasHandledDevotionalParam to false');
-      //   setHasHandledDevotionalParam(false);
-      // }, 2000);
       
       if (isPrayPresses) {
         // Only clear custom devotional when user completes the devotional
@@ -609,7 +585,7 @@ export const useHomeScreen = () => {
             try {
               riveRef.current.setInputState('State Machine 1', 'Action-Number', 1);
             } catch (e) {
-              console.log('Error setting Rive Action-Number to Raising Hand:', e);
+              appLog('Error setting Rive Action-Number to Raising Hand:', e);
             }
           }
           
@@ -623,7 +599,7 @@ export const useHomeScreen = () => {
         setShowPrayerView(true);
         setPrayerViewVisible(true);
       } else {
-        console.log('[useHomeScreen] Closing devotional (non-prayer path)');
+        appLog('[useHomeScreen] Closing devotional (non-prayer path)');
         // fds
         // Check streak trigger conditions when user presses "Go Home"
         const homeStore = useHomeStore.getState();
@@ -634,7 +610,7 @@ export const useHomeScreen = () => {
         const { readingCompleted, sawStreakToday } = homeStore;
         
         // Only trigger if reading is completed and streak hasn't been shown today
-        console.log('🔍 handleDevotionalClose - Checking streak conditions:', {
+        appLog('🔍 handleDevotionalClose - Checking streak conditions:', {
           readingCompleted,
           sawStreakToday,
           timestamp: new Date().toISOString()
@@ -643,7 +619,7 @@ export const useHomeScreen = () => {
         // Only trigger if reading is completed and streak hasn't been shown today
         if (readingCompleted && !sawStreakToday) {
           
-          console.log('🎯 Reading completed! Triggering streak screen from devotional close');
+          appLog('🎯 Reading completed! Triggering streak screen from devotional close');
           
           // Mark that we've shown the streak screen today
           homeStore.setSawStreakToday(true);
@@ -733,7 +709,7 @@ export const useHomeScreen = () => {
           try {
             riveRef.current.setInputState('State Machine 1', 'Action-Number', 1);
           } catch (e) {
-            console.log('Error setting Rive Action-Number to Raising Hand:', e);
+            appLog('Error setting Rive Action-Number to Raising Hand:', e);
           }
         }
         Animated.timing(riveArtboardOpacityAnim, {
@@ -754,8 +730,7 @@ export const useHomeScreen = () => {
     setShowGlobalButtons(true);
     setDevotionalReaderVisible(true);
     
-    // Reset the handled param flag when manually opening devotional
-    // setHasHandledDevotionalParam(false);
+
 
     // Snap to 60% (index 0) when opening devotional manually
     if (bottomSheetRef.current) {
@@ -840,7 +815,7 @@ export const useHomeScreen = () => {
                   if (riveRef.current?.setInputState) {
             try {
               riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
-              console.log('Force set Rive to writing animation (10) after journal shown');
+              appLog('Force set Rive to writing animation (10) after journal shown');
             } catch (_) {
               // Ignore if Action-Number input not present
             }
@@ -865,7 +840,7 @@ export const useHomeScreen = () => {
         try {
           // Set writing animation immediately
           riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
-          console.log('Set Rive to writing animation (10) for reflection');
+          appLog('Set Rive to writing animation (10) for reflection');
         } catch (error) {
           console.error('Error setting Rive to writing animation:', error);
         }
@@ -934,6 +909,7 @@ export const useHomeScreen = () => {
   }, [devotionalData]);
 
   const onCloseJournal = useCallback(({isCompleted, isReflectPresses}:{isCompleted?:boolean, isReflectPresses?:boolean}) => {
+    resetOpenedDevotionalFromParam
     // If isReflectPresses is true, trigger prayer navigation
     if (isReflectPresses) {
 
@@ -974,15 +950,15 @@ export const useHomeScreen = () => {
 
       // Only reset reflection completion if the user didn't complete it
       if (!isCompleted) {
-        console.log('🔍 JOURNAL CLOSE - Setting reflectionCompleted to false (cancelled)')
+        appLog('🔍 JOURNAL CLOSE - Setting reflectionCompleted to false (cancelled)')
         setReflectionCompleted(false);
       } else {
-        console.log('🔍 JOURNAL CLOSE - Keeping reflectionCompleted as true (completed)');
+        appLog('🔍 JOURNAL CLOSE - Keeping reflectionCompleted as true (completed)');
         // Ensure it stays true
         setReflectionCompleted(true);
         
         // Fetch recent devotionals after completing a reflection to ensure we have the latest data
-        console.log('🔄 Fetching recent devotionals after journal completion');
+        appLog('🔄 Fetching recent devotionals after journal completion');
         const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
         fetchRecentDevotionals().catch((error) => {
           console.error('❌ Error fetching recent devotionals after journal completion:', error);
@@ -1006,7 +982,7 @@ export const useHomeScreen = () => {
     
     const { readingCompleted, sawStreakToday } = homeStore;
     
-    console.log('🔍 onCloseJournal - Checking streak conditions:', {
+    appLog('🔍 onCloseJournal - Checking streak conditions:', {
       readingCompleted,
       sawStreakToday,
       timestamp: new Date().toISOString()
@@ -1015,7 +991,7 @@ export const useHomeScreen = () => {
     // Only trigger if reading is completed and streak hasn't been shown today
     if (readingCompleted && !sawStreakToday) {
       
-      console.log('🎯 Reading completed! Triggering streak screen from journal close');
+      appLog('🎯 Reading completed! Triggering streak screen from journal close');
       
       // Mark that we've shown the streak screen today
       homeStore.setSawStreakToday(true);
@@ -1034,6 +1010,7 @@ export const useHomeScreen = () => {
   }, [handlePrayerPress]);
 
   const onClosePrayer = useCallback(({ isReflectPresses }: { isReflectPresses?: boolean }) => {
+    resetOpenedDevotionalFromParam()
     if (isReflectPresses) {
       if(finishReading){
         setFinishReading(false);
@@ -1068,9 +1045,9 @@ export const useHomeScreen = () => {
           try {
             // Set to writing animation for journal
             riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
-            console.log('Set Rive to writing animation (10) from prayer to reflection');
+            appLog('Set Rive to writing animation (10) from prayer to reflection');
           } catch (e) {
-            console.log('Error setting Rive Action-Number to Journal:', e);
+            appLog('Error setting Rive Action-Number to Journal:', e);
           }
         }
         Animated.parallel([
@@ -1128,7 +1105,7 @@ export const useHomeScreen = () => {
       const currentState = useHomeStore.getState();
       const { readingCompleted, sawStreakToday } = currentState;
       
-      console.log('🔍 onClosePrayer - Checking streak conditions:', {
+      appLog('🔍 onClosePrayer - Checking streak conditions:', {
         readingCompleted,
         sawStreakToday,
         timestamp: new Date().toISOString()
@@ -1137,7 +1114,7 @@ export const useHomeScreen = () => {
       // Only trigger if reading is completed and streak hasn't been shown today
       if (readingCompleted && !sawStreakToday) {
         
-        console.log('🎯 Reading completed! Triggering streak screen from prayer close');
+        appLog('🎯 Reading completed! Triggering streak screen from prayer close');
         
         // Mark that we've shown the streak screen today
         homeStore.setSawStreakToday(true);
@@ -1153,7 +1130,7 @@ export const useHomeScreen = () => {
         
         return; // Exit early to prevent further processing
       } else {
-        console.log('🚫 Streak conditions not met, not showing streak screen');
+        appLog('🚫 Streak conditions not met, not showing streak screen');
       }
 
     }
@@ -1212,7 +1189,7 @@ export const useHomeScreen = () => {
     setTimeout(() => {
       const showCheckIn = (global as any).showCheckIn;
       if (showCheckIn && typeof showCheckIn === 'function') {
-        console.log('[HomeScreen] Triggering check-in after widget modal close');
+        appLog('[HomeScreen] Triggering check-in after widget modal close');
         showCheckIn();
       } else {
         console.error('[HomeScreen] showCheckIn function not found on global');
@@ -1276,10 +1253,10 @@ export const useHomeScreen = () => {
     const skinNumber = currentSkin ? parseInt(currentSkin, 10) : 0;
     try {
       riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
-      console.log(`Applied skin from store: ${skinNumber} (${isPro ? 'golden pro' : currentSkin || 'normal'} skin)`);
+      appLog(`Applied skin from store: ${skinNumber} (${isPro ? 'golden pro' : currentSkin || 'normal'} skin)`);
       setRiveSkinInitialized(true);
     } catch (e) {
-      console.log('Error setting lamb skin:', e);
+      appLog('Error setting lamb skin:', e);
       // Still mark as initialized to prevent blocking
       setRiveSkinInitialized(true);
     }
@@ -1294,11 +1271,11 @@ export const useHomeScreen = () => {
     const targetLevelNumber = currentLevel < 10 ? 1 : 0;
 
     try {
-      console.log(`[LevelDebug] Current level: ${currentLevel}, Setting Level-Number to: ${targetLevelNumber}`);
+      appLog(`[LevelDebug] Current level: ${currentLevel}, Setting Level-Number to: ${targetLevelNumber}`);
       riveRef.current.setInputState('State Machine 1', 'Level-Number', targetLevelNumber);
-      console.log(`[LevelFallback] Applied Level-Number ${targetLevelNumber} for level ${currentLevel}`);
+      appLog(`[LevelFallback] Applied Level-Number ${targetLevelNumber} for level ${currentLevel}`);
     } catch (e) {
-      console.log('[LevelFallback] Error applying Level-Number:', e);
+      appLog('[LevelFallback] Error applying Level-Number:', e);
     }
   }, [riveReady, levelInfo?.level, riveSkinInitialized]);
 
@@ -1319,7 +1296,7 @@ export const useHomeScreen = () => {
 
   // Handler for when Rive starts playing (indicates it's ready)
   const handleRivePlay = () => {
-    console.log('Rive component started playing, ensuring correct skin & action state');
+    appLog('Rive component started playing, ensuring correct skin & action state');
     
     // Use a small timeout to ensure Rive is fully ready before sending inputs
     setTimeout(() => {
@@ -1338,14 +1315,14 @@ export const useHomeScreen = () => {
           } else {
             riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
           }
-          console.log(`Set Rive Skin-Number: ${skinNumber} (${isPro ? 'golden pro' : currentSkin || 'normal'} skin) on play`);
+          appLog(`Set Rive Skin-Number: ${skinNumber} (${isPro ? 'golden pro' : currentSkin || 'normal'} skin) on play`);
           
           // Set Level-Number based on lamb level
           const currentLevel = levelInfo?.level || 1;
           const levelNumber = currentLevel < 10 ? 1 : 0;
-          console.log(`[RivePlay] Current level: ${currentLevel}, Setting Level-Number to: ${levelNumber}`);
+          appLog(`[RivePlay] Current level: ${currentLevel}, Setting Level-Number to: ${levelNumber}`);
           riveRef.current.setInputState('State Machine 1', 'Level-Number', levelNumber);
-          console.log(`Set Rive Level-Number: ${levelNumber} (level ${currentLevel})`);
+          appLog(`Set Rive Level-Number: ${levelNumber} (level ${currentLevel})`);
           
           setRiveSkinInitialized(true);
         }
@@ -1382,10 +1359,21 @@ export const useHomeScreen = () => {
       if (lastActionInputRef.current !== targetAction) {
         riveRef.current.setInputState('State Machine 1', 'Action-Number', targetAction);
         lastActionInputRef.current = targetAction;
-        console.log(`Set Rive Action-Number: ${targetAction} on play (changed)`);
+        appLog(`Set Rive Action-Number: ${targetAction} on play (changed)`);
       }
+      
+      // Mark Rive as initialized so it becomes visible
+      setRiveInitialized(true);
+      
+      // Animate the Rive entrance from bottom to top
+      Animated.timing(riveEntranceAnim, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.out(Easing.back(1.2)),
+        useNativeDriver: true,
+      }).start();
     } catch (e) {
-      console.log('Error setting Rive inputs on play:', e);
+      appLog('Error setting Rive inputs on play:', e);
     }
   }, 100); // Delay ensures Rive is ready for state changes
 };
@@ -1419,6 +1407,7 @@ export const useHomeScreen = () => {
     showJournalContent,
     showShareCard,
     isDarkContant,
+    riveInitialized,
 
     // Store values
     mode,
@@ -1483,6 +1472,7 @@ export const useHomeScreen = () => {
     showGlow,
     levelInfo,
     buttonTitle,
+    riveEntranceAnim,
 
     // Handlers
     handleDevotionalFinishPress,
@@ -1528,7 +1518,7 @@ export const useHomeScreen = () => {
     riveSkinInitialized,
     MAX_HEARTS,
     showDevotional,
-    resetRiveToDefaultState
+    resetRiveToDefaultState,
   };
 };
 

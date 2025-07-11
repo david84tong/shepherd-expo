@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { appLog } from '../helper/helper';
 
 export interface CheckInData {
   mood: string;
@@ -164,7 +165,7 @@ export const useCheckInStore = create<CheckInState>()(
         const now = new Date();
         const hoursSinceLastCheckIn = (now.getTime() - lastCheckIn.getTime()) / (1000 * 60 * 60);
         
-        console.log('[CheckInStore] Time since last check-in:', {
+        appLog('[CheckInStore] Time since last check-in:', {
           lastCheckInTime: state.lastCheckInTime,
           hoursSinceLastCheckIn,
           hasBeenOneHour: hoursSinceLastCheckIn >= 1
