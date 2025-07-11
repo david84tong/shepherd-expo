@@ -25,6 +25,7 @@ export interface UserDoc {
   selectedPathId: string;
   email?: string; // User email from authentication
   spiritualGoal: string;
+  streakCommit: number;
   experienceLevel: string;
   notificationTime: string;
   notificationEnabled?: boolean;
@@ -82,6 +83,7 @@ export interface UserStore extends UserDoc {
 
   // Getters for UserDoc fields
   getSpiritualGoal: () => UserDoc['spiritualGoal'];
+  getStreakCommit: () => UserDoc['streakCommit'];
   getExperienceLevel: () => UserDoc['experienceLevel'];
   getFrequencyGoal: () => UserDoc['frequencyGoal'];
   getDenomination: () => UserDoc['denomination'];
@@ -118,6 +120,7 @@ export interface UserStore extends UserDoc {
 
   // Setters for UserDoc fields
   setSpiritualGoal: (goal: UserDoc['spiritualGoal']) => void;
+  setStreakCommit: (streakCommit: UserDoc['streakCommit']) => void;
   setExperienceLevel: (level: UserDoc['experienceLevel']) => void;
   setFrequencyGoal: (goal: UserDoc['frequencyGoal']) => void;
   setDenomination: (denomination?: string) => void;

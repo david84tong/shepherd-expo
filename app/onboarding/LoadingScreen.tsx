@@ -352,19 +352,15 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             totalSteps: loadingPoints.length,
             timeSpent: currentStep * STEP_DURATION + FINAL_DELAY,
             abTestGroup: abTestValue,
-            redirectTo: abTestValue === 0 ? 'PricingScreen' : 'PricingScreen',
+            redirectTo: 'streakCommitment'
           });
 
-          // Navigate based on A/B test value - but skip if from check-in
+          // Navigate to streak commitment screen
           if (!isCheckInFlow) {
-            appLog('[LoadingScreen] Navigating to pricing screen (not check-in flow)');
-            if (abTestValue === 0) {
-              router.push('/PricingScreen');
-            } else {
-              router.push('/onboardin/OldPricingScreen');
-            }
+            appLog('[LoadingScreen] Navigating to streak commitment screen (not check-in flow)');
+            router.push('/onboarding/rating');
           } else {
-            appLog('[LoadingScreen] Skipping pricing navigation (check-in flow detected)');
+            appLog('[LoadingScreen] Skipping streak commitment navigation (check-in flow detected)');
           }
         }, FINAL_DELAY);
       }

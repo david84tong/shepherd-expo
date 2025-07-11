@@ -507,5 +507,14 @@
     "create_personalized_devotional": "Basierend auf einem Check-in",
     "pour_out_your_heart": "Gieße dein Herz aus",
     "let_your_prayers_fill_your_cup": "Lasse deine Gebete deinen Becher füllen",
-    "hold_to_begin": "Halte, um zu beginnen"
+    "hold_to_begin": "Halte, um zu beginnen",
+    "onboarding_streak_commitment_7_day": "7 Tage Verpflichtung",
+    "onboarding_streak_commitment_14_day": "14 Tage Verpflichtung",
+    "onboarding_streak_commitment_30_day": "30 Tage Verpflichtung",
+    "onboarding_streak_commitment_50_day": "50 Tage Verpflichtung",
+    "onboarding_streak_commitment_faithful": "Treu",
+    "onboarding_streak_commitment_devoted": "Verpflichtet",
+    "onboarding_streak_commitment_blessed": "Gebetet",
+    "onboarding_streak_commitment_sanctified": "Heilig",
+    "onboarding_streak_commitment_button": "Mein Verpflichtung annehmen"
 }

@@ -346,6 +346,8 @@ export default function SaveProgressScreen() {
         isPro: false,
         isProWithReferral: false,
         completedMapPaths: [],
+        streakCommit: allResponses.streakCommit || 7,
+        customDevotionals: [],
       };
 
       appLog('Creating user data:', JSON.stringify(userData));
@@ -362,6 +364,7 @@ export default function SaveProgressScreen() {
         ...userData,
         $name: displayName,
         spiritual_goal: spiritualGoal,
+        // streak_commit: userData.streakCommit,
         experience_level: userData.experienceLevel,
         denomination: userData.denomination,
         age_range: userData.ageRange,

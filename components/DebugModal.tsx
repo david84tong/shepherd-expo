@@ -38,6 +38,7 @@ const ONBOARDING_SCREENS: DebugScreen[] = [
   { name: 'Onboarding 7 - Notifications', route: '/onboarding/7' },
   { name: 'Onboarding 9 - Notification Permission', route: '/onboarding/9' },
   { name: 'Onboarding 10 - Reminder Time', route: '/onboarding/10' },
+  { name: 'Onboarding 11 - Streak Commitment', route: '/onboarding/streakCommitment' },
   { name: 'Loading Screen', route: '/onboarding/LoadingScreen' },
   { name: 'Lamb Growth Explainer', route: '/onboarding/explainer' },
 ];

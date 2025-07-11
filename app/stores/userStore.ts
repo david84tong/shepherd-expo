@@ -161,6 +161,7 @@ const initialState: UserDoc = {
   spiritualGoal: 'Walk',
   experienceLevel: 'new',
   frequencyGoal: 'daily',
+  streakCommit: 7,
   denomination: '',
   displayName: '',
   selectedPathId: '',
@@ -369,6 +370,7 @@ export const useUserStore = create<UserStore>()(
         const state = get();
         return state?.spiritualGoal || initialState.spiritualGoal;
       },
+      getStreakCommit: () => get().streakCommit || initialState.streakCommit,
       getExperienceLevel: () => get().experienceLevel || initialState.experienceLevel,
       getFrequencyGoal: () => get().frequencyGoal || initialState.frequencyGoal,
       getDenomination: () => get().denomination || initialState.denomination,
@@ -411,6 +413,7 @@ export const useUserStore = create<UserStore>()(
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
+      setStreakCommit: (streakCommit) => set({ streakCommit }),
       setExperienceLevel: (experienceLevel) => set({ experienceLevel }),
       setFrequencyGoal: (frequencyGoal) => set({ frequencyGoal }),
       setDenomination: (denomination) => set({ denomination }),
