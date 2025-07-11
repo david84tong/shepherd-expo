@@ -209,6 +209,7 @@ export default function HomeScreen() {
     showJournalContent,
     showShareCard,
     isDarkContant,
+    riveInitialized,
 
     // Store values
     mode,
@@ -261,6 +262,7 @@ export default function HomeScreen() {
     levelInfo,
     buttonTitle,
     showDevotionalContent,
+    riveEntranceAnim,
 
     // Handlers
     handleDevotionalFinishPress,
@@ -584,7 +586,7 @@ export default function HomeScreen() {
           justifyContent: 'center',
           opacity: riveSkinInitialized ? 1 : 0, // Hide until skin is initialized
         }}>
-        <TouchableOpacity
+      {riveInitialized?  <TouchableOpacity
           onPress={() => {
             hapticLight();
             analytics.logEvent('HomeScreen_Tapped_LambName');
@@ -599,8 +601,8 @@ export default function HomeScreen() {
               ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
               : ''}
           </Text>
-        </TouchableOpacity>
-        <View
+        </TouchableOpacity>:null}
+        <Animated.View
           style={{
             width: '100%',
             height: RPH(27),
@@ -608,6 +610,16 @@ export default function HomeScreen() {
             justifyContent: 'center',
             zIndex: 10,
             marginLeft: RPH(1),
+            opacity: riveEntranceAnim,
+            transform: [
+              {
+                translateY: riveEntranceAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [50, 0], // Start 50px below, animate to original position
+                  extrapolate: 'clamp',
+                }),
+              },
+            ],
           }}>
           {IS_ANDROID ? (
             <Rive
@@ -622,7 +634,7 @@ export default function HomeScreen() {
               style={{
                 width: RPH(30),
                 height: RPH(30),
-                opacity: new Date().getHours() >= 19 ? 0.85 : 1,
+                opacity: riveInitialized ? (new Date().getHours() >= 19 ? 0.85 : 1) : 0,
               }}
             />
           ) : (
@@ -638,11 +650,11 @@ export default function HomeScreen() {
               style={{
                 width: RPH(30),
                 height: RPH(30),
-                opacity: new Date().getHours() >= 19 ? 0.85 : 1,
+                opacity: riveInitialized ? (new Date().getHours() >= 19 ? 0.85 : 1) : 0,
               }}
             />
           )}
-        </View>
+        </Animated.View>
       </View>
     );
   }, [
@@ -655,6 +667,8 @@ export default function HomeScreen() {
     lambName,
     isLevelPillExpanded,
     riveSkinInitialized,
+    riveInitialized,
+    riveEntranceAnim,
   ]);
 
   // Gate of rendering: only render the screen if the assets are ready

@@ -92,6 +92,7 @@ export const useHomeScreen = () => {
   const [showShareCard, setShowShareCard] = useState(false);
   const [riveError, setRiveError] = useState<any>(null);
   const [riveSkinInitialized, setRiveSkinInitialized] = useState(false);
+  const [riveInitialized, setRiveInitialized] = useState(false);
   const clearParamTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Store hooks  
@@ -172,6 +173,7 @@ export const useHomeScreen = () => {
   const controlRowOpacity = useRef(new Animated.Value(0)).current;
   const pan = useRef(new Animated.ValueXY()).current;
   const translateY = useRef(new Animated.Value(0)).current;
+  const riveEntranceAnim = useRef(new Animated.Value(0)).current;
 
   const MAX_HEARTS = 100;
   // Rive animation hook
@@ -1359,6 +1361,17 @@ function resetOpenedDevotionalFromParam(){
         lastActionInputRef.current = targetAction;
         appLog(`Set Rive Action-Number: ${targetAction} on play (changed)`);
       }
+      
+      // Mark Rive as initialized so it becomes visible
+      setRiveInitialized(true);
+      
+      // Animate the Rive entrance from bottom to top
+      Animated.timing(riveEntranceAnim, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.out(Easing.back(1.2)),
+        useNativeDriver: true,
+      }).start();
     } catch (e) {
       appLog('Error setting Rive inputs on play:', e);
     }
@@ -1394,6 +1407,7 @@ function resetOpenedDevotionalFromParam(){
     showJournalContent,
     showShareCard,
     isDarkContant,
+    riveInitialized,
 
     // Store values
     mode,
@@ -1458,6 +1472,7 @@ function resetOpenedDevotionalFromParam(){
     showGlow,
     levelInfo,
     buttonTitle,
+    riveEntranceAnim,
 
     // Handlers
     handleDevotionalFinishPress,
