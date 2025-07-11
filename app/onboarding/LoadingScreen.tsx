@@ -361,7 +361,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             if (abTestValue === 0) {
               router.push('/PricingScreen');
             } else {
-              router.push('/onboardin/OldPricingScreen');
+              router.push('/onboarding/OldPricingScreen');
             }
           } else {
             appLog('[LoadingScreen] Skipping pricing navigation (check-in flow detected)');
