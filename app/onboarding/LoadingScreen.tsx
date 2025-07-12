@@ -357,10 +357,14 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
           // Navigate to streak commitment screen
           if (!isCheckInFlow) {
-            appLog('[LoadingScreen] Navigating to streak commitment screen (not check-in flow)');
-            router.push('/onboarding/rating');
+            appLog('[LoadingScreen] Navigating to pricing screen (not check-in flow)');
+            if (abTestValue === 0) {
+              router.push('/PricingScreen');
+            } else {
+              router.push('/PricingScreen');
+            }
           } else {
-            appLog('[LoadingScreen] Skipping streak commitment navigation (check-in flow detected)');
+            appLog('[LoadingScreen] Skipping pricing navigation (check-in flow detected)');
           }
         }, FINAL_DELAY);
       }
