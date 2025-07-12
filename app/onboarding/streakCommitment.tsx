@@ -1,10 +1,13 @@
+// Core React & React Native
+import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
+import { View, Text, Pressable, StatusBar, Image, Animated } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useState, useRef, useLayoutEffect } from 'react';
-import { View, Text, Pressable, StatusBar, Image } from 'react-native';
-import { useOnboardingStore } from '../stores/onboardingStore';
-import { useUserStore } from '../stores/userStore';
-import analytics from '../../utils/analytics';
-import PrimaryButton from '../../components/PrimaryButton';
+
+// Third-party libraries
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Rive, { RiveRef } from 'rive-react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useAssets } from 'expo-asset';
 import {
   useAnimatedStyle,
   withTiming,
@@ -12,117 +15,139 @@ import {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import { toBool } from '../utils/toBool';
-import CustomAnimatedView from '../components/CustomAnimatedView';
-import { hapticLight } from '~/utils/haptics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { appLog } from '../helper/helper';
-import i18n from '../utils/i18n';
+
+// Store & Utils
+import { useOnboardingStore } from '../stores/onboardingStore';
+import { useUserStore } from '../stores/userStore';
 import { useSoundStore } from '../stores/soundStore';
+import analytics from '../../utils/analytics';
+import { toBool } from '../utils/toBool';
+import { appLog, RPH } from '../helper/helper';
+import i18n from '../utils/i18n';
+import { IS_ANDROID } from '../utils/utils';
+import { hapticLight } from '~/utils/haptics';
+
+// Components
+import PrimaryButton from '../../components/PrimaryButton';
+import CustomAnimatedView from '../components/CustomAnimatedView';
+
+// Assets
+import gemIcon from '../../assets/icons/greenGemIcon.png';
+
+// Constants
+const STATE_MACHINE = 'State Machine 1';
 
 const STREAK_OPTIONS = [
-  { 
-    days: 7, 
-    label: i18n.t('onboarding_streak_commitment_7_day'), 
+  {
+    days: 3,
+    label: i18n.t('onboarding_streak_commitment_3_day'),
     status: i18n.t('onboarding_streak_commitment_faithful'),
+    reward: {
+      type: 'gem',
+      amount: 100,
+      description: '100 gems',
+      scale: 1.2,
+    },
   },
-  { 
-    days: 14, 
-    label: i18n.t('onboarding_streak_commitment_14_day'), 
+  {
+    days: 7,
+    label: i18n.t('onboarding_streak_commitment_7_day'),
     status: i18n.t('onboarding_streak_commitment_devoted'),
+    reward: {
+      type: 'gem',
+      amount: 300,
+      description: '300 gems',
+      scale: 1.4,
+    },
   },
-  { 
-    days: 30, 
-    label: i18n.t('onboarding_streak_commitment_30_day'), 
+  {
+    days: 21,
+    label: i18n.t('onboarding_streak_commitment_21_day'),
     status: i18n.t('onboarding_streak_commitment_blessed'),
-  },
-  { 
-    days: 50, 
-    label: i18n.t('onboarding_streak_commitment_50_day'), 
-    status: i18n.t('onboarding_streak_commitment_sanctified'),
+    reward: {
+      type: 'skin',
+      description: 'Phoenix Lamb Skin',
+      scale: 1.6,
+    },
   },
 ];
 
+// Animation Helpers
+const createAnimationSequence = (
+  rewardCardOpacity: Animated.Value,
+  rewardCardScale: Animated.Value,
+  gemTextOpacity: Animated.Value,
+  chestScale: Animated.Value,
+  scaleValue: number
+) => {
+  return Animated.sequence([
+    Animated.timing(chestScale, {
+      toValue: scaleValue,
+      duration: 500,
+      useNativeDriver: true,
+    }),
+    Animated.parallel([
+      Animated.timing(rewardCardOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(rewardCardScale, {
+        toValue: 1,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]),
+    Animated.timing(gemTextOpacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }),
+  ]);
+};
+
 export default function StreakCommitmentScreen() {
+  // Hooks
   const router = useRouter();
   const params = useLocalSearchParams();
   const { setResponse } = useOnboardingStore();
-  const setStreakCommit = useUserStore((state) => state.setStreakCommit);
-  const [selectedStreak, setSelectedStreak] = useState<number | null>(null);
-  const { playButtonSound } = useSoundStore();
+  const { playButtonSound, playChestOpeningSound } = useSoundStore();
+  const [riveAssets] = useAssets([
+    require('../../assets/riveAnimations/successLamb.riv'),
+    require('../../assets/riveAnimations/new_shepherd.riv'),
+  ]);
 
-  // Track if animations have been initialized
+  // State
+  const [selectedStreak, setSelectedStreak] = useState<number | null>(null);
+  const [showRewardAnimation, setShowRewardAnimation] = useState(false);
+  const [showFireLambAnimation, setShowFireLambAnimation] = useState(false);
+  const [riveLoaded, setRiveLoaded] = useState(false);
+
+  // Refs
+  const riveRef = useRef<RiveRef>(null);
+  const riveRef10 = useRef<RiveRef>(null);
   const animationsInitialized = useRef(false);
 
-  // Create Reanimated shared values for each component
+  // Animation Values
+  const rewardCardOpacity = useRef(new Animated.Value(0)).current;
+  const rewardCardScale = useRef(new Animated.Value(0.8)).current;
+  const gemTextOpacity = useRef(new Animated.Value(0)).current;
+  const chestScale = useRef(new Animated.Value(1)).current;
+
+  // Shared Values
   const screenOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
-
   const lambOpacity = useSharedValue(0);
   const lambTranslateY = useSharedValue(20);
-
   const verseOpacity = useSharedValue(0);
   const verseTranslateY = useSharedValue(20);
-
   const optionsOpacity = useSharedValue(0);
   const optionsTranslateY = useSharedValue(20);
-
   const buttonOpacity = useSharedValue(0);
   const buttonTranslateY = useSharedValue(20);
 
-  // Run animations only once during initial layout
-  useLayoutEffect(() => {
-    if (animationsInitialized.current) return;
-
-    const immediate = toBool(params?.immediate);
-    screenOpacity.value = immediate ? 1 : 0;
-
-    if (!immediate) {
-      screenOpacity.value = withTiming(1, { duration: 250 });
-    }
-
-    // Reset animation values with minimal delay
-    const timer = setTimeout(() => {
-      titleOpacity.value = 0;
-      titleTranslateY.value = 20;
-      lambOpacity.value = 0;
-      lambTranslateY.value = 20;
-      verseOpacity.value = 0;
-      verseTranslateY.value = 20;
-      optionsOpacity.value = 0;
-      optionsTranslateY.value = 20;
-      buttonOpacity.value = 0;
-      buttonTranslateY.value = 20;
-
-      // Staggered animations for each component with shorter delays
-      const animateComponent = (opacity: any, translateY: any, delay: number) => {
-        opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
-        translateY.value = withDelay(
-          delay,
-          withSpring(0, {
-            damping: 16,
-            stiffness: 100,
-            mass: 0.8,
-          })
-        );
-      };
-
-      // Use shorter delays between components
-      animateComponent(titleOpacity, titleTranslateY, 50);
-      animateComponent(lambOpacity, lambTranslateY, 100);
-      animateComponent(verseOpacity, verseTranslateY, 150);
-      animateComponent(optionsOpacity, optionsTranslateY, 200);
-      animateComponent(buttonOpacity, buttonTranslateY, 250);
-
-      // Mark animations as initialized
-      animationsInitialized.current = true;
-    }, 50);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Create animated style for the screen container
+  // Animated Styles
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
     flex: 1,
@@ -132,11 +157,6 @@ export default function StreakCommitmentScreen() {
   const lambStyle = useAnimatedStyle(() => ({
     opacity: lambOpacity.value,
     transform: [{ translateY: lambTranslateY.value }],
-  }));
-
-  const verseStyle = useAnimatedStyle(() => ({
-    opacity: verseOpacity.value,
-    transform: [{ translateY: verseTranslateY.value }],
   }));
 
   const optionsStyle = useAnimatedStyle(() => ({
@@ -149,117 +169,296 @@ export default function StreakCommitmentScreen() {
     transform: [{ translateY: buttonTranslateY.value }],
   }));
 
+  // Effects
+  useEffect(() => {
+    if (!riveRef10.current || !riveLoaded) return;
+    riveRef10.current?.setInputState(STATE_MACHINE, 'Skin-Number', 99);
+    riveRef10.current?.setInputState(STATE_MACHINE, 'Action-Number', 10);
+  }, [riveLoaded]);
+
+  useEffect(() => {
+    appLog('Rive assets loaded:', riveAssets);
+    if (riveAssets && riveAssets[1]) {
+      appLog('Rive asset URI:', riveAssets[1].uri);
+      setTimeout(() => {
+        setRiveLoaded(true);
+        appLog('Rive loaded via timeout');
+      }, 500);
+    }
+  }, [riveAssets]);
+
+  useLayoutEffect(() => {
+    if (animationsInitialized.current) return;
+
+    const immediate = toBool(params?.immediate);
+    screenOpacity.value = immediate ? 1 : 0;
+
+    if (!immediate) {
+      screenOpacity.value = withTiming(1, { duration: 250 });
+    }
+
+    const timer = setTimeout(() => {
+      // Reset animation values
+      [
+        { opacity: titleOpacity, translateY: titleTranslateY },
+        { opacity: lambOpacity, translateY: lambTranslateY },
+        { opacity: verseOpacity, translateY: verseTranslateY },
+        { opacity: optionsOpacity, translateY: optionsTranslateY },
+        { opacity: buttonOpacity, translateY: buttonTranslateY },
+      ].forEach(({ opacity, translateY }) => {
+        opacity.value = 0;
+        translateY.value = 20;
+      });
+
+      // Staggered animations
+      const animateComponent = (opacity: any, translateY: any, delay: number) => {
+        opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
+        translateY.value = withDelay(
+          delay,
+          withSpring(0, { damping: 16, stiffness: 100, mass: 0.8 })
+        );
+      };
+
+      // Animate components with shorter delays
+      [
+        { opacity: titleOpacity, translateY: titleTranslateY, delay: 50 },
+        { opacity: lambOpacity, translateY: lambTranslateY, delay: 100 },
+        { opacity: verseOpacity, translateY: verseTranslateY, delay: 150 },
+        { opacity: optionsOpacity, translateY: optionsTranslateY, delay: 200 },
+        { opacity: buttonOpacity, translateY: buttonTranslateY, delay: 250 },
+      ].forEach(({ opacity, translateY, delay }) => {
+        animateComponent(opacity, translateY, delay);
+      });
+
+      animationsInitialized.current = true;
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handlers
+  const playChestAnimation = () => {
+    // Reset animations
+    rewardCardOpacity.setValue(0);
+    rewardCardScale.setValue(0.8);
+    gemTextOpacity.setValue(0);
+    chestScale.setValue(1);
+
+    // Trigger Rive animation
+    if (riveRef.current) {
+      riveRef.current.reset();
+      riveRef.current.play();
+    }
+
+    const selectedOption = STREAK_OPTIONS.find((option) => option.days === selectedStreak);
+    const scaleValue = selectedOption?.reward.scale || 1;
+
+    createAnimationSequence(
+      rewardCardOpacity,
+      rewardCardScale,
+      gemTextOpacity,
+      chestScale,
+      scaleValue
+    ).start();
+  };
+
   const handleStreakSelect = (days: number) => {
     hapticLight();
+    setShowFireLambAnimation(false);
+    
+    if (days === 21) {
+      setShowFireLambAnimation(true);
+      setShowRewardAnimation(false);
+    }
+    
     setSelectedStreak(days);
-    playButtonSound()
-    analytics.logEvent('StreakCommitmentScreen_Selected', {
-      days: days
-    });
+    playButtonSound();
+    setShowRewardAnimation(true);
+    playChestOpeningSound?.();
+
+    setTimeout(() => {
+      playChestAnimation();
+    }, 100);
+
+    analytics.logEvent('StreakCommitmentScreen_Selected', { days });
   };
 
   const handleContinue = async () => {
-    if (selectedStreak) {
-      hapticLight();
-      
-      // Save streak commitment
-      await setResponse('streakCommit', selectedStreak);
-      //  setStreakCommit(selectedStreak);
-      
-      analytics.logEvent('StreakCommitmentScreen_Continued', {
-        selectedStreak
-      });
+    if (!selectedStreak) return;
 
-      // Get A/B test value
-      let abTestValue = 0;
-      try {
-        const storedAbTest = await AsyncStorage.getItem('abTest');
-        if (storedAbTest !== null) {
-          abTestValue = parseInt(storedAbTest, 10);
-          appLog('[StreakCommitmentScreen] Retrieved A/B test value:', abTestValue);
-        }
-      } catch (error) {
-        console.error('[StreakCommitmentScreen] Error retrieving A/B test value:', error);
-      }
+    hapticLight();
+    await setResponse('streakCommit', selectedStreak);
 
-      // Animate out and navigate
+    analytics.logEvent('StreakCommitmentScreen_Continued', { selectedStreak });
+
+    try {
+      const storedAbTest = await AsyncStorage.getItem('abTest');
+      const abTestValue = storedAbTest !== null ? parseInt(storedAbTest, 10) : 0;
+      appLog('[StreakCommitmentScreen] Retrieved A/B test value:', abTestValue);
+
       screenOpacity.value = withTiming(0, { duration: 300 });
-      
+
       setTimeout(() => {
         router.push({
           pathname: abTestValue === 0 ? '/onboarding/PricingScreen' : '/onboarding/OldPricingScreen',
-          params: {
-            animated: true,
-            animation: 'fade',
-            immediate: false,
-          },
+          params: { animated: true, animation: 'fade', immediate: false },
         } as any);
       }, 300);
+    } catch (error) {
+      console.error('[StreakCommitmentScreen] Error retrieving A/B test value:', error);
     }
+  };
+
+  // Render Methods
+  const renderLambAnimation = () => {
+    if (!showFireLambAnimation || !riveAssets) return null;
+
+    return (
+      <View className="w-[260px] h-[260px]">
+        {IS_ANDROID ? (
+          <Rive
+            ref={riveRef10}
+            resourceName={'new_shepherd'}
+            stateMachineName="State Machine 1"
+            style={{ width: '100%', height: '100%' }}
+          />
+        ) : (
+          <Rive
+            ref={riveRef10}
+            url={riveAssets[1].uri!}
+            stateMachineName="State Machine 1"
+            
+            style={{ width: "100%", height: "100%" }}
+          />
+        )}
+      </View>
+    );
+  };
+
+  const renderRewardAnimation = () => {
+    if (!showRewardAnimation || !riveAssets || showFireLambAnimation) return null;
+
+    return (
+      <View className="w-full items-center justify-center" style={{ height: RPH(20) }}>
+        {IS_ANDROID ? (
+          <Rive
+            ref={riveRef}
+            resourceName={'success_lamb'}
+            artboardName="chest"
+            autoplay={true}
+            style={{ width: '160%', height: '160%' }}
+          />
+        ) : (
+          <Rive
+            ref={riveRef}
+            url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
+            artboardName="chest"
+            autoplay={true}
+            style={{ width: '160%', height: '160%' }}
+          />
+        )}
+      </View>
+    );
+  };
+
+  const renderRewardCard = () => {
+    if (!showRewardAnimation || !selectedStreak || showFireLambAnimation) return null;
+
+    return (
+      <View className="items-center">
+        <Animated.View
+          className="bg-white/80 rounded-[28px] px-8 py-6 border-[2.5px] border-accentGold w-[85%] max-w-sm"
+          style={{
+            opacity: rewardCardOpacity,
+            transform: [{ scale: rewardCardScale }],
+          }}>
+          <Text className="text-sm font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
+            STREAK REWARD
+          </Text>
+          <Animated.View
+            className="flex-row items-center justify-center"
+            style={{ opacity: gemTextOpacity }}>
+            <Image
+              source={gemIcon}
+              style={{ width: RPH(4), height: RPH(4) }}
+              className="mr-3"
+            />
+            <Text className="font-din text-textPrimary text-3xl font-bold">
+              +
+              {STREAK_OPTIONS.find((option) => option.days === selectedStreak)?.reward
+                .amount || 0}{' '}
+              Gems
+            </Text>
+          </Animated.View>
+        </Animated.View>
+      </View>
+    );
+  };
+
+  const renderDefaultLamb = () => {
+    if (selectedStreak) return null;
+
+    return (
+      <CustomAnimatedView
+        style={lambStyle}
+        className="h-[200px] w-full justify-center items-center mb-4 mt-[80px]">
+        <Image
+          source={require('../../assets/onboarding/streaklambtalk.png')}
+          style={{ width: 250, height: 250 }}
+          className="absolute left-[12%] -top-[45%] right-0"
+          resizeMode="contain"
+        />
+        <Image
+          source={require('../../assets/onboarding/streakLamb.png')}
+          style={{ width: 400, height: 400 }}
+          resizeMode="contain"
+        />
+      </CustomAnimatedView>
+    );
   };
 
   return (
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <CustomAnimatedView style={screenStyle} className="px-6 pt-12">
+        <View className="flex-1 items-center">
+          {renderDefaultLamb()}
+          {renderLambAnimation()}
+          {renderRewardAnimation()}
+          {renderRewardCard()}
 
-       <View className="flex-1 justify-center items-center" >
-         {/* Rive Animation */}
-         <CustomAnimatedView
-          style={lambStyle}
-          className="h-[200px] w-full justify-center items-center mb-4 -mt-12">
-            <Image
-            source={require('../../assets/onboarding/streaklambtalk.png')}
-            style={{ width: 250, height: 250 }}
-            className="absolute  left-[12%] -top-[45%] right-0"
-            resizeMode="contain"
-          />
-            
-         <Image
-            source={require('../../assets/onboarding/streakLamb.png')}
-            style={{ width: 400, height: 400 }}
-            resizeMode="contain"
-          />
-        </CustomAnimatedView>
-
-       
-        {/* Options */}
-        <CustomAnimatedView style={optionsStyle} className="mt-8 space-y-4 w-full gap-3">
-          {STREAK_OPTIONS.map((option) => (
-            <Pressable
-              key={option.days}
-              onPress={() => handleStreakSelect(option.days)}
-              onPressIn={() => hapticLight()}
-              className={`p-4 rounded-3xl border-t-2 border-b-[6px] border-l-2 border-r-2 ${
-                selectedStreak === option.days
-                  ? 'bg-white border-accentGold/30'
-                  : 'bg-black/10 border-accentGold/80'
-              }`}
-            >
-              <View className="flex-col">
-                <View className="flex-row justify-between items-center">
-                  <Text
-                    className={`font-feather text-xl ${
-                      selectedStreak === option.days ? 'text-textPrimary' : 'text-textPrimary'
-                    }`}
-                  >
-                    {option.label}
-                  </Text>
-                  <Text
-                    className={`font-din text-lg ${
-                      selectedStreak === option.days ? 'text-textPrimary' : 'text-textPrimary'
-                    }`}
-                  >
-                    {option.status}
-                  </Text>
+          <CustomAnimatedView style={optionsStyle} className="mt-8 space-y-4 w-full gap-3">
+            {STREAK_OPTIONS.map((option) => (
+              <Pressable
+                key={option.days}
+                onPress={() => handleStreakSelect(option.days)}
+                onPressIn={() => hapticLight()}
+                className={`p-4 rounded-3xl border-t-2 border-b-[6px] border-l-2 border-r-2 ${
+                  selectedStreak !== option.days
+                    ? 'bg-white border-accentGold/30'
+                    : 'bg-surfaceCream border-accentGold/80'
+                }`}>
+                <View className="flex-col">
+                  <View className="flex-row justify-between items-center">
+                    <Text
+                      className={`font-feather text-xl ${
+                        selectedStreak === option.days ? 'text-textPrimary' : 'text-textPrimary'
+                      }`}>
+                      {option.label}
+                    </Text>
+                    <Text
+                      className={`font-din text-lg ${
+                        selectedStreak === option.days ? 'text-textPrimary' : 'text-textPrimary'
+                      }`}>
+                      {option.status}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            </Pressable>
-          ))}
-        </CustomAnimatedView>
-       </View>
+              </Pressable>
+            ))}
+          </CustomAnimatedView>
+        </View>
 
-        {/* Continue Button */}
         <CustomAnimatedView style={buttonStyle} className="absolute bottom-10 left-4 right-4">
           <PrimaryButton
             title={i18n.t('onboarding_streak_commitment_button')}
@@ -271,4 +470,4 @@ export default function StreakCommitmentScreen() {
       </CustomAnimatedView>
     </>
   );
-} 
+}

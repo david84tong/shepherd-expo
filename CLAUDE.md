@@ -41,26 +41,7 @@
 |      1 | Raising Hand |
 |      0 | Idle         |
 
-For skins 
-riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
-| Number | Skin Name   |
-| -----: | ----------- |
-|      0 | Normal Skin |
-|     99 | Gold Skin   |
-|      1 | Pink Skin   |
-|      2 | Noah Skin   |
-|      3 | Cloak Skin  |
-|      4 | Banana Skin |
-|      5 | 10 Skin     |
-|      6 | Apple Skin  |
-|      7 | Lion Skin   |
-|      8 | Whale Skin  |
-|      9 | Armor Skin  |
-
-if user is baby Level-Number to 1  
-riveRef.current.setInputState('State Machine 1', 'Level-Number', 1);
-if level is >= 33 set Wings ON/OFF  to true
-riveRef.current.setInputState('State Machine 1', 'Wings ON/OFF', 1);
+0
 
 
 ## Firebase

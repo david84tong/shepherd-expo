@@ -161,7 +161,7 @@ const initialState: UserDoc = {
   spiritualGoal: 'Walk',
   experienceLevel: 'new',
   frequencyGoal: 'daily',
-  streakCommit: 7,
+  streakCommit: 3,
   denomination: '',
   displayName: '',
   selectedPathId: '',
