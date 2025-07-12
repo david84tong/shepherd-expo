@@ -187,6 +187,10 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
   presentFreeTrialPaywall: async () => {
     appLog('[SubscriptionStore] presentFreeTrialPaywall called');
+
+    if(Platform.OS =="android"){
+      return get().presentPaywall();
+    }
     
     // Check if a paywall is already presenting
     if (get().isPaywallPresenting) {
