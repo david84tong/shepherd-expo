@@ -38,6 +38,7 @@ import josephsCoat from '~/assets/lambStatic/JosephsCoat.png';
 import armorOfGod from '~/assets/lambStatic/armorOfGod.png';
 import whale from '~/assets/lambStatic/whale.png';
 import pinkSkin from '~/assets/lambStatic/pinkSkin.png';
+import phoenixSkin from '~/assets/lambStatic/FIre_Skin.png';
 import { hapticLight, hapticMedium, hapticSuccess } from '~/utils/haptics';
 // Define store item types
 type StoreCategory = 'skins' | 'powerups' | 'hearts';
@@ -69,6 +70,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const ownedSkins = useShopStore(state => state.ownedSkins);
   const riveRef = useHomeStore(state => state.riveRef);
   const setCurrentSkin = useHomeStore(state => state.setCurrentSkin);
+  const currentStreak = useUserStore(state => state.streakCount || 0);
 
   // Use reactive store subscriptions for real-time updates
   const userGems = useUserStore(state => state.gens || 0);
@@ -106,6 +108,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       isPro: true,
       isOwned: isProMember, // Pro users automatically own this skin
     },
+    
     {
       id: 'skin_default',
       category: 'skins',
@@ -217,9 +220,21 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       skinNumber: 9,
       unlockLevel: 24,
     },
+    {
+      id: 'phoenix_skin',
+      category: 'skins',
+      name: 'Phoenix Skin',
+      description: 'A majestic skin unlocked after 21 days in a row. Embark on this alliance.',
+      price: 0,
+      currency: 'gems',
+      image: phoenixSkin,
+      skinNumber: 10,
+      unlockLevel: 1, // Level requirement is not the main unlock condition
+      isOwned: false
+    },
 
 
-  ], [userLevel, isProMember]);
+  ], [userLevel, isProMember, currentStreak]);
 
   // Filter items by category
   const filteredItems = useMemo(() =>
@@ -432,7 +447,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     const skinId = item.skinNumber?.toString() || item.id;
     const isOwned = item.isOwned || hasSkin(skinId); // Check both item property and shop store
     const isAnointedLamb = item.id === 'skin_super';
-    // Check if the skin is currently equipped
+    const isPhoenixSkin = item.id === 'phoenix_skin';
     const isEquipped = equippedSkin === skinId;
 
     // Debug logging for Annointed Lamb
@@ -449,13 +464,28 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         hasSkinResult: hasSkin(skinId)
       });
     }
+    
+    // Add streak check for Phoenix skin
+    const hasRequiredStreak = isPhoenixSkin ? currentStreak >= 21 : true;
+    const isItemLocked = isLocked || (isPhoenixSkin && !hasRequiredStreak);
+
+    // Debug logging for Phoenix skin
+    if (isPhoenixSkin) {
+      appLog('🔍 Phoenix Skin Debug:', {
+        currentStreak,
+        hasRequiredStreak,
+        isLocked: isItemLocked
+      });
+    }
 
     return (
       <View
         key={item.id}
         className={`${isAnointedLamb
           ? 'bg-lightYellow border-2 border-accentGold shadow-lg'
-          : 'bg-surfaceCreamLight border border-brownBorder shadow-card'
+          : isPhoenixSkin
+            ? 'border-2 border-orange shadow-lg'
+            : 'bg-surfaceCreamLight border border-brownBorder shadow-card'
           } rounded-[24px] mb-4 overflow-hidden h-48`}
         style={isAnointedLamb ? {
           shadowColor: '#FCD34D',
@@ -463,34 +493,44 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           shadowOpacity: 0.3,
           shadowRadius: 8,
           elevation: 8,
+        } : isPhoenixSkin ? {
+          shadowColor: '#FCD34D', // Orange fire color
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.5,
+          shadowRadius: 12,
+          elevation: 10,
         } : {}}>
 
         <View className="flex-row p-4 h-48 justify-between">
           {/* Lamb Image - Full size, no background, clipped at bottom */}
           <View className="w-48 h-full absolute left-0 bottom-0 ml-2">
-            {isAnointedLamb && (
+            {(isAnointedLamb || isPhoenixSkin) && (
               <View
                 className="w-48 h-48 absolute bottom-[-20] rounded-full"
                 style={{
-                  backgroundColor: 'rgba(252, 211, 77, 0.2)',
-                  shadowColor: '#FCD34D',
+                  backgroundColor: isAnointedLamb 
+                    ? 'rgba(252, 211, 77, 0.2)'
+                    : 'rgba(249, 115, 22, 0.1)', // Orange glow for Phoenix
+                  shadowColor: isAnointedLamb 
+                    ? '#FCD34D'
+                    : '#F97316',
                   shadowOffset: { width: 0, height: 0 },
                   right: 4,
-                  shadowOpacity: 0.6,
-                  shadowRadius: 20,
-                  elevation: 10,
+                  shadowOpacity: isAnointedLamb ? 0.6 : 0.7,
+                  shadowRadius: isAnointedLamb ? 20 : 25,
+                  elevation: isAnointedLamb ? 10 : 12,
                 }}
               />
             )}
             <Image
               source={item.image}
-              className="w-48 h-48 absolute bottom-[-20]"
+              className={` ${isPhoenixSkin ? "w-[200px] h-[200px] -left-[18px]" :"w-48 h-48" } absolute bottom-[-20]`}
               resizeMode="contain"
             />
           </View>
 
           {/* Content - Add left padding to account for image */}
-          <View className="flex-1 ml-44 pl-2 mr-2 my-2">
+          <View className="flex-1 ml-44 pl-4 mr-2 my-2">
             {/* Name */}
             <Text className="font-feather text-lg text-textPrimary mb-1">
               {item.name}
@@ -538,7 +578,17 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                     featherIcon="zap"
                   />
                 )
-              ) : isLocked ? (
+              ) : isPhoenixSkin && !hasRequiredStreak ? (
+                <PrimaryButton
+                  title={`${currentStreak}/21 streak `}
+                  onPress={() => {}}
+                  disabled={true}
+                  buttonType="blue"
+                  buttonHeight={40}
+                  width="100%"
+                  featherIcon="lock"
+                />
+              ) : isItemLocked ? (
                 <PrimaryButton
                   title={`Unlocks lvl ${item.unlockLevel}`}
                   onPress={() => { }}

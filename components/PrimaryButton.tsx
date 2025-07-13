@@ -141,7 +141,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     }}>
       <Pressable
         className={
-          `flex-row items-center justify-center px-5  border-[3px]` + `
+          `flex-row items-center justify-center px-3  border-[3px]` + `
           ${disabled || !isActive
             ? (buttonType === 'blue'
               ? 'bg-[#B6E6F7] border-[#B6E6F7]'
