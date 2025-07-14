@@ -346,6 +346,7 @@ export default function StreakCommitmentScreen() {
             ref={riveRef10}
             url={riveAssets[1].uri!}
             stateMachineName="State Machine 1"
+            artboardName="10 Fire Skin"
             style={{ width: "100%", height: "100%" }}
           />
         )}

@@ -23,6 +23,7 @@ const STORE_METHOD_KEYS = [
   'addXp',
   'createUser',
   'getBibleVersion',
+  'getCovenantProgress',
   'getChaptersReadTotal',
   'getCompletedPrayers',
   'getCompletedReadings',
@@ -96,6 +97,7 @@ const STORE_METHOD_KEYS = [
   'setStreakCount',
   'setUpdatedAt',
   'setUser',
+  'setCovenantProgress',
   'setVersesReadTotal',
   'syncFirestoreData'
 ];
@@ -321,6 +323,8 @@ export const useUserStore = create<UserStore>()(
             proExpiryDate: firestoreData.proExpiryDate || state.proExpiryDate,
             // Sync check-in data - ensure it's always an array
             checkIns: Array.isArray(firestoreData.checkIns) ? firestoreData.checkIns : (state.checkIns || []),
+            // Sync covenant progress
+            covenantProgress: firestoreData.covenantProgress || state.covenantProgress,
           };
         });
         appLog('Firestore data sync complete');

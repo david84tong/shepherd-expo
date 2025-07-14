@@ -20,6 +20,13 @@ export interface CheckIn {
   timeStamp: FirebaseFirestoreTypes.Timestamp;
 }
 
+export interface CovenantProgress {
+  currentStreak: number;
+  targetDays: number;
+  progress: number;
+  state: typeof COVENANT_STATES[keyof typeof COVENANT_STATES];
+}
+
 export interface UserDoc {
   //onboarding questions
   id: string;
@@ -27,12 +34,7 @@ export interface UserDoc {
   email?: string; // User email from authentication
   spiritualGoal: string;
   experienceLevel: string;
-  covenantProgress: {
-    currentStreak: number;
-    targetDays: number;
-    progress: number;
-    state: typeof COVENANT_STATES[keyof typeof COVENANT_STATES];
-  };
+  covenantProgress: CovenantProgress;
   notificationTime: string;
   notificationEnabled?: boolean;
   setNotificationTime: (time: string) => Promise<void>;
@@ -114,7 +116,7 @@ export interface UserStore extends UserDoc {
   getCompletedPrayers: () => Prayer[];
   getCompletedReadings: () => Reading[];
   getSkins: () => string[];
-
+  getCovenantProgress: () => CovenantProgress;
   // Getters for Lamb fields
   getLambLevel: () => number;
   getLambXp: () => number;
@@ -155,7 +157,7 @@ export interface UserStore extends UserDoc {
   setSkins: (skins: string[]) => void;
   addSkin: (skin: string) => void;
   setIsProFromOnboarding: (isProFromOnboarding: boolean) => void;
-
+  setCovenantProgress: (progress: CovenantProgress) => void;
   // Setters for Lamb fields
   setLambLevel: (level: number) => void;
   setLambXp: (xp: number) => void;

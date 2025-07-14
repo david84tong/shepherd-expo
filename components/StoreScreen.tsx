@@ -578,16 +578,40 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                     featherIcon="zap"
                   />
                 )
-              ) : isPhoenixSkin && !hasRequiredStreak ? (
-                <PrimaryButton
-                  title={`${currentStreak}/21 streak `}
-                  onPress={() => {}}
-                  disabled={true}
-                  buttonType="blue"
-                  buttonHeight={40}
-                  width="100%"
-                  featherIcon="lock"
-                />
+              ) : isPhoenixSkin ? (
+                hasRequiredStreak ? (
+                  isEquipped ? (
+                    <PrimaryButton
+                      title="Equipped"
+                      onPress={() => { }}
+                      disabled={true}
+                      buttonType="blue"
+                      buttonHeight={40}
+                      width="100%"
+                      featherIcon="check"
+                    />
+                  ) : (
+                    <PrimaryButton
+                      title="Equip"
+                      onPress={() => handleEquip(item)}
+                      disabled={false}
+                      buttonType="blue"
+                      buttonHeight={40}
+                      width="100%"
+                      featherIcon="check"
+                    />
+                  )
+                ) : (
+                  <PrimaryButton
+                    title={`${currentStreak}/21 streak `}
+                    onPress={() => {}}
+                    disabled={true}
+                    buttonType="blue"
+                    buttonHeight={40}
+                    width="100%"
+                    featherIcon="lock"
+                  />
+                )
               ) : isItemLocked ? (
                 <PrimaryButton
                   title={`Unlocks lvl ${item.unlockLevel}`}
