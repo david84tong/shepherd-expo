@@ -350,7 +350,7 @@ export default function SaveProgressScreen() {
 
       appLog('Creating user data:', JSON.stringify(userData));
       // We are checking if user have premium in this mobile also user if purchased before signup from onboarding or user restored from paywall in onboarding before signup.
-      if (isPremium && !isProFromOnboarding) {
+      if (isPremium && isProFromOnboarding) {
         userData.isPro = true;
         userData.proExpiryDate = undefined;
         useUserStore.getState().setProStatus('pro');
@@ -424,7 +424,7 @@ export default function SaveProgressScreen() {
         if (isLoginMode) {
           const isPremium = await checkPremiumStatus();
           const isProFromOnboarding = useUserStore.getState().isProFromOnboarding;
-          if (isPremium && !isProFromOnboarding) {
+          if (isPremium && isProFromOnboarding) {
             useUserStore.getState().setProStatus('pro');
             await firestore().collection('users').doc(user.uid).set(
               {
@@ -540,7 +540,7 @@ export default function SaveProgressScreen() {
         if (isLoginMode) {
           const isPremium = await checkPremiumStatus();
           const isProFromOnboarding = useUserStore.getState().isProFromOnboarding;
-          if (isPremium && !isProFromOnboarding) {
+          if (isPremium && isProFromOnboarding) {
             useUserStore.getState().setProStatus('pro');
           }
           // User exists and data has been fetched in the auth hook
