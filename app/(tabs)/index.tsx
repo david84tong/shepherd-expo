@@ -1265,6 +1265,8 @@ export default function HomeScreen() {
                                     <View className="-mt-4">
                                       <CardStack
                                         data={finalDevotionals}
+                                        dynamicHeight={true}
+                                        baseHeight={280}
                                         renderCard={(
                                           devotional: Devotional,
                                           index: number,
@@ -1278,7 +1280,7 @@ export default function HomeScreen() {
                                             onShare={() => handleDailyVerseShare(devotional)}
                                             showShareButton={true}
                                             showExpandButton={true}
-                                            height={35}
+                                            height="dynamic"
                                           />
                                         )}
                                       />

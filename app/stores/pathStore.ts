@@ -137,13 +137,13 @@ export const usePathStore = create<PathState>()(
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
         
         if (state.lastCompletionDate !== today) {
-          // New day - update the last completion date
+          // New day - reset completion status and update the last completion date
           appLog(`🔄 New day detected. Updating lastCompletionDate from ${state.lastCompletionDate} to ${today}`);
           set({ 
-            lastCompletionDate: today
+            lastCompletionDate: today,
+            completedUnitToday: false // Reset for new day
           });
         }
-        // Note: completedUnitToday is not persisted, so it's always false on app start
       },
       
       // Set selected path
@@ -276,6 +276,7 @@ export const usePathStore = create<PathState>()(
           completedUnitIds: state.completedUnitIds,
           nextUnitPreview: state.nextUnitPreview,
           lastCompletionDate: state.lastCompletionDate,
+          completedUnitToday: state.completedUnitToday, // Persist the daily completion status
         };
       },
     }

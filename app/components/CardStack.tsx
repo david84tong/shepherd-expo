@@ -7,9 +7,11 @@ interface CardStackProps<T> {
     data: T[];
     renderCard: (item: T, index: number, onCardTap: () => void) => React.ReactNode;
     style?: any; // Pass { width: number } to override default width (320)
+    dynamicHeight?: boolean; // New prop to enable dynamic height calculation
+    baseHeight?: number; // Base height in pixels when dynamicHeight is true
 }
 
-function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
+function CardStack<T>({ data, renderCard, style, dynamicHeight = false, baseHeight = 350 }: CardStackProps<T>) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const position = useRef(new Animated.Value(0)).current; // Only X
     const [isAnimating, setIsAnimating] = useState(false);
@@ -51,6 +53,102 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
         }
         return cards;
     }, [currentIndex, data, stackSize]);
+
+    // Calculate dynamic height based on content length
+    const calculateDynamicHeight = useCallback(() => {
+        if (!dynamicHeight) return baseHeight;
+        
+        // Calculate height for all cards in the stack to find the maximum needed height
+        let maxHeight = baseHeight;
+        
+        cardsToShow.forEach((cardInfo) => {
+            const devotional = cardInfo.item as any;
+            if (!devotional) return;
+            
+            let cardHeight = baseHeight;
+            
+            if (devotional.verse) {
+                const verseLength = devotional.verse.length;
+                const lineBreaks = (devotional.verse.match(/\n/g) || []).length;
+                
+                // Calculate height based on both character length and line breaks
+                let verseHeight = 0;
+                
+                // Balanced height calculation for verse content
+                if (verseLength > 400) {
+                    verseHeight += 100; // Add 100px for very long verses
+                } else if (verseLength > 300) {
+                    verseHeight += 85; // Add 85px for very long verses
+                } else if (verseLength > 200) {
+                    verseHeight += 70; // Add 70px for long verses
+                } else if (verseLength > 100) {
+                    verseHeight += 2; // Add 50px for medium verses
+                } else if (verseLength > 50) {
+                    verseHeight += 1; // Add 35px for short verses
+                }
+                
+                // Add extra height for line breaks and estimated text wrapping
+                verseHeight += lineBreaks * 15;
+                
+                // Estimate additional height for text wrapping (assuming ~40 characters per line)
+                const estimatedLines = Math.ceil(verseLength / 40);
+                const extraLineHeight = Math.max(0, estimatedLines - 1) * 8; // 8px per additional line
+                verseHeight += extraLineHeight;
+                
+                cardHeight += verseHeight;
+            }
+            
+            // Add extra height for longer Bible references
+            if (devotional.bibleReference) {
+                const referenceLength = devotional.bibleReference.length;
+                if (referenceLength > 30) {
+                    cardHeight += 15; // Add 15px for very long references
+                } else if (referenceLength > 20) {
+                    cardHeight += 12; // Add 12px for long references
+                }
+            }
+            
+            // Add extra height for custom devotionals that might have additional content
+            if (devotional.id && (devotional.id.startsWith('custom-') || devotional.id.startsWith('ai-'))) {
+                cardHeight += 25; // Add 25px for custom devotionals
+            }
+            
+            // Add extra height for cards with share/expand buttons
+            if (devotional.id) {
+                cardHeight += 20; // Add 20px for button area
+            }
+            
+            // Update max height if this card needs more space
+            maxHeight = Math.max(maxHeight, cardHeight);
+        });
+        
+        // Add extra height for stack overlap effect
+        if (stackSize > 1) {
+            maxHeight += 15; // Extra height for stack effect
+        }
+        
+        // Ensure minimum height and add buffer for safety
+        const finalHeight = Math.max(maxHeight, baseHeight) + 15; // Buffer to prevent overflow
+        
+        // Debug logging for height calculation
+        if (__DEV__) {
+            console.log('🎨 [CardStack] Dynamic height calculation:', {
+                cardsCount: cardsToShow.length,
+                stackSize,
+                baseHeight,
+                maxHeight,
+                finalHeight,
+                verseLengths: cardsToShow.map(card => (card.item as any)?.verse?.length || 0)
+            });
+        }
+        
+        return finalHeight;
+    }, [cardsToShow, dynamicHeight, baseHeight, stackSize]);
+
+    const containerHeight = calculateDynamicHeight();
+
+    // Note: Height is now calculated based on all cards in the stack, not just the current one
+    // This prevents height fluctuation during swipes
 
     // Interpolate rotation for swipe left and right
     const rotate = position.interpolate({
@@ -326,7 +424,16 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
 
     return (
         <View
-            style={[{ width: containerWidth, minHeight: 350, position: 'relative', alignItems: 'center', marginTop: 20 }, style]}
+            style={[
+                { 
+                    width: containerWidth, 
+                    height: containerHeight, 
+                    position: 'relative', 
+                    alignItems: 'center', 
+                    marginTop: 20
+                }, 
+                style
+            ]}
             pointerEvents="box-none"
             onTouchStart={() => {
                 // Mark gesture as potentially active immediately
