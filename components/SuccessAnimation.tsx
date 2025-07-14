@@ -671,6 +671,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     } else {
       // For other success types, check if we should show streak
       if (!sawStreakToday) {
+        // Set sawStreakToday to true before navigating to streak screen
+        setSawStreakToday(true);
+        appLog('Setting sawStreakToday to true before navigating to streak screen');
+        
         router.push({
           pathname: '/streak',
         });
