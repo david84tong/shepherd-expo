@@ -1,4 +1,5 @@
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import { COVENANT_STATES } from '../hooks/streakHook';
 
 export interface MapPathCompletion {
   date: FirebaseFirestoreTypes.Timestamp;
@@ -25,8 +26,13 @@ export interface UserDoc {
   selectedPathId: string;
   email?: string; // User email from authentication
   spiritualGoal: string;
-  streakCommit: number;
   experienceLevel: string;
+  covenantProgress: {
+    currentStreak: number;
+    targetDays: number;
+    progress: number;
+    state: typeof COVENANT_STATES[keyof typeof COVENANT_STATES];
+  };
   notificationTime: string;
   notificationEnabled?: boolean;
   setNotificationTime: (time: string) => Promise<void>;
@@ -83,7 +89,6 @@ export interface UserStore extends UserDoc {
 
   // Getters for UserDoc fields
   getSpiritualGoal: () => UserDoc['spiritualGoal'];
-  getStreakCommit: () => UserDoc['streakCommit'];
   getExperienceLevel: () => UserDoc['experienceLevel'];
   getFrequencyGoal: () => UserDoc['frequencyGoal'];
   getDenomination: () => UserDoc['denomination'];
@@ -120,7 +125,6 @@ export interface UserStore extends UserDoc {
 
   // Setters for UserDoc fields
   setSpiritualGoal: (goal: UserDoc['spiritualGoal']) => void;
-  setStreakCommit: (streakCommit: UserDoc['streakCommit']) => void;
   setExperienceLevel: (level: UserDoc['experienceLevel']) => void;
   setFrequencyGoal: (goal: UserDoc['frequencyGoal']) => void;
   setDenomination: (denomination?: string) => void;

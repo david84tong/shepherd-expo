@@ -70,7 +70,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const ownedSkins = useShopStore(state => state.ownedSkins);
   const riveRef = useHomeStore(state => state.riveRef);
   const setCurrentSkin = useHomeStore(state => state.setCurrentSkin);
-  const currentStreak = useUserStore(state => state.streakCount || 0);
+  const {currentStreak , targetDays} = useUserStore(state => state.covenantProgress);
 
   // Use reactive store subscriptions for real-time updates
   const userGems = useUserStore(state => state.gens || 0);

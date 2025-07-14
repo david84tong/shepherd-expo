@@ -9,6 +9,7 @@ import { syncStreakDataToWidget } from '../../utils/widgetSync';
 import { UserDoc, Lamb, UserStore, MapPathCompletion, CheckIn } from '../models/User';
 import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
 import { appLog } from '../helper/helper';
+import { COVENANT_STATES } from '../hooks/streakHook';
 
 // Constants
 
@@ -161,7 +162,12 @@ const initialState: UserDoc = {
   spiritualGoal: 'Walk',
   experienceLevel: 'new',
   frequencyGoal: 'daily',
-  streakCommit: 3,
+  covenantProgress: {
+    currentStreak: 0,
+    targetDays: 0,
+    progress: 0,
+    state: COVENANT_STATES.NOT_STARTED,
+  },
   denomination: '',
   displayName: '',
   selectedPathId: '',
@@ -370,9 +376,24 @@ export const useUserStore = create<UserStore>()(
         const state = get();
         return state?.spiritualGoal || initialState.spiritualGoal;
       },
-      getStreakCommit: () => get().streakCommit || initialState.streakCommit,
       getExperienceLevel: () => get().experienceLevel || initialState.experienceLevel,
       getFrequencyGoal: () => get().frequencyGoal || initialState.frequencyGoal,
+      getCovenantProgress: () => {
+        const state = get().covenantProgress;
+        const streakCount = state.currentStreak || 0;
+        const streakCommit = state.targetDays || 0;
+        
+        return {
+          currentStreak: streakCount,
+          targetDays: streakCommit,
+          progress: streakCommit > 0 ? (streakCount / streakCommit) * 100 : 0,
+          state: COVENANT_STATES[
+            streakCommit === 0 ? 'NOT_STARTED' :
+            streakCount === 0 ? 'BROKEN' :
+            streakCount >= streakCommit ? 'COMPLETED' : 'IN_PROGRESS'
+          ]
+        };
+      },
       getDenomination: () => get().denomination || initialState.denomination,
       getDisplayName: () => get().displayName || initialState.displayName,
       getSelectedPathId: () => get().selectedPathId || initialState.selectedPathId,
@@ -413,7 +434,7 @@ export const useUserStore = create<UserStore>()(
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
-      setStreakCommit: (streakCommit) => set({ streakCommit }),
+      setCovenantProgress: (covenantProgress : UserDoc['covenantProgress']) => set({ covenantProgress }),
       setExperienceLevel: (experienceLevel) => set({ experienceLevel }),
       setFrequencyGoal: (frequencyGoal) => set({ frequencyGoal }),
       setDenomination: (denomination) => set({ denomination }),

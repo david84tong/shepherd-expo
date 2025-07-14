@@ -26,6 +26,7 @@ import { appLog, RPH } from '../helper/helper';
 import i18n from '../utils/i18n';
 import { IS_ANDROID } from '../utils/utils';
 import { hapticLight } from '~/utils/haptics';
+import { COVENANT_STATES } from '../hooks/streakHook';
 
 // Components
 import PrimaryButton from '../../components/PrimaryButton';
@@ -116,12 +117,12 @@ export default function StreakCommitmentScreen() {
     require('../../assets/riveAnimations/successLamb.riv'),
     require('../../assets/riveAnimations/new_shepherd.riv'),
   ]);
+  const [riveLoaded, setRiveLoaded] = useState(false);
 
   // State
   const [selectedStreak, setSelectedStreak] = useState<number | null>(null);
   const [showRewardAnimation, setShowRewardAnimation] = useState(false);
   const [showFireLambAnimation, setShowFireLambAnimation] = useState(false);
-  const [riveLoaded, setRiveLoaded] = useState(false);
 
   // Refs
   const riveRef = useRef<RiveRef>(null);
@@ -169,23 +170,7 @@ export default function StreakCommitmentScreen() {
     transform: [{ translateY: buttonTranslateY.value }],
   }));
 
-  // Effects
-  useEffect(() => {
-    if (!riveRef10.current || !riveLoaded) return;
-    riveRef10.current?.setInputState(STATE_MACHINE, 'Skin-Number', 99);
-    riveRef10.current?.setInputState(STATE_MACHINE, 'Action-Number', 10);
-  }, [riveLoaded]);
-
-  useEffect(() => {
-    appLog('Rive assets loaded:', riveAssets);
-    if (riveAssets && riveAssets[1]) {
-      appLog('Rive asset URI:', riveAssets[1].uri);
-      setTimeout(() => {
-        setRiveLoaded(true);
-        appLog('Rive loaded via timeout');
-      }, 500);
-    }
-  }, [riveAssets]);
+ 
 
   useLayoutEffect(() => {
     if (animationsInitialized.current) return;
@@ -236,6 +221,28 @@ export default function StreakCommitmentScreen() {
     return () => clearTimeout(timer);
   }, []);
 
+   // Update skin number input
+   useEffect(() => {
+    if (!riveRef10.current || !riveLoaded) return;
+    riveRef10.current?.setInputState(STATE_MACHINE, 'Skin-Number', 10);
+    riveRef10.current?.setInputState(STATE_MACHINE, 'Action-Number', 12);
+    appLog('Rive inputs set - Skin: 10, Action: 12');
+    
+  }, [riveLoaded]);
+
+  useEffect(() => {
+    appLog('Rive assets loaded:', riveAssets);
+    if (riveAssets && riveAssets[1]) {
+      appLog('Rive asset URI:', riveAssets[1].uri);
+      const timer = setTimeout(() => {
+        setRiveLoaded(true);
+        appLog('Rive loaded via timeout');
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [riveAssets]);
+  
+
   // Handlers
   const playChestAnimation = () => {
     // Reset animations
@@ -275,6 +282,13 @@ export default function StreakCommitmentScreen() {
     playButtonSound();
     setShowRewardAnimation(true);
     playChestOpeningSound?.();
+    
+    appLog('Setting covenant progress to:', {
+      currentStreak: 0,
+      targetDays: days,
+      progress: 0,
+      state: COVENANT_STATES.IN_PROGRESS,
+    });
 
     setTimeout(() => {
       playChestAnimation();
@@ -287,7 +301,12 @@ export default function StreakCommitmentScreen() {
     if (!selectedStreak) return;
 
     hapticLight();
-    await setResponse('streakCommit', selectedStreak);
+    await setResponse('covenantProgress', {
+      currentStreak: 0,
+      targetDays: selectedStreak,
+      progress: 0,
+      state: COVENANT_STATES.IN_PROGRESS,
+    });
 
     analytics.logEvent('StreakCommitmentScreen_Continued', { selectedStreak });
 
@@ -314,7 +333,7 @@ export default function StreakCommitmentScreen() {
     if (!showFireLambAnimation || !riveAssets) return null;
 
     return (
-      <View className="w-[260px] h-[260px]">
+      <View className="w-[250px] h-[250px]">
         {IS_ANDROID ? (
           <Rive
             ref={riveRef10}
@@ -327,7 +346,6 @@ export default function StreakCommitmentScreen() {
             ref={riveRef10}
             url={riveAssets[1].uri!}
             stateMachineName="State Machine 1"
-            
             style={{ width: "100%", height: "100%" }}
           />
         )}
@@ -395,6 +413,35 @@ export default function StreakCommitmentScreen() {
     );
   };
 
+  const renderRewardCardForPhoenix = () => {
+    if (!showRewardAnimation || !selectedStreak || !showFireLambAnimation) return null;
+
+    return (
+      <View className="items-center">
+      <Animated.View
+        className="bg-white/80 rounded-[28px] px-8 py-4 border-[2.5px] border-accentGold w-[85%] max-w-sm"
+        style={{
+          opacity: rewardCardOpacity,
+          transform: [{ scale: rewardCardScale }],
+        }}>
+        <Text className="text-sm font-din text-[#B89B4C] text-center uppercase mb-2 tracking-wider">
+          Special Reward
+        </Text>
+        <Animated.View
+          className="flex-row items-center justify-center"
+          style={{ opacity: gemTextOpacity }}>
+          <Text className="font-din text-textPrimary text-2xl font-bold text-center">
+            Unlock Phoenix Lamb
+          </Text>
+        </Animated.View>
+        <Text className="font-din text-[#B89B4C] text-center text-sm mt-1">
+          A legendary skin for your faithful companion
+        </Text>
+      </Animated.View>
+    </View>
+    );
+  };
+
   const renderDefaultLamb = () => {
     if (selectedStreak) return null;
 
@@ -426,7 +473,7 @@ export default function StreakCommitmentScreen() {
           {renderLambAnimation()}
           {renderRewardAnimation()}
           {renderRewardCard()}
-
+          {renderRewardCardForPhoenix()}
           <CustomAnimatedView style={optionsStyle} className="mt-8 space-y-4 w-full gap-3">
             {STREAK_OPTIONS.map((option) => (
               <Pressable
