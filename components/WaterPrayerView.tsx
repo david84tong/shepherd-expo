@@ -410,7 +410,8 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   setShowPrayerSuccess
 }, ref) => {
   const { recentPrayers } = usePrayerStore();
-  const { currentDevotional } = useDevotionalStore();
+  const { customDevotional, currentDevotional } = useDevotionalStore();
+  const devotionalToUse = customDevotional || currentDevotional;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [skipTyping, setSkipTyping] = useState(false);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
@@ -470,13 +471,11 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   // Generate prayer content based on devotional or recent prayers
   const generatePrayerContent = useCallback(() => {
-    // First try to use the devotional prayer (handle both string and object structures)
     let devotionalPrayer: string | undefined;
-    if (currentDevotional?.prayer) {
-      if (typeof currentDevotional.prayer === 'string') {
-        devotionalPrayer = currentDevotional.prayer;
-      } else if (typeof currentDevotional.prayer === 'object') {
-        // Try to get the current language, fallback to 'en'
+    if (devotionalToUse?.prayer) {
+      if (typeof devotionalToUse.prayer === 'string') {
+        devotionalPrayer = devotionalToUse.prayer;
+      } else if (typeof devotionalToUse.prayer === 'object') {
         let lang = 'en';
         if (typeof navigator !== 'undefined') {
           const navLang = (navigator.language || (navigator.languages && navigator.languages[0]));
@@ -484,23 +483,19 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
             lang = navLang.split('-')[0];
           }
         }
-        const prayerObj = currentDevotional.prayer as Record<string, string>;
+        const prayerObj = devotionalToUse.prayer as Record<string, string>;
         devotionalPrayer = prayerObj[lang] || prayerObj['en'] || Object.values(prayerObj)[0];
       }
     }
-
     if (devotionalPrayer && devotionalPrayer.trim().length > 0) {
       return devotionalPrayer;
     }
-
-    // Fallback to recent prayers
     const latestPrayer = recentPrayers[0];
     if (!latestPrayer) {
       return "Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen.";
     }
-
     return `Dear God, I come before you today with a humble heart. Please help me with ${latestPrayer.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
-  }, [currentDevotional?.prayer, recentPrayers]);
+  }, [devotionalToUse?.prayer, recentPrayers]);
 
   // Smooth component fade-in on mount
   useEffect(() => {

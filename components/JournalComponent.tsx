@@ -91,7 +91,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   const currentPath = usePathStore((state) => state.currentPath);
 
   // Get current devotional from devotional store
-  const { currentDevotional, fetchTodaysDevotional } = useDevotionalStore();
+  const { customDevotional, currentDevotional, fetchTodaysDevotional } = useDevotionalStore();
+  const devotionalToUse = customDevotional || currentDevotional;
 
   // Check if this reflection was initiated from the verse reading
   const tappedReflectAboutVerse = useHomeStore((state) => state.tappedReflectAboutVerse);
@@ -167,11 +168,11 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   // Ensure devotional is fetched when component mounts
   useEffect(() => {
     appLog('📝 JournalComponent mounted, checking devotional...');
-    if (!currentDevotional) {
+    if (!devotionalToUse) {
       appLog('📝 No current devotional, fetching...');
       fetchTodaysDevotional();
     } else {
-      appLog('📝 Current devotional exists:', currentDevotional.id);
+      appLog('📝 Current devotional exists:', devotionalToUse.id);
     }
   }, []);
 
@@ -203,25 +204,19 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
   // Get reflection prompt from devotional or fallback
   const getReflectionPrompt = () => {
-    // If reflection is already completed, show a different prompt
     if (reflectionCompleted) {
       return "Tell God what's on your mind";
     }
-
-    // First try to use the devotional reflection prompt (handle both string and object structures)
-    if (currentDevotional?.reflectionPrompt) {
-      if (typeof currentDevotional.reflectionPrompt === 'string') {
-      
-        appLog('📝 Using string reflection prompt:', currentDevotional.reflectionPrompt);
-        return currentDevotional.reflectionPrompt;
-      } else if (typeof currentDevotional.reflectionPrompt === 'object' && (currentDevotional.reflectionPrompt as any).en) {
-        const prompt = (currentDevotional.reflectionPrompt as any).en;
+    if (devotionalToUse?.reflectionPrompt) {
+      if (typeof devotionalToUse.reflectionPrompt === 'string') {
+        appLog('📝 Using string reflection prompt:', devotionalToUse.reflectionPrompt);
+        return devotionalToUse.reflectionPrompt;
+      } else if (typeof devotionalToUse.reflectionPrompt === 'object' && (devotionalToUse.reflectionPrompt as any).en) {
+        const prompt = (devotionalToUse.reflectionPrompt as any).en;
         appLog('📝 Using object.en reflection prompt:', prompt);
         return prompt;
       }
     }
-
-    // Fallback to default prompt
     appLog('📝 Using fallback prompt');
     return i18n.t('reflection_prompt_fallback');
   };
@@ -319,8 +314,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     if (visible) {
       appLog('JournalComponent: Showing journal component');
       appLog('tappedReflectAboutVerse =', tappedReflectAboutVerse);
-      appLog('📝 Current devotional:', currentDevotional?.id, currentDevotional?.bibleReference);
-      appLog('📝 Devotional reflection prompt available:', !!currentDevotional?.reflectionPrompt);
+      appLog('📝 Current devotional:', devotionalToUse?.id, devotionalToUse?.bibleReference);
+      appLog('📝 Devotional reflection prompt available:', !!devotionalToUse?.reflectionPrompt);
       appLog('📝 Using reflection prompt:', getReflectionPrompt());
 
       // Set path in progress when component becomes visible
@@ -584,9 +579,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         reflection_length: reflectionContent.length,
         reflection_content: reflectionContent,
         prompt: currentPath?.reflection,
-        devotionalId: currentDevotional?.id || null,
+        devotionalId: devotionalToUse?.id || null,
         devotionalPrompt: getReflectionPrompt(),
-        bibleReference: currentDevotional?.bibleReference || null,
+        bibleReference: devotionalToUse?.bibleReference || null,
         heartsAwarded: heartsToAdd,
         xpAwarded: xpReward,
       });
@@ -638,9 +633,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
       analytics.logEvent('Journal_Tapped_Cancel', {
         prompt: currentPath?.reflection,
-        devotionalId: currentDevotional?.id || null,
+        devotionalId: devotionalToUse?.id || null,
         devotionalPrompt: getReflectionPrompt(),
-        bibleReference: currentDevotional?.bibleReference || null,
+        bibleReference: devotionalToUse?.bibleReference || null,
       });
       useHomeStore.getState().setTappedReflectAboutVerse(false);
       appLog('Reset tappedReflectAboutVerse flag to false (from back button)');
@@ -998,9 +993,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
                 analytics.logEvent('Journal_Tapped_Cancel', {
                   prompt: currentPath?.reflection,
-                  devotionalId: currentDevotional?.id || null,
+                  devotionalId: devotionalToUse?.id || null,
                   devotionalPrompt: getReflectionPrompt(),
-                  bibleReference: currentDevotional?.bibleReference || null,
+                  bibleReference: devotionalToUse?.bibleReference || null,
                 });
                 useHomeStore.getState().setTappedReflectAboutVerse(false);
                 appLog('Reset tappedReflectAboutVerse flag to false (from cancel button)');
@@ -1070,9 +1065,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                       reflection_length: reflectionContent.length,
                       reflection_content: reflectionContent,
                       prompt: currentPath?.reflection,
-                      devotionalId: currentDevotional?.id || null,
+                      devotionalId: devotionalToUse?.id || null,
                       devotionalPrompt: getReflectionPrompt(),
-                      bibleReference: currentDevotional?.bibleReference || null,
+                      bibleReference: devotionalToUse?.bibleReference || null,
                       heartsAwarded: heartsToAdd,
                       xpAwarded: xpReward,
                     });
