@@ -1,6 +1,6 @@
 // Core React & React Native
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
-import { View, Text, Pressable, StatusBar, Image, Animated } from 'react-native';
+import { View, Text, Pressable, StatusBar, Image, Animated, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 // Third-party libraries
@@ -221,26 +221,27 @@ export default function StreakCommitmentScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-   // Update skin number input
-   useEffect(() => {
-    if (!riveRef10.current || !riveLoaded) return;
-    riveRef10.current?.setInputState(STATE_MACHINE, 'Skin-Number', 10);
-    riveRef10.current?.setInputState(STATE_MACHINE, 'Action-Number', 12);
-    appLog('Rive inputs set - Skin: 10, Action: 12');
-    
-  }, [riveLoaded]);
-
   useEffect(() => {
     appLog('Rive assets loaded:', riveAssets);
+    
     if (riveAssets && riveAssets[1]) {
       appLog('Rive asset URI:', riveAssets[1].uri);
+      
       const timer = setTimeout(() => {
         setRiveLoaded(true);
         appLog('Rive loaded via timeout');
-      }, 500);
-      return () => clearTimeout(timer);
+        appLog('Rive loaded via timeout');
+
+        // Set Rive inputs once loaded
+        if (riveRef10.current) {
+          riveRef10.current.setInputState(STATE_MACHINE, 'Skin-Number', 10);
+          riveRef10.current.setInputState(STATE_MACHINE, 'Action-Number', 12);
+          appLog('Rive inputs set - Skin: 10, Action: 12');
+        }
+      }, 100);
+      
     }
-  }, [riveAssets]);
+  }, [riveAssets, riveRef10?.current,selectedStreak]);
   
 
   // Handlers
@@ -338,6 +339,7 @@ export default function StreakCommitmentScreen() {
           <Rive
             ref={riveRef10}
             resourceName={'new_shepherd'}
+            artboardName="[Main] Shpeherd"
             stateMachineName="State Machine 1"
             style={{ width: '100%', height: '100%' }}
           />
@@ -345,8 +347,8 @@ export default function StreakCommitmentScreen() {
           <Rive
             ref={riveRef10}
             url={riveAssets[1].uri!}
+            artboardName="[Main] Shpeherd"
             stateMachineName="State Machine 1"
-            artboardName="10 Fire Skin"
             style={{ width: "100%", height: "100%" }}
           />
         )}
@@ -358,14 +360,14 @@ export default function StreakCommitmentScreen() {
     if (!showRewardAnimation || !riveAssets || showFireLambAnimation) return null;
 
     return (
-      <View className="w-full items-center justify-center" style={{ height: RPH(20) }}>
+      <View className="w-[250px] h-[250px] items-center justify-center">
         {IS_ANDROID ? (
           <Rive
             ref={riveRef}
             resourceName={'success_lamb'}
             artboardName="chest"
             autoplay={true}
-            style={{ width: '160%', height: '160%' }}
+            style={{ width: '120%', height: '130%' }}
           />
         ) : (
           <Rive
@@ -373,7 +375,7 @@ export default function StreakCommitmentScreen() {
             url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
             artboardName="chest"
             autoplay={true}
-            style={{ width: '160%', height: '160%' }}
+            style={{ width: '120%', height: '130%' }}
           />
         )}
       </View>
@@ -469,43 +471,51 @@ export default function StreakCommitmentScreen() {
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <CustomAnimatedView style={screenStyle} className="px-6 pt-12">
-        <View className="flex-1 items-center">
-          {renderDefaultLamb()}
-          {renderLambAnimation()}
-          {renderRewardAnimation()}
-          {renderRewardCard()}
-          {renderRewardCardForPhoenix()}
-          <CustomAnimatedView style={optionsStyle} className="mt-8 space-y-4 w-full gap-3">
-            {STREAK_OPTIONS.map((option) => (
-              <Pressable
-                key={option.days}
-                onPress={() => handleStreakSelect(option.days)}
-                onPressIn={() => hapticLight()}
-                className={`p-4 rounded-3xl border-t-2 border-b-[6px] border-l-2 border-r-2 ${
-                  selectedStreak !== option.days
-                    ? 'bg-white border-accentGold/30'
-                    : 'bg-surfaceCream border-accentGold/80'
-                }`}>
-                <View className="flex-col">
-                  <View className="flex-row justify-between items-center">
-                    <Text
-                      className={`font-feather text-xl ${
-                        selectedStreak === option.days ? 'text-textPrimary' : 'text-textPrimary'
-                      }`}>
-                      {option.label}
-                    </Text>
-                    <Text
-                      className={`font-din text-lg ${
-                        selectedStreak === option.days ? 'text-textPrimary' : 'text-textPrimary'
-                      }`}>
-                      {option.status}
-                    </Text>
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+          className="flex-1"
+        >
+          <View className="flex-1 items-center">
+            <View className="h-[300px] items-center justify-center mb-5">
+              {renderDefaultLamb()}
+              {renderLambAnimation()}
+              {renderRewardAnimation()}
+              {renderRewardCard()}
+              {renderRewardCardForPhoenix()}
+            </View>
+            <CustomAnimatedView style={optionsStyle} className="mt-8 space-y-4 w-full gap-2">
+              {STREAK_OPTIONS.map((option) => (
+                <Pressable
+                  key={option.days}
+                  onPress={() => handleStreakSelect(option.days)}
+                  onPressIn={() => hapticLight()}
+                  className={`p-4 rounded-3xl border-t-2 border-b-[6px] border-l-2 border-r-2 ${
+                    selectedStreak !== option.days
+                      ? 'bg-white border-accentGold/30'
+                      : 'bg-surfaceCream border-accentGold/80'
+                  }`}>
+                  <View className="flex-col">
+                    <View className="flex-row justify-between items-center">
+                      <Text
+                        className={`font-feather text-xl ${
+                          selectedStreak === option.days ? 'text-textPrimary' : 'text-textPrimary'
+                        }`}>
+                        {option.label}
+                      </Text>
+                      <Text
+                        className={`font-din text-lg ${
+                          selectedStreak === option.days ? 'text-textPrimary' : 'text-textPrimary'
+                        }`}>
+                        {option.status}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              </Pressable>
-            ))}
-          </CustomAnimatedView>
-        </View>
+                </Pressable>
+              ))}
+            </CustomAnimatedView>
+          </View>
+        </ScrollView>
 
         <CustomAnimatedView style={buttonStyle} className="absolute bottom-10 left-4 right-4">
           <PrimaryButton

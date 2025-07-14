@@ -58,6 +58,10 @@ import { initializeLanguage } from './utils/i18n';
 import { useHomeStore } from './stores/homeStore';
 import { useDevotionalStore } from './stores/devotionalStore';
 import { appLog } from './helper/helper';
+import { CovenantSuccessModal } from '../components/CovenantSuccessModal';
+import { COVENANT_STATES } from './hooks/streakHook';
+import { useUserStore } from './stores/userStore';
+
 // Define missing ref types
 type PrayerSheetRef = {
   show: () => void;
@@ -716,6 +720,22 @@ export default function RootLayout() {
     }
   }, [readingCompleted, prayerCompleted, reflectionCompleted]);
 
+  // Covenant success modal state
+  const showCovenantSuccessModal = useHomeStore((state) => state.showCovenantSuccessModal);
+  const completedCovenantDays = useHomeStore((state) => state.completedCovenantDays);
+  const setShowCovenantSuccessModal = useHomeStore((state) => state.setShowCovenantSuccessModal);
+  const setCovenantProgress = useUserStore((state) => state.setCovenantProgress);
+
+  const handleNextCovenant = (days: number) => {
+    setCovenantProgress({
+      currentStreak: 0,
+      targetDays: days,
+      progress: 0,
+      state: COVENANT_STATES.IN_PROGRESS
+    });
+    setShowCovenantSuccessModal(false);
+  };
+
   // Show Rive animation
   if (showRiveAnimation && riveAssets?.[0]?.uri) {
     return (
@@ -843,6 +863,13 @@ export default function RootLayout() {
 
             {/* Debug button (visible only in development or for creators) */}
             {(__DEV__ || isCreator) && <DebugButton />}
+
+            <CovenantSuccessModal
+              visible={showCovenantSuccessModal}
+              onClose={() => setShowCovenantSuccessModal(false)}
+              completedDays={completedCovenantDays}
+              onSelectNextCovenant={handleNextCovenant}
+            />
           </>
         )}
       </BottomSheetModalProvider>

@@ -3,6 +3,7 @@ import React from 'react';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { appLog } from '../helper/helper';
+import analytics from '../../utils/analytics';
 
 // Define the possible states/modes for the home screen
 export type HomeMode = 'DEFAULT' | 'PREVIEW' | 'PRAYER' | 'REFLECTION';
@@ -71,6 +72,7 @@ interface HomeState {
   setCurrentSkin: (skin: string) => void;
   setShowCovenantSuccessModal: (show: boolean) => void;
   setCompletedCovenantDays: (days: number) => void;
+  handleCovenantSuccess: (days: number) => void;
 
   // Daily XP functions
   addDailyXp: (amount: number) => number; // Returns actual XP added (may be limited)
@@ -179,6 +181,14 @@ export const useHomeStore = create<HomeState>()(
       setCurrentSkin: (skin) => set({ currentSkin: skin }),
       setShowCovenantSuccessModal: (show) => set({ showCovenantSuccessModal: show }),
       setCompletedCovenantDays: (days) => set({ completedCovenantDays: days }),
+
+      handleCovenantSuccess: (days) => {
+        set({ 
+          showCovenantSuccessModal: true,
+          completedCovenantDays: days
+        });
+        analytics.logEvent('Covenant_Completed', { days });
+      },
 
       // Daily XP functions
       resetDailyXpIfNeeded: () => {

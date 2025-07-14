@@ -507,5 +507,7 @@
     "onboarding_streak_commitment_devoted": "Devoto",
     "onboarding_streak_commitment_blessed": "Bendito",
     "onboarding_streak_commitment_sanctified": "Santificado",
-    "onboarding_streak_commitment_button": "Cometer mi compromiso"
+    "onboarding_streak_commitment_button": "Cometer mi compromiso",
+    "covenant_success_title": "¡Cátara Completada! 🎉",
+    "covenant_success_description": "¡Felicidades! Has completado tu cátara de {{days}} días. ¿Te gustaría enfrentar una nueva desafío?"
 }

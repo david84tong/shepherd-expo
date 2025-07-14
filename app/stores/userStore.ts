@@ -10,6 +10,7 @@ import { UserDoc, Lamb, UserStore, MapPathCompletion, CheckIn } from '../models/
 import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
 import { appLog } from '../helper/helper';
 import { COVENANT_STATES } from '../hooks/streakHook';
+import { useHomeStore } from './homeStore';
 
 // Constants
 
@@ -438,7 +439,22 @@ export const useUserStore = create<UserStore>()(
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
-      setCovenantProgress: (covenantProgress : UserDoc['covenantProgress']) => set({ covenantProgress }),
+      setCovenantProgress: (covenantProgress: UserDoc['covenantProgress']) => {
+        set({ covenantProgress });
+        if (isAuthenticated()) {
+          updateField('covenantProgress', covenantProgress);
+        }
+        
+        // Reset streak if starting new covenant
+        if (covenantProgress.state === COVENANT_STATES.IN_PROGRESS) {
+          set({ streakCount: 0, streak: 0 });
+          if (isAuthenticated()) {
+            updateField('streakCount', 0);
+            updateField('streak', 0);
+          }
+          syncStreakWithWidget(0, get().lastActivityDate);
+        }
+      },
       setExperienceLevel: (experienceLevel) => set({ experienceLevel }),
       setFrequencyGoal: (frequencyGoal) => set({ frequencyGoal }),
       setDenomination: (denomination) => set({ denomination }),
@@ -452,6 +468,27 @@ export const useUserStore = create<UserStore>()(
         if (isAuthenticated()) {
           updateField('streakCount', count);
           updateField('streak', count);
+        }
+        
+        // Check if covenant is completed
+        const state = get();
+        const covenantProgress = state.covenantProgress;
+        if (count >= covenantProgress.targetDays && covenantProgress.state !== COVENANT_STATES.COMPLETED) {
+          // Update covenant state to completed
+          const updatedProgress = {
+            ...covenantProgress,
+            currentStreak: count,
+            progress: 100,
+            state: COVENANT_STATES.COMPLETED
+          };
+          set({ covenantProgress: updatedProgress });
+          if (isAuthenticated()) {
+            updateField('covenantProgress', updatedProgress);
+          }
+          
+          // Show success modal
+          const homeStore = useHomeStore.getState();
+          homeStore.handleCovenantSuccess(covenantProgress.targetDays);
         }
         
         syncStreakWithWidget(count, get().lastActivityDate);

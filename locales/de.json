@@ -515,5 +515,8 @@
     "onboarding_streak_commitment_devoted": "Verpflichtet",
     "onboarding_streak_commitment_blessed": "Gebetet",
     "onboarding_streak_commitment_sanctified": "Heilig",
-    "onboarding_streak_commitment_button": "Mein Verpflichtung annehmen"
+    "onboarding_streak_commitment_button": "Mein Verpflichtung annehmen",
+    "covenant_success_title": "Cérémonie Completée ! 🎉",
+    "covenant_success_description": "Félicitations ! Vous avez complété votre cérémonie de {{days}} jours. Souhaitez-vous relever un nouveau défi ?",
+    "continue": "Weiter"
 }

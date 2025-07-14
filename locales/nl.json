@@ -515,5 +515,8 @@
     "onboarding_streak_commitment_devoted": "Dedieerd",
     "onboarding_streak_commitment_blessed": "Gebenedigd",
     "onboarding_streak_commitment_sanctified": "Heilig",
-    "onboarding_streak_commitment_button": "Mijn Verbond aanvaarden"
+    "onboarding_streak_commitment_button": "Mijn Verbond aanvaarden",
+    "covenant_success_title": "Cérémonie Completée ! 🎉",
+    "covenant_success_description": "Félicitations ! Vous avez complété votre cérémonie de {{days}} jours. Souhaitez-vous relever un nouveau défi ?",
+    "continue": "Doorgaan"
 }

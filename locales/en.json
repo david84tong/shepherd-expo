@@ -520,5 +520,8 @@
     "onboarding_streak_commitment_devoted": "Devoted",
     "onboarding_streak_commitment_blessed": "Blessed",
     "onboarding_streak_commitment_sanctified": "Sanctified",
-    "onboarding_streak_commitment_button": "Commit my Covenant"
+    "onboarding_streak_commitment_button": "Commit my Covenant",
+    "covenant_success_title": "Covenant Complete! 🎉",
+    "covenant_success_description": "Congratulations! You've successfully completed your {{days}}-day covenant. Would you like to take on a new challenge?" ,
+    "continue": "Continue"
 }

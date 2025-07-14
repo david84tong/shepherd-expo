@@ -516,5 +516,8 @@
     "onboarding_streak_commitment_devoted": "Dévoué",
     "onboarding_streak_commitment_blessed": "Béni",
     "onboarding_streak_commitment_sanctified": "Sain",
-    "onboarding_streak_commitment_button": "Engager mon alliance"
+    "onboarding_streak_commitment_button": "Engager mon alliance",
+    "covenant_success_title": "Cérémonie Completée ! 🎉",
+    "covenant_success_description": "Félicitations ! Vous avez complété votre cérémonie de {{days}} jours. Souhaitez-vous relever un nouveau défi ?",
+    "continue": "Continuer"
 }
