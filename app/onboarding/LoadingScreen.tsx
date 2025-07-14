@@ -25,6 +25,7 @@ import { hapticHeavy } from '~/utils/haptics';
 import { useHomeStore } from '../stores/homeStore';
 import { useUIStore } from '../stores/uiStore';
 import { appLog } from '../helper/helper';
+import Toast from 'react-native-toast-message';
 
 const { width, height } = Dimensions.get('window');
 
@@ -69,6 +70,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const [hasStarted, setHasStarted] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const lastHapticPercentage = useRef(0);
+
+  // Add timeout state and ref
+  const [timeoutTriggered, setTimeoutTriggered] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+
 
   // Get custom devotional from store FIRST - needs to be before useEffect
   const customDevotional = useDevotionalStore((s) => s.customDevotional);
@@ -246,6 +253,68 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     };
   }, [progressAnim]);
 
+  // Add timeout effect for custom devotional creation - starts 30 seconds AFTER reaching 100%
+  useEffect(() => {
+    // Set timeout for non-onboarding flows (custom devotional creation AND check-in flows)
+    if (!isOnboarding) {
+      const currentProgress = Math.round(progressValue * 100);
+      
+      // Only start the 30-second timer when we reach 100%
+      if (currentProgress === 100 && !timeoutRef.current) {
+        appLog('[LoadingScreen] Progress reached 100%, starting 30-second timeout for devotional creation');
+        
+        timeoutRef.current = setTimeout(() => {
+          appLog('[LoadingScreen] 30-second timeout triggered after reaching 100%');
+          setTimeoutTriggered(true);
+          
+          // Track timeout event
+          analytics.logEvent('LoadingScreen_Custom_Devotional_Timeout_After_100', {
+            verseText: verseText || 'unknown',
+            reference: reference || 'unknown',
+            currentStep,
+            totalSteps: loadingPoints.length,
+            apiLoadingState,
+            isCreatingDevotional,
+            hasCustomDevotional: !!customDevotional,
+            hasCurrentDevotional: !!devotionalStoreCurrentDevotional,
+            timeStuckAt100: 20000, // 20 seconds
+          });
+
+          // Show error toast
+          Toast.show({
+            type: 'error',
+            text1: 'Devotional Creation Timeout',
+            text2: 'The devotional is taking longer than expected. Please try again.',
+            position: 'top',
+            visibilityTime: 4000,
+          });
+
+          // Navigate back to appropriate screen after toast has been shown for full duration
+          setTimeout(() => {
+            if (!hasNavigated.current) {
+              hasNavigated.current = true;
+              // For check-in flow, go back to home tab, otherwise go to bible tab
+              if (isCheckInFlow) {
+                router.navigate('/(tabs)');
+              } else {
+                router.navigate('/(tabs)/bible');
+              }
+            }
+          }, 4000); // Wait for full toast duration before navigating
+        }, 20000); // 30 seconds after reaching 100%
+      }
+
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+      };
+    }
+  }, [progressValue, isOnboarding, isCheckInFlow, verseText, reference, currentStep, loadingPoints.length, apiLoadingState, isCreatingDevotional, customDevotional, devotionalStoreCurrentDevotional, router]);
+
+
+
   // Cleanup function
   useEffect(() => {
     return () => {
@@ -258,6 +327,13 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       setApiLoadingState('idle'); // Reset API loading state
       setPaywallShown(false); // Reset paywall shown state
       hasNavigated.current = false; // Reset navigation guard
+      setTimeoutTriggered(false); // Reset timeout state
+      
+      // Clear timeout on cleanup
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
   }, [progressAnim]);
 
@@ -547,11 +623,13 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         currentStep,
         totalSteps: loadingPoints.length,
         animationComplete,
-        isCreatingDevotional
+        isCreatingDevotional,
+        timeoutTriggered
       });
 
-      // CRITICAL: Only navigate when ALL conditions are met
+      // CRITICAL: Only navigate when ALL conditions are met AND timeout hasn't triggered
       const canNavigate = 
+        !timeoutTriggered &&
         currentStep >= loadingPoints.length && 
         animationComplete && 
         apiLoadingState === 'completed' &&
@@ -566,10 +644,17 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         hasDevotional: !!(customDevotional || devotionalStoreCurrentDevotional),
         notCreating: !isCreatingDevotional,
         noError: !devotionalError,
+        noTimeout: !timeoutTriggered,
         canNavigate
       });
 
       if (canNavigate) {
+        // Clear timeout if navigation is successful
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+
         // For check-in flow
         if (isCheckInFlow && customDevotional) {
           appLog('[LoadingScreen] All conditions met - check-in devotional ready, navigating to DevotionalReader');
@@ -626,6 +711,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       if (apiLoadingState === 'error' && devotionalError) {
         appLog('[LoadingScreen] API error occurred:', devotionalError);
         
+        // Clear timeout on error
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+        
         // Check navigation guard before navigating
         if (!hasNavigated.current) {
           hasNavigated.current = true;
@@ -652,7 +743,8 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     showPaywallForNonProUser, 
     animationComplete, 
     paywallShown,
-    isCreatingDevotional
+    isCreatingDevotional,
+    timeoutTriggered
   ]);
   
   // Clear the check-in flag when navigating away
@@ -944,6 +1036,9 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           ))}
         </View>
       </View>
+      
+      {/* Toast component for error messages */}
+      <Toast />
     </View>
   );
 }
