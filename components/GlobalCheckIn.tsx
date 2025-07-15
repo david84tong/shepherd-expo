@@ -724,7 +724,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
   const renderMoodScreen = () => {
     const dimensions = getResponsiveCardDimensions();
-    const imageSize = RPH(9); // Responsive image size
+    const imageSize = RPH(8); // Responsive image size
     
     return (
       <Animated.View
@@ -735,13 +735,13 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           paddingTop: RPH(2),
           transform: [{ translateX: moodAnim }],
         }}>
-        <Text className="font-feather text-3xl text-textPrimary mb-8 text-center px-4 max-w-[300px]">
+        <Text className="font-feather text-2xl mt-2 text-textPrimary mb-2 text-center max-w-[340px]">
           How are you feeling right now?
         </Text>
-        <Text className="font-feather text-xl mb-6 text-center px-1 text-textPrimary/70 max-w-[300px]">
+        <Text className="font-feather text-lg mb-6 text-center px-1 text-textPrimary/70 max-w-[340px]">
           Select a mood to help you grow.
         </Text>
-        <View className="flex-1 w-full flex-row flex-wrap justify-center gap-4 px-2">
+        <View className="flex-1 w-full flex-row flex-wrap justify-center items-center gap-2  px-2">
           {moods.map((mood) => (
             <Pressable
               key={mood.value}
@@ -754,7 +754,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   animateToScreen('focus');
                 }, 200);
               }}
-              className={`w-[30%] rounded-3xl border-[2.5px] items-center justify-center 
+              className={`w-[30%] rounded-3xl border-[2.5px] items-center justify-center
                 ${
                   selectedMood === mood.value
                     ? 'border-orange bg-white/90'
@@ -764,9 +764,9 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 source={mood.image}
                 style={{ width: imageSize, height: imageSize }}
                 resizeMode="contain"
-                className="mb-2"
+                className=""
               />
-              <Text className="font-din text-base text-textPrimary">{mood.label}</Text>
+              <Text className="font-din text-base text-textPrimary p-1">{mood.label}</Text>
             </Pressable>
           ))}
         </View>
@@ -787,10 +787,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           paddingTop: RPH(2),
           transform: [{ translateX: focusAnim }],
         }}>
-        <Text className="font-feather text-3xl text-textPrimary mb-3 text-center px-4 max-w-[300px]">
+        <Text className="font-feather text-2xl mt-4 text-textPrimary mb-1 text-center">
           What would you like to focus on?
         </Text>
-        <Text className="font-feather text-xl mb-6 text-center px-4 text-textPrimary/70 max-w-[300px]">
+        <Text className="font-feather text-lg mb-6 text-center px-4 text-textPrimary/70">
           Select a focus to help you grow.
         </Text>
         <ScrollView
@@ -863,15 +863,15 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           justifyContent: 'center',
           transform: [{ translateX: struggleAnim }],
         }}>
-        <Text className="font-feather text-3xl text-textPrimary text-center px-2 max-w-[300px] mb-2">
+        <Text className="font-feather text-2xl mt-6 text-textPrimary text-center px-2 mb-1">
           What are you struggling with?
         </Text>
-        <Text className="font-feather text-xl text-center mb-6 text-textPrimary/70 max-w-[300px]">
+        <Text className="font-feather text-lg text-center mb-6 text-textPrimary/70">
           Select a struggle to help you grow.
         </Text>
 
         <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
-          <View className="flex-row flex-wrap justify-center gap-4">
+          <View className="flex-row flex-wrap justify-center gap-3">
             {struggleAreas.map((struggle) => (
               <Pressable
                 key={struggle.value}
@@ -904,9 +904,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 </View>
                 <Text className="font-din text-sm text-textPrimary text-center mb-1">
                   {struggle.label}
-                </Text>
-                <Text className="font-din text-[10px] text-gray-500 text-center">
-                  {struggle.verse}
                 </Text>
               </Pressable>
             ))}
@@ -1316,7 +1313,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           <Pressable
             style={{
               position: 'absolute',
-              top: -10,
+              top: -15,
               right: 20,
               width: 36,
               height: 36,
