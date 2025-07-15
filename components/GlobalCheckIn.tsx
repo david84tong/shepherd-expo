@@ -556,7 +556,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       image: require('../assets/icons/moods/sadLamb.png'),
     },
     {
-      emoji: '😤',
+      emoji: '😢',
       label: 'Very Bad',
       value: 'veryBad',
       image: require('../assets/icons/moods/reallyBadLamb.png'),
@@ -754,13 +754,18 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   animateToScreen('focus');
                 }, 200);
               }}
-              className={`w-[30%] rounded-3xl border-[2.5px] p-2 items-center justify-center
+              className={`w-[30%] rounded-3xl border-[2.5px] items-center justify-center
                 ${
                   selectedMood === mood.value
                     ? 'border-orange bg-white/90'
                     : 'border-accentGold bg-white/60'
                 }`}>
-              <Text className="font-feather text-4xl text-textPrimary">{mood.emoji}</Text>
+              <Image
+                source={mood.image}
+                style={{ width: imageSize, height: imageSize }}
+                resizeMode="contain"
+                className=""
+              />
               <Text className="font-din text-base text-textPrimary p-1">{mood.label}</Text>
             </Pressable>
           ))}
@@ -1033,7 +1038,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         </View>
       )}
 
-      <View className="w-full space-y-3 mt-3 px-4 pb-8 gap-3">
+      <View className="w-full space-y-3 mt-auto px-4 pb-8 gap-3">
         <PrimaryButton
           title={
             currentFocus !== '' || currentStruggle !== ''
