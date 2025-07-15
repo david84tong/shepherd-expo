@@ -656,7 +656,7 @@ export function DebugButton() {
             title: devotional.title || '',
             content: devotional.content || '',
             createdAt: devotional.createdAt || new Date().toISOString(),
-            context: typeof devotional.context === 'object' ? devotional.context.en : devotional.context || '',
+            context: typeof devotional.context === 'object' ? devotional.context : devotional.context || '',
             bibleReference: devotional.verse || devotional.bibleReference || '',
             prayer: typeof devotional.prayer === 'object' ? devotional.prayer : { en: devotional.prayer || '' },
             reflectionPrompt: typeof devotional.reflection === 'object' ? devotional.reflection : { en: devotional.reflection || devotional.reflectionPrompt || '' },

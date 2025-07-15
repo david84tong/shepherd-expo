@@ -38,6 +38,7 @@ import josephsCoat from '~/assets/lambStatic/JosephsCoat.png';
 import armorOfGod from '~/assets/lambStatic/armorOfGod.png';
 import whale from '~/assets/lambStatic/whale.png';
 import pinkSkin from '~/assets/lambStatic/pinkSkin.png';
+import fireSkin from '~/assets/lambStatic/pinkSkin.png';
 import { hapticLight, hapticMedium, hapticSuccess } from '~/utils/haptics';
 // Define store item types
 type StoreCategory = 'skins' | 'powerups' | 'hearts';
@@ -216,6 +217,17 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       image: armorOfGod,
       skinNumber: 9,
       unlockLevel: 24,
+    },
+    {
+      id: 'skin_fire',
+      category: 'skins',
+      name: "Fire Skin",
+      description: 'Blazing with the fire of the Holy Spirit, a skin that burns with divine passion',
+      price: 0,
+      currency: 'gems',
+      image: fireSkin,
+      skinNumber: 10,
+      isOwned: true,
     },
 
 
