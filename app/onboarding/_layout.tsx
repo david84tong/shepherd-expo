@@ -13,6 +13,7 @@ import { appLog } from '../helper/helper';
 
 // Define the actual screens we have implemented - MOVED HERE
 const IMPLEMENTED_SCREENS = [
+  'streakCommitment',
   '1',
   '2',
   'username',
@@ -69,7 +70,8 @@ export default function OnboardingLayout() {
     !pathname.includes('/onboarding/auth') &&
     !pathname.includes('/pricing') &&
     !pathname.includes('/PricingScreen') &&
-    !pathname.includes('/onboarding/pricing/OldPricingScreen');
+    !pathname.includes('/onboarding/pricing/OldPricingScreen') &&
+    !pathname.includes('/onboarding/streakCommitment');
 
   appLog(
     `[OnboardingLayout] Path: ${pathname}, Should show progress bar: ${shouldShowProgressBar}`

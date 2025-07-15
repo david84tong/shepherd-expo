@@ -505,5 +505,19 @@
     "reflecting": "Temps de Silence – Réfléchir",
     "capture_thoughts": "Pause et rencontre Dieu",
     "generate_custom_devotional": "Dévotionnel Personnalisé",
-    "create_personalized_devotional": "Basé sur un check-in"
+    "create_personalized_devotional": "Basé sur un check-in",
+    "pour_out_your_heart": "Épanche ton cœur",
+    "let_your_prayers_fill_your_cup": "Laisse tes prières remplir ton verre",
+    "hold_to_begin": "Maintenez appuyé pour commencer",
+    "onboarding_streak_commitment_3_day": "3 jour cérémonie",
+    "onboarding_streak_commitment_7_day": "7 jour cérémonie",
+    "onboarding_streak_commitment_21_day": "21 jour cérémonie",
+    "onboarding_streak_commitment_faithful": "Fidèle",
+    "onboarding_streak_commitment_devoted": "Dévoué",
+    "onboarding_streak_commitment_blessed": "Béni",
+    "onboarding_streak_commitment_sanctified": "Sain",
+    "onboarding_streak_commitment_button": "Engager mon alliance",
+    "covenant_success_title": "Cérémonie Completée ! 🎉",
+    "covenant_success_description": "Félicitations ! Vous avez complété votre cérémonie de {{days}} jours. Souhaitez-vous relever un nouveau défi ?",
+    "continue": "Continuer"
 }

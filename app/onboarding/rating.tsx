@@ -23,6 +23,7 @@ import analytics from '../../utils/analytics';
 import { useRouter } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
 import { appLog, RPH, RPW } from '../helper/helper';
+import { TestimonialList } from '../components/TestimonialList';
 
 const Rating = () => {
   const insets = useSafeAreaInsets();
@@ -123,18 +124,13 @@ const Rating = () => {
     transform: [{ translateY: starsTranslateY.value }],
   }));
 
-  const imageStyle = useAnimatedStyle(() => ({
-    opacity: imageOpacity.value,
-    transform: [{ translateY: imageTranslateY.value }],
-  }));
-
   const buttonStyle = useAnimatedStyle(() => ({
     opacity: buttonOpacity.value,
     transform: [{ translateY: buttonTranslateY.value }],
     position: 'absolute',
     left: 24,
     right: 24,
-    bottom: Math.max(insets.bottom + 16, 24),
+    bottom: Math.max(insets.bottom, 16),
   }));
 
   const handleRateApp = async () => {
@@ -161,7 +157,7 @@ const Rating = () => {
   const handleIRatedPress = () => {
     analytics.logEvent('RatingScreen_Tapped_IRated');
     router.push({
-      pathname: '/onboarding/LoadingScreen',
+      pathname: '/onboarding/streakCommitment',
       params: {
         isOnboarding: 'true',
       },
@@ -208,20 +204,13 @@ const Rating = () => {
             </Animated.View>
 
             {/* shepherd Ratings image */}
-            <Animated.View style={imageStyle} className="items-center mb-12">
-              <Image
-                source={require('../../assets/onboarding/shepReviews.png')}
-                style={{ width: 500, height: RPH(45), resizeMode: 'contain' }}
-                defaultSource={require('../../assets/icon.png')}
-                className={`rounded ${Platform.OS === 'ios' ? 'shadow-md' : undefined}`}
-              />
-            </Animated.View>
+              <TestimonialList />
 
             {/* Bottom button */}
-            <Animated.View style={buttonStyle} className="items-center mt-12">
+            <Animated.View style={buttonStyle} className="items-center mt-24">
               <PrimaryButton title="Leave a rating" onPress={handleRateApp} buttonType="gold" />
 
-              <TouchableOpacity onPress={handleIRatedPress} className="mt-6 items-center">
+              <TouchableOpacity onPress={handleIRatedPress} className="mt-2 items-center ">
                 <Text className="font-din text-description underline text-[16px]">
                   👍 Ok, I rated
                 </Text>

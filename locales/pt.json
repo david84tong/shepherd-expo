@@ -504,5 +504,20 @@
     "reflecting": "Tempo de Quietude – Refletir",
     "capture_thoughts": "Pause e encontre Deus",
     "generate_custom_devotional": "Devocional Personalizado",
-    "create_personalized_devotional": "Baseado em um check-in"
+    "create_personalized_devotional": "Baseado em um check-in",
+    "pause_meet_god": "Pause e encontre Deus",
+    "pour_out_your_heart": "Derrame seu coração",
+    "let_your_prayers_fill_your_cup": "Deixe suas orações encherem seu copo",
+    "hold_to_begin": "Segure para começar",
+    "onboarding_streak_commitment_3_day": "3 dia cérémonie",
+    "onboarding_streak_commitment_7_day": "7 dia cérémonie",
+    "onboarding_streak_commitment_21_day": "21 dia cérémonie",
+    "onboarding_streak_commitment_faithful": "Fiel",
+    "onboarding_streak_commitment_devoted": "Devoto",
+    "onboarding_streak_commitment_blessed": "Bendito",
+    "onboarding_streak_commitment_sanctified": "Santificado",
+    "onboarding_streak_commitment_button": "Cometer meu compromisso",
+    "covenant_success_title": "Cérémonie Completée ! 🎉",
+    "covenant_success_description": "Félicitations ! Vous avez complété votre cérémonie de {{days}} jours. Souhaitez-vous relever un nouveau défi ?",
+    "continue": "Continuar"
 }

@@ -38,6 +38,7 @@ const ONBOARDING_SCREENS: DebugScreen[] = [
   { name: 'Onboarding 7 - Notifications', route: '/onboarding/7' },
   { name: 'Onboarding 9 - Notification Permission', route: '/onboarding/9' },
   { name: 'Onboarding 10 - Reminder Time', route: '/onboarding/10' },
+  { name: 'Onboarding 11 - Streak Commitment', route: '/onboarding/streakCommitment' },
   { name: 'Loading Screen', route: '/onboarding/LoadingScreen' },
   { name: 'Lamb Growth Explainer', route: '/onboarding/explainer' },
 ];
@@ -656,7 +657,7 @@ export function DebugButton() {
             title: devotional.title || '',
             content: devotional.content || '',
             createdAt: devotional.createdAt || new Date().toISOString(),
-            context: typeof devotional.context === 'object' ? devotional.context.en : devotional.context || '',
+            context: typeof devotional.context === 'object' ? devotional.context : devotional.context || '',
             bibleReference: devotional.verse || devotional.bibleReference || '',
             prayer: typeof devotional.prayer === 'object' ? devotional.prayer : { en: devotional.prayer || '' },
             reflectionPrompt: typeof devotional.reflection === 'object' ? devotional.reflection : { en: devotional.reflection || devotional.reflectionPrompt || '' },

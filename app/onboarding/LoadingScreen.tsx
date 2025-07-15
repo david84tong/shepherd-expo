@@ -429,10 +429,10 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             totalSteps: loadingPoints.length,
             timeSpent: currentStep * STEP_DURATION + FINAL_DELAY,
             abTestGroup: abTestValue,
-            redirectTo: abTestValue === 0 ? 'PricingScreen' : 'PricingScreen',
+            redirectTo: 'streakCommitment'
           });
 
-          // Navigate based on A/B test value - but skip if from check-in
+          // Navigate to streak commitment screen
           if (!isCheckInFlow) {
             appLog('[LoadingScreen] Navigating to pricing screen (not check-in flow)');
             if (abTestValue === 0) {

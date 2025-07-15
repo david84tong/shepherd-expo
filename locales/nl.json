@@ -492,7 +492,9 @@
     "continue_reading_plan": "Leesplan Doorgaan",
     "start_bible_reading_plan": "Bijbel Leesplan Starten",
     "refresh_spirit_prayer": "Verfris je geest met gebed",
-    "pause_meet_god": "Pauzeer en ontmoet God",
+    "pour_out_your_heart": "Gie je hart uit",
+    "let_your_prayers_fill_your_cup": "Laat je gebeden je beker vullen",
+    "hold_to_begin": "Houd ingedrukt om te beginnen",
     "custom_devotional": "Aangepaste Devotie",
     "custom_path": "Aangepast Pad",
     "journal_thoughts": "Schrijf je gedachten op",
@@ -505,5 +507,16 @@
     "reflecting": "Stille Tijd – Reflecteren",
     "capture_thoughts": "Pauzeer en ontmoet God",
     "generate_custom_devotional": "Aangepaste Devotie",
-    "create_personalized_devotional": "Gebaseerd op een check-in"
+    "create_personalized_devotional": "Gebaseerd op een check-in",
+    "onboarding_streak_commitment_3_day": "3 dag cérémonie",
+    "onboarding_streak_commitment_7_day": "7 dag cérémonie",
+    "onboarding_streak_commitment_21_day": "21 dag cérémonie",
+    "onboarding_streak_commitment_faithful": "Getrouw",
+    "onboarding_streak_commitment_devoted": "Dedieerd",
+    "onboarding_streak_commitment_blessed": "Gebenedigd",
+    "onboarding_streak_commitment_sanctified": "Heilig",
+    "onboarding_streak_commitment_button": "Mijn Verbond aanvaarden",
+    "covenant_success_title": "Cérémonie Completée ! 🎉",
+    "covenant_success_description": "Félicitations ! Vous avez complété votre cérémonie de {{days}} jours. Souhaitez-vous relever un nouveau défi ?",
+    "continue": "Doorgaan"
 }

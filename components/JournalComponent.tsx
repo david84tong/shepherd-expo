@@ -39,6 +39,7 @@ import PrimaryButton from './PrimaryButton';
 import CircleButton from './Shared/CircleButton';
 import i18n from '../app/utils/i18n';
 import { useSoundStore } from '~/app/stores/soundStore';
+import { useLanguageStore } from '~/app/stores/languageStore';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -102,6 +103,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
   // Check if button should be enabled
   const isButtonEnabled = useMemo(() => charCount >= MIN_CHARS_REQUIRED, [charCount]);
+
+  const { language } = useLanguageStore();
 
   useEffect(() => {
     if (isButtonEnabled) {
@@ -207,13 +210,36 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     if (reflectionCompleted) {
       return "Tell God what's on your mind";
     }
-    if (devotionalToUse?.reflectionPrompt) {
-      if (typeof devotionalToUse.reflectionPrompt === 'string') {
-        appLog('📝 Using string reflection prompt:', devotionalToUse.reflectionPrompt);
-        return devotionalToUse.reflectionPrompt;
-      } else if (typeof devotionalToUse.reflectionPrompt === 'object' && (devotionalToUse.reflectionPrompt as any).en) {
-        const prompt = (devotionalToUse.reflectionPrompt as any).en;
-        appLog('📝 Using object.en reflection prompt:', prompt);
+
+    const currentLang = language;
+     
+    // First try to use the devotional reflection prompt (handle both string and object structures)
+    if (currentDevotional?.reflectionPrompt) {
+      if (typeof currentDevotional.reflectionPrompt === 'string') {
+      
+        appLog('📝 Using string reflection prompt:', currentDevotional.reflectionPrompt);
+        return currentDevotional.reflectionPrompt;
+      } else if (typeof currentDevotional.reflectionPrompt === 'object') {
+        const promptObj = currentDevotional.reflectionPrompt as any;
+        let prompt: string;
+
+        // Try to get prompt in current language
+        if (promptObj[currentLang]) {
+          prompt = promptObj[currentLang];
+          console.log(`📝 Using ${currentLang} reflection prompt:`, prompt);
+        } 
+        // Fallback to English
+        else if (promptObj.en) {
+          prompt = promptObj.en;
+          console.log('📝 Using fallback English reflection prompt:', prompt);
+        }
+        // Use first available language as last resort
+        else {
+          const availableLangs = Object.keys(promptObj);
+          prompt = availableLangs.length > 0 ? promptObj[availableLangs[0]] : '';
+          console.log('📝 Using first available language prompt:', prompt);
+        }
+
         return prompt;
       }
     }
@@ -607,6 +633,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             tappedReflectAboutVerse && currentPath && currentPath.bookId
               ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
               : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
+          reflectionPrompt: getReflectionPrompt(),
         });
 
         // Update last reflection date
@@ -1093,6 +1120,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                           tappedReflectAboutVerse && currentPath && currentPath.bookId
                             ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
                             : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
+                        reflectionPrompt: getReflectionPrompt(),
                       });
 
                       // Update last reflection date
