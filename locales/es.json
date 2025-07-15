@@ -509,5 +509,7 @@
     "onboarding_streak_commitment_sanctified": "Santificado",
     "onboarding_streak_commitment_button": "Cometer mi compromiso",
     "covenant_success_title": "¡Cátara Completada! 🎉",
-    "covenant_success_description": "¡Felicidades! Has completado tu cátara de {{days}} días. ¿Te gustaría enfrentar una nueva desafío?"
+    "covenant_success_description": "¡Felicidades! Has completado tu cátara de {{days}} días. ¿Te gustaría enfrentar una nueva desafío?",
+    "covenant_success_description_21_days": "¡Felicidades! Has completado tu cátara de 21 días, ve a tu tienda para desbloquear la skin Phoenix",
+    "continue": "Continuar"
 }

@@ -219,6 +219,7 @@ export default function StreakCommitmentScreen() {
     // Animate chest to new scale
     playChestAnimation(scaleValue);
 
+    // add analytics for selected streak
     analytics.logEvent('StreakCommitmentScreen_Selected', { days });
   };
 
@@ -233,7 +234,16 @@ export default function StreakCommitmentScreen() {
       state: COVENANT_STATES.IN_PROGRESS,
     });
 
+    // add analytics for streak commitment screen continued
     analytics.logEvent('StreakCommitmentScreen_Continued', { selectedStreak });
+
+    // add analytics for covenant progress
+    analytics.logEvent('covenantProgress', {
+      currentStreak: 0,
+      targetDays: selectedStreak,
+      progress: 0,
+      state: COVENANT_STATES.IN_PROGRESS,
+    });
 
     try {
       const storedAbTest = await AsyncStorage.getItem('abTest');
@@ -389,7 +399,12 @@ export default function StreakCommitmentScreen() {
               {STREAK_OPTIONS.map((option) => (
                 <Pressable
                   key={option.days}
-                  onPress={() => handleStreakSelect(option.days)}
+                  onPress={() => {
+                    if(option.days == selectedStreak){
+                      return;
+                    }
+                    handleStreakSelect(option.days);
+                  }}
                   onPressIn={() => hapticLight()}
                   className={`p-4 rounded-3xl border-t-2 border-b-[6px] border-l-2 border-r-2 ${
                     selectedStreak !== option.days

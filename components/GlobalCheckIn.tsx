@@ -534,35 +534,35 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       emoji: '😊',
       label: 'Great',
-      value: 'Great',
+      value: 'great',
       image: require('../assets/icons/moods/greatLamb.png'),
     },
     {
-      emoji: '😔',
+      emoji: '🙂',
       label: 'Good',
       value: 'good',
       image: require('../assets/icons/moods/goodLamb.png'),
     },
     {
-      emoji: '😌',
+      emoji: '😐',
       label: 'Meh',
-      value: 'meb',
+      value: 'meh',
       image: require('../assets/icons/moods/sheepIcon.png'),
     },
     {
-      emoji: '😤',
+      emoji: '😞',
       label: 'Bad',
       value: 'bad',
       image: require('../assets/icons/moods/sadLamb.png'),
     },
     {
-      emoji: '😴',
+      emoji: '😤',
       label: 'Very Bad',
       value: 'veryBad',
       image: require('../assets/icons/moods/reallyBadLamb.png'),
     },
     {
-      emoji: '🤗',
+      emoji: '😡',
       label: 'Angry',
       value: 'angry',
       image: require('../assets/icons/moods/angryLamb.png'),
@@ -754,18 +754,13 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   animateToScreen('focus');
                 }, 200);
               }}
-              className={`w-[30%] rounded-3xl border-[2.5px] items-center justify-center
+              className={`w-[30%] rounded-3xl border-[2.5px] p-2 items-center justify-center
                 ${
                   selectedMood === mood.value
                     ? 'border-orange bg-white/90'
                     : 'border-accentGold bg-white/60'
                 }`}>
-              <Image
-                source={mood.image}
-                style={{ width: imageSize, height: imageSize }}
-                resizeMode="contain"
-                className=""
-              />
+              <Text className="font-feather text-4xl text-textPrimary">{mood.emoji}</Text>
               <Text className="font-din text-base text-textPrimary p-1">{mood.label}</Text>
             </Pressable>
           ))}
@@ -986,7 +981,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         paddingTop: RPH(2),
         transform: [{ translateX: successAnim }],
       }}>
-      <Text className="font-feather text-4xl text-textPrimary text-center px-4">
+      <Text className="font-feather text-2xl text-textPrimary text-center px-4">
         Check-in Complete!
       </Text>
       {showRewardAnimation && riveAssets ? (
@@ -1038,7 +1033,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         </View>
       )}
 
-      <View className="w-full space-y-3 mt-auto px-4 pb-8 gap-3">
+      <View className="w-full space-y-3 mt-3 px-4 pb-8 gap-3">
         <PrimaryButton
           title={
             currentFocus !== '' || currentStruggle !== ''
