@@ -26,6 +26,7 @@ import { useHomeStore } from '../stores/homeStore';
 import { useUIStore } from '../stores/uiStore';
 import { appLog } from '../helper/helper';
 import Toast from 'react-native-toast-message';
+import { IS_ANDROID } from '../utils/utils';
 
 const { width, height } = Dimensions.get('window');
 
@@ -295,9 +296,9 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
               hasNavigated.current = true;
               // For check-in flow, go back to home tab, otherwise go to bible tab
               if (isCheckInFlow) {
-                router.navigate('/(tabs)');
+                router.back()
               } else {
-                router.navigate('/(tabs)/bible');
+                router.back()
               }
             }
           }, 4000); // Wait for full toast duration before navigating
@@ -574,10 +575,17 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           if (!hasNavigated.current) {
             hasNavigated.current = true;
             showDevotionalReader();
+           if(IS_ANDROID){
+            router.replace({
+              pathname: '/(tabs)',
+              params: { showDevotional: 'true' }
+            });
+           }else{
             router.navigate({
               pathname: '/(tabs)',
               params: { showDevotional: 'true' }
             });
+           }
           }
         } else {
           // User cancelled or error - go back to Bible tab
@@ -590,7 +598,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           // Check navigation guard before navigating
           if (!hasNavigated.current) {
             hasNavigated.current = true;
-            router.navigate('/(tabs)/bible');
+            router.back()
           }
         }
       } catch (error) {
@@ -603,7 +611,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         // Fallback - go to Bible tab
         if (!hasNavigated.current) {
           hasNavigated.current = true;
-          router.navigate('/(tabs)/bible');
+          router.back()
         }
       }
     }, 500);
@@ -668,10 +676,17 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             hasNavigated.current = true;
             const timer = setTimeout(() => {
               showDevotionalReader();
-              router.navigate({
-                pathname: '/(tabs)',
-                params: { showDevotional: 'true' }
-              });
+             if(IS_ANDROID){
+            router.replace({
+              pathname: '/(tabs)',
+              params: { showDevotional: 'true' }
+            });
+           }else{
+            router.navigate({
+              pathname: '/(tabs)',
+              params: { showDevotional: 'true' }
+            });
+           }
             }, 500);
             return () => clearTimeout(timer);
           }
@@ -692,10 +707,17 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             hasNavigated.current = true;
             const timer = setTimeout(() => {
               showDevotionalReader();
-              router.navigate({
-                pathname: '/(tabs)',
-                params: { showDevotional: 'true' }
-              });
+              if(IS_ANDROID){
+                router.replace({
+                  pathname: '/(tabs)',
+                  params: { showDevotional: 'true' }
+                });
+               }else{
+                router.navigate({
+                  pathname: '/(tabs)',
+                  params: { showDevotional: 'true' }
+                });
+               }
             }, 500);
             return () => clearTimeout(timer);
           }
