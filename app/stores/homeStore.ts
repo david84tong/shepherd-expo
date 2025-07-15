@@ -183,10 +183,12 @@ export const useHomeStore = create<HomeState>()(
       setCompletedCovenantDays: (days) => set({ completedCovenantDays: days }),
 
       handleCovenantSuccess: (days) => {
+        appLog(`🎉 [COVENANT MODAL] handleCovenantSuccess called for ${days} days`);
         set({ 
           showCovenantSuccessModal: true,
           completedCovenantDays: days
         });
+        appLog(`🎉 [COVENANT MODAL] Modal state updated - showCovenantSuccessModal: true, completedCovenantDays: ${days}`);
         analytics.logEvent('Covenant_Completed', { days });
       },
 

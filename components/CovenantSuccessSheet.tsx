@@ -111,7 +111,8 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
   const { playTrifectaCompleteSound, playButtonSound, playChestOpeningSound } = useSoundStore();
   const { setCovenantProgress } = useUserStore();
   const { setShowCovenantSuccessModal } = useHomeStore();
-  
+  const [riveLoaded, setRiveLoaded] = useState(false);
+  const [showPhoenixAnimation, setShowPhoenixAnimation] = useState(false);
   const [selectedNextCovenant, setSelectedNextCovenant] = useState<number | null>(null);
   const [animationKey, setAnimationKey] = useState(0);
   const [isSheetVisible, setIsSheetVisible] = useState(false);
@@ -124,7 +125,7 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
   const gemTextOpacity = useRef(new Animated.Value(1)).current;
 
   // Snap points for the bottom sheet
-  const snapPoints = useMemo(() => ['80%'], []);
+  const snapPoints = useMemo(() => ['90%'], []);
 
   // Memoized computed values
   const completedReward = useMemo(() => {
@@ -230,6 +231,8 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
       onSelectNextCovenant(selectedNextCovenant);
     } else if (completedDays === 21) {
       // For 21 days completion, just close the modal
+      // go to store
+      
       setShowCovenantSuccessModal(false);
     }
     
@@ -290,19 +293,27 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
     [completedDays, completedReward, playTrifectaCompleteSound, playChestOpeningSound, handleDismiss, chestScale, rewardCardOpacity, rewardCardScale, contentOpacity]
   );
 
-  // Set Rive inputs when assets are loaded
   useEffect(() => {
-    if (riveAssets && riveAssets[1] && riveRefPhoenix.current) {
+    appLog('Rive assets loaded:', riveAssets);
+    
+    if (riveAssets && riveAssets[1]) {
+      appLog('Rive asset URI:', riveAssets[1].uri);
+      
       const timer = setTimeout(() => {
+        setRiveLoaded(true);
+        appLog('Rive loaded via timeout');
+
+        // Set Rive inputs once loaded
         if (riveRefPhoenix.current) {
           riveRefPhoenix.current.setInputState(STATE_MACHINE, 'Skin-Number', 10);
           riveRefPhoenix.current.setInputState(STATE_MACHINE, 'Action-Number', 12);
           appLog('Rive inputs set - Skin: 10, Action: 12');
         }
-      }, 100);
+      }, 200);
       return () => clearTimeout(timer);
     }
-  }, [riveAssets]);
+
+  }, [riveAssets, selectedNextCovenant, riveRefPhoenix?.current]);
 
   // Memoized render methods
   const renderLambAnimation = useMemo(() => {

@@ -729,9 +729,9 @@ export default function RootLayout() {
 
   const handleNextCovenant = (days: number) => {
     setCovenantProgress({
-      currentStreak: 0,
+      currentStreak: completedCovenantDays,
       targetDays: days,
-      progress: 0,
+      progress: 0, // TODO: calculate progress
       state: COVENANT_STATES.IN_PROGRESS
     });
     setShowCovenantSuccessModal(false);
@@ -860,7 +860,7 @@ export default function RootLayout() {
             {/* Global Covenant Success Sheet */}
             <CovenantSuccessSheet
               covenantSheetRef={covenantSuccessSheetRef}
-              completedDays={completedCovenantDays}
+              completedDays={3}
               onSelectNextCovenant={handleNextCovenant}
             />
 
