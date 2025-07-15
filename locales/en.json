@@ -509,5 +509,19 @@
     "reflecting": "Quiet Time – Reflect",
     "capture_thoughts": "Pause and meet with God",
     "generate_custom_devotional": "Custom Devotional",
-    "create_personalized_devotional": "Based off a check-in"
+    "create_personalized_devotional": "Based off a check-in",
+    "pour_out_your_heart": "Pour out your heart",
+    "let_your_prayers_fill_your_cup": "Let your prayers fill your cup",
+    "hold_to_begin": "Hold to begin",
+    "onboarding_streak_commitment_3_day": "3 day covenant",
+    "onboarding_streak_commitment_7_day": "7 day covenant",
+    "onboarding_streak_commitment_21_day": "21 day covenant",
+    "onboarding_streak_commitment_faithful": "Faithful",
+    "onboarding_streak_commitment_devoted": "Devoted",
+    "onboarding_streak_commitment_blessed": "Blessed",
+    "onboarding_streak_commitment_sanctified": "Sanctified",
+    "onboarding_streak_commitment_button": "Commit my Covenant",
+    "covenant_success_title": "Covenant Complete! 🎉",
+    "covenant_success_description": "Congratulations! You've successfully completed your {{days}}-day covenant. Would you like to take on a new challenge?" ,
+    "continue": "Continue"
 }

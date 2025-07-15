@@ -38,6 +38,8 @@ import { useSoundStore } from '~/app/stores/soundStore';
 import { hapticHeavy, hapticLight, hapticMedium } from '~/utils/haptics';
 import { appLog, RPH } from '~/app/helper/helper';
 import { router } from 'expo-router';
+import { useLanguageStore } from '~/app/stores/languageStore';
+import i18n from '~/app/utils/i18n';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -309,7 +311,7 @@ const WaterWaveAnimation: React.FC<{
                 marginBottom: 4,
                 fontFamily: 'Nunito-Black',
               }}>
-                {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : 'Pour out your heart')}
+                {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : i18n.t('pour_out_your_heart'))}
               </Text>
               <Text className=' text-textPrimary ' style={{
                 fontFamily: 'DIN Next Rounded LT W01 Regular',
@@ -317,7 +319,7 @@ const WaterWaveAnimation: React.FC<{
                 fontSize: 16,
                 color: `${totalHoldTime > 10000 ? 'white' : "#0369a1"}`,
               }}>
-                {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : 'Let your prayers fill your cup')}
+                {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : i18n.t('let_your_prayers_fill_your_cup'))}
               </Text>
               <Text className='font-feather text-textPrimary' style={{
                 textAlign: 'center',
@@ -325,7 +327,7 @@ const WaterWaveAnimation: React.FC<{
                 marginTop: 24,
                 opacity: 0.8,
               }}>
-                {animationTriggered ? '' : (totalHoldTime > 1000 ? '' : 'Hold to begin')}
+                {animationTriggered ? '' : (totalHoldTime > 1000 ? '' : i18n.t('hold_to_begin'))}
               </Text>
             </Reanimated.View>
           )}
@@ -399,19 +401,21 @@ export interface PrayerViewRef {
   handleSettings: () => void;
 }
 
-const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
-  visible = true,
-  onClose,
-  onSetIdle,
-  setFinishReading,
-  setShowControlRow,
-  showControlRow,
-  setIsCompletePrayerDisabled,
-  setShowPrayerSuccess
-}, ref) => {
+const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
+  ({
+    visible = true,
+    onClose,
+    onSetIdle,
+    setFinishReading,
+    setShowControlRow,
+    showControlRow,
+    setIsCompletePrayerDisabled,
+    setShowPrayerSuccess
+  }, ref) => {
   const { recentPrayers } = usePrayerStore();
   const { customDevotional, currentDevotional } = useDevotionalStore();
   const devotionalToUse = customDevotional || currentDevotional;
+  const { language } = useLanguageStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [skipTyping, setSkipTyping] = useState(false);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
@@ -472,19 +476,28 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   // Generate prayer content based on devotional or recent prayers
   const generatePrayerContent = useCallback(() => {
     let devotionalPrayer: string | undefined;
-    if (devotionalToUse?.prayer) {
-      if (typeof devotionalToUse.prayer === 'string') {
-        devotionalPrayer = devotionalToUse.prayer;
-      } else if (typeof devotionalToUse.prayer === 'object') {
-        let lang = 'en';
-        if (typeof navigator !== 'undefined') {
-          const navLang = (navigator.language || (navigator.languages && navigator.languages[0]));
-          if (typeof navLang === 'string') {
-            lang = navLang.split('-')[0];
-          }
+    if (currentDevotional?.prayer) {
+      if (typeof currentDevotional.prayer === 'string') {
+        devotionalPrayer = currentDevotional.prayer;
+      } else if (typeof currentDevotional.prayer === 'object') {
+        const prayerObj = currentDevotional.prayer as Record<string, string>;
+        
+        // Try to get prayer in current language
+        if (prayerObj[language]) {
+          devotionalPrayer = prayerObj[language];
+          console.log(`🙏 Using ${language} prayer text`);
         }
-        const prayerObj = devotionalToUse.prayer as Record<string, string>;
-        devotionalPrayer = prayerObj[lang] || prayerObj['en'] || Object.values(prayerObj)[0];
+        // Fallback to English
+        else if (prayerObj.en) {
+          devotionalPrayer = prayerObj.en;
+          console.log('🙏 Using fallback English prayer text');
+        }
+        // Use first available language as last resort
+        else {
+          const availableLangs = Object.keys(prayerObj);
+          devotionalPrayer = availableLangs.length > 0 ? prayerObj[availableLangs[0]] : '';
+          console.log('🙏 Using first available language prayer text');
+        }
       }
     }
     if (devotionalPrayer && devotionalPrayer.trim().length > 0) {
@@ -495,7 +508,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       return "Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen.";
     }
     return `Dear God, I come before you today with a humble heart. Please help me with ${latestPrayer.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
-  }, [devotionalToUse?.prayer, recentPrayers]);
+  }, [currentDevotional?.prayer, recentPrayers, language]);
 
   // Smooth component fade-in on mount
   useEffect(() => {
@@ -1089,8 +1102,8 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         <View style={{ marginHorizontal: 24, flex: 1, marginTop: 24 }}>
           <SuccessMessage
             screenType="prayer"
-            title="Prayer Complete!"
-            description="Wonderful! You spent time in prayer & strengthened your faith."
+            title={i18n.t('prayer_complete')}
+            description={i18n.t('prayer_complete_desc')}
             level={levelInfo.level}
             prevLevel={levelInfo.level}
             buttonsEnabled={buttonsEnabled}
@@ -1213,8 +1226,8 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                 onClose({ isReflectPresses: true });
               }
             }}
-            prayButtonTitle="Reflect on this verse"
-            rewardsTitle="PRAYER REWARDS"
+            prayButtonTitle={i18n.t('reflect_on_this_verse')}
+            rewardsTitle={i18n.t('prayer_rewards')}
           />
         </View>
       ) : (

@@ -43,6 +43,7 @@ import i18n from '../utils/i18n';
 import { appLog, RPH } from '../helper/helper';
 import { AppFonts } from '../constants/appFonts';
 import { hapticLight } from '~/utils/haptics';
+import { COVENANT_STATES } from '../hooks/streakHook';
 
 // Add this near the top of the file, after imports
 
@@ -346,6 +347,13 @@ export default function SaveProgressScreen() {
         isPro: false,
         isProWithReferral: false,
         completedMapPaths: [],
+        covenantProgress: allResponses.covenantProgress || {
+          currentStreak: 0,
+          targetDays: 0,
+          progress: 0,
+          state: COVENANT_STATES.NOT_STARTED,
+        },
+        customDevotionals: [],
       };
 
       appLog('Creating user data:', JSON.stringify(userData));
@@ -362,6 +370,7 @@ export default function SaveProgressScreen() {
         ...userData,
         $name: displayName,
         spiritual_goal: spiritualGoal,
+        // streak_commit: userData.streakCommit,
         experience_level: userData.experienceLevel,
         denomination: userData.denomination,
         age_range: userData.ageRange,

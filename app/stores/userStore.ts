@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -8,6 +9,8 @@ import { syncStreakDataToWidget } from '../../utils/widgetSync';
 import { UserDoc, Lamb, UserStore, MapPathCompletion, CheckIn } from '../models/User';
 import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
 import { appLog } from '../helper/helper';
+import { COVENANT_STATES } from '../hooks/streakHook';
+import { useHomeStore } from './homeStore';
 
 // Constants
 
@@ -21,6 +24,7 @@ const STORE_METHOD_KEYS = [
   'addXp',
   'createUser',
   'getBibleVersion',
+  'getCovenantProgress',
   'getChaptersReadTotal',
   'getCompletedPrayers',
   'getCompletedReadings',
@@ -94,6 +98,7 @@ const STORE_METHOD_KEYS = [
   'setStreakCount',
   'setUpdatedAt',
   'setUser',
+  'setCovenantProgress',
   'setVersesReadTotal',
   'syncFirestoreData'
 ];
@@ -160,6 +165,12 @@ const initialState: UserDoc = {
   spiritualGoal: 'Walk',
   experienceLevel: 'new',
   frequencyGoal: 'daily',
+  covenantProgress: {
+    currentStreak: 0,
+    targetDays: 0,
+    progress: 0,
+    state: COVENANT_STATES.NOT_STARTED,
+  },
   denomination: '',
   displayName: '',
   selectedPathId: '',
@@ -197,6 +208,7 @@ const initialState: UserDoc = {
   completedMapPaths: [],
   skins: [],
   checkIns: [],
+  customDevotionals: [],
   setNotificationTime: async (_time: string) => {
     // This will be overridden by the actual implementation
     console.warn('setNotificationTime not implemented in initial state');
@@ -312,6 +324,8 @@ export const useUserStore = create<UserStore>()(
             proExpiryDate: firestoreData.proExpiryDate || state.proExpiryDate,
             // Sync check-in data - ensure it's always an array
             checkIns: Array.isArray(firestoreData.checkIns) ? firestoreData.checkIns : (state.checkIns || []),
+            // Sync covenant progress
+            covenantProgress: firestoreData.covenantProgress || state.covenantProgress,
           };
         });
         appLog('Firestore data sync complete');
@@ -369,6 +383,22 @@ export const useUserStore = create<UserStore>()(
       },
       getExperienceLevel: () => get().experienceLevel || initialState.experienceLevel,
       getFrequencyGoal: () => get().frequencyGoal || initialState.frequencyGoal,
+      getCovenantProgress: () => {
+        const state = get().covenantProgress;
+        const streakCount = state.currentStreak || 0;
+        const streakCommit = state.targetDays || 0;
+        
+        return {
+          currentStreak: streakCount,
+          targetDays: streakCommit,
+          progress: streakCommit > 0 ? (streakCount / streakCommit) * 100 : 0,
+          state: COVENANT_STATES[
+            streakCommit === 0 ? 'NOT_STARTED' :
+            streakCount === 0 ? 'BROKEN' :
+            streakCount >= streakCommit ? 'COMPLETED' : 'IN_PROGRESS'
+          ]
+        };
+      },
       getDenomination: () => get().denomination || initialState.denomination,
       getDisplayName: () => get().displayName || initialState.displayName,
       getSelectedPathId: () => get().selectedPathId || initialState.selectedPathId,
@@ -409,6 +439,22 @@ export const useUserStore = create<UserStore>()(
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
+      setCovenantProgress: (covenantProgress: UserDoc['covenantProgress']) => {
+        set({ covenantProgress });
+        if (isAuthenticated()) {
+          updateField('covenantProgress', covenantProgress);
+        }
+        
+        // Reset streak if starting new covenant
+        if (covenantProgress.state === COVENANT_STATES.IN_PROGRESS) {
+          set({ streakCount: 0, streak: 0 });
+          if (isAuthenticated()) {
+            updateField('streakCount', 0);
+            updateField('streak', 0);
+          }
+          syncStreakWithWidget(0, get().lastActivityDate);
+        }
+      },
       setExperienceLevel: (experienceLevel) => set({ experienceLevel }),
       setFrequencyGoal: (frequencyGoal) => set({ frequencyGoal }),
       setDenomination: (denomination) => set({ denomination }),
@@ -422,6 +468,27 @@ export const useUserStore = create<UserStore>()(
         if (isAuthenticated()) {
           updateField('streakCount', count);
           updateField('streak', count);
+        }
+        
+        // Check if covenant is completed
+        const state = get();
+        const covenantProgress = state.covenantProgress;
+        if (count >= covenantProgress.targetDays && covenantProgress.state !== COVENANT_STATES.COMPLETED) {
+          // Update covenant state to completed
+          const updatedProgress = {
+            ...covenantProgress,
+            currentStreak: count,
+            progress: 100,
+            state: COVENANT_STATES.COMPLETED
+          };
+          set({ covenantProgress: updatedProgress });
+          if (isAuthenticated()) {
+            updateField('covenantProgress', updatedProgress);
+          }
+          
+          // Show success modal
+          const homeStore = useHomeStore.getState();
+          homeStore.handleCovenantSuccess(covenantProgress.targetDays);
         }
         
         syncStreakWithWidget(count, get().lastActivityDate);

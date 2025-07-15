@@ -1,3 +1,5 @@
+import { COVENANT_STATES } from '../hooks/streakHook';
+
 export const WORKOUT_DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 export const ONBOARDING_STORAGE_KEY = '@onboarding_responses';
 export const ONBOARDING_COMPLETED_KEY = '@onboarding_completed';
@@ -22,6 +24,7 @@ export const ONBOARDING_PAGES = [
   '17',
   '18',
   'auth',
+  'streakCommitment',
 ];
 
 export type OnboardingResponses = {
@@ -81,6 +84,12 @@ export type OnboardingResponses = {
   /** Screen 7 – "How much of the Bible have you read before?" */
   bibleFamiliarity?: 'never' | 'a-little' | 'a-lot';
   frequencyGoal?: '1-5' | '6-10' | '11-15' | '15-25';
+  covenantProgress?: {
+    currentStreak: number;
+    targetDays: 0 | 3 | 7  | 21;
+    progress: number;
+    state: typeof COVENANT_STATES[keyof typeof COVENANT_STATES];
+  };
 
   /** Screen 8 – "How comfortable are you with prayer?" */
   prayerConfidence?: 'pray-regularly' | 'sometimes' | 'never-prayed';
@@ -127,6 +136,12 @@ export const shepherdOnboardingInitialState: OnboardingResponses = {
   consistencyObstacle: undefined,
   lambName: undefined,
   streakCommitment: undefined,
+  covenantProgress: {
+    currentStreak: 0,
+    targetDays: 0,
+    progress: 0,
+    state: 'not_started',
+  },
   completedAt: undefined,
   appRated: false,
 };

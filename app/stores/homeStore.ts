@@ -3,6 +3,7 @@ import React from 'react';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { appLog } from '../helper/helper';
+import analytics from '../../utils/analytics';
 
 // Define the possible states/modes for the home screen
 export type HomeMode = 'DEFAULT' | 'PREVIEW' | 'PRAYER' | 'REFLECTION';
@@ -38,6 +39,10 @@ interface HomeState {
   sawStreakToday: boolean; // Track if streak screen was shown today
   showGlobalButtons: boolean;
 
+  // Covenant success modal
+  showCovenantSuccessModal: boolean;
+  completedCovenantDays: number;
+
   // Navigation param handling
 
   // Daily XP tracking
@@ -65,6 +70,9 @@ interface HomeState {
   setBottomSheetRef: (ref: React.RefObject<any> | null) => void;
   setRiveRef: (ref: React.RefObject<any> | null) => void;
   setCurrentSkin: (skin: string) => void;
+  setShowCovenantSuccessModal: (show: boolean) => void;
+  setCompletedCovenantDays: (days: number) => void;
+  handleCovenantSuccess: (days: number) => void;
 
   // Daily XP functions
   addDailyXp: (amount: number) => number; // Returns actual XP added (may be limited)
@@ -104,6 +112,9 @@ export const useHomeStore = create<HomeState>()(
       tappedPrayAboutVerse: false,
       tappedReflectAboutVerse: false,
       sawStreakToday: false,
+      // Default covenant success modal
+      showCovenantSuccessModal: false,
+      completedCovenantDays: 0,
       // Default daily XP tracking
       dailyXpEarned: 0,
       lastXpResetDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
@@ -168,6 +179,16 @@ export const useHomeStore = create<HomeState>()(
       setBottomSheetRef: (ref) => set({ bottomSheetRef: ref }),
       setRiveRef: (ref) => set({ riveRef: ref }),
       setCurrentSkin: (skin) => set({ currentSkin: skin }),
+      setShowCovenantSuccessModal: (show) => set({ showCovenantSuccessModal: show }),
+      setCompletedCovenantDays: (days) => set({ completedCovenantDays: days }),
+
+      handleCovenantSuccess: (days) => {
+        set({ 
+          showCovenantSuccessModal: true,
+          completedCovenantDays: days
+        });
+        analytics.logEvent('Covenant_Completed', { days });
+      },
 
       // Daily XP functions
       resetDailyXpIfNeeded: () => {
@@ -270,6 +291,8 @@ export const useHomeStore = create<HomeState>()(
         dailyXpEarned: state.dailyXpEarned,
         lastXpResetDate: state.lastXpResetDate,
         lastStreakDate: state.lastStreakDate,
+        showCovenantSuccessModal: state.showCovenantSuccessModal,
+        completedCovenantDays: state.completedCovenantDays,
       }),
     }
   )

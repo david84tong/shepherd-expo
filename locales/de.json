@@ -504,5 +504,19 @@
     "reflecting": "Stille Zeit – Reflektieren",
     "capture_thoughts": "Pausiere und begegne Gott",
     "generate_custom_devotional": "Personalisierte Andacht",
-    "create_personalized_devotional": "Basierend auf einem Check-in"
+    "create_personalized_devotional": "Basierend auf einem Check-in",
+    "pour_out_your_heart": "Gieße dein Herz aus",
+    "let_your_prayers_fill_your_cup": "Lasse deine Gebete deinen Becher füllen",
+    "hold_to_begin": "Halte, um zu beginnen",
+    "onboarding_streak_commitment_3_day": "3 Tage Verpflichtung",
+    "onboarding_streak_commitment_7_day": "7 Tage Verpflichtung",
+    "onboarding_streak_commitment_21_day": "21 Tage Verpflichtung",
+    "onboarding_streak_commitment_faithful": "Treu",
+    "onboarding_streak_commitment_devoted": "Verpflichtet",
+    "onboarding_streak_commitment_blessed": "Gebetet",
+    "onboarding_streak_commitment_sanctified": "Heilig",
+    "onboarding_streak_commitment_button": "Mein Verpflichtung annehmen",
+    "covenant_success_title": "Cérémonie Completée ! 🎉",
+    "covenant_success_description": "Félicitations ! Vous avez complété votre cérémonie de {{days}} jours. Souhaitez-vous relever un nouveau défi ?",
+    "continue": "Weiter"
 }

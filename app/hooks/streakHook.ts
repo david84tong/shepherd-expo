@@ -15,6 +15,14 @@ const PENALTIES = {
   REFLECTION: 1, // -1 heart per day missing reflection
 };
 
+// Covenant states
+export const COVENANT_STATES = {
+  NOT_STARTED: 'not_started', // User hasn't started a covenant
+  IN_PROGRESS: 'in_progress', // User is working towards their covenant
+  COMPLETED: 'completed', // User has reached their streakCommit goal
+  BROKEN: 'broken', // User broke their streak before reaching the goal
+} as const;
+
 /** Utility — returns true if two Date objects fall on the same
  *  local-timezone calendar day (year / month / date match). */
 const isSameLocalCalendarDay = (d1: Date, d2: Date): boolean => {
@@ -23,6 +31,14 @@ const isSameLocalCalendarDay = (d1: Date, d2: Date): boolean => {
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate()
   );
+};
+
+// Get covenant state based on streak and commitment
+const getCovenantState = (streakCount: number, streakCommit: number): typeof COVENANT_STATES[keyof typeof COVENANT_STATES] => {
+  if (streakCommit === 0) return COVENANT_STATES.NOT_STARTED;
+  if (streakCount === 0) return COVENANT_STATES.BROKEN;
+  if (streakCount >= streakCommit) return COVENANT_STATES.COMPLETED;
+  return COVENANT_STATES.IN_PROGRESS;
 };
 
 /** Calculates whole-day distance between two dates (local time). */
@@ -344,7 +360,10 @@ export const checkStreakAndApplyPenalties = async () => {
         appLog(
           'User is authenticated, fetching latest data from Firestore before checking streak'
         );
-        await fetchFromFirestore?.({});
+        const currentLoggedUser = auth().currentUser;
+        if (currentLoggedUser) {
+          await fetchFromFirestore?.({ currentLoggedUser });
+        }
       } catch (fetchError) {
         appLog('Error fetching from Firestore, continuing with local data:', fetchError);
         // Continue with local data if fetch fails
@@ -447,7 +466,10 @@ export const useStreakManager = () => {
     try {
       // First, try to fetch latest data from Firestore if user is authenticated
       if (isAuthenticated()) {
-        await fetchFromFirestore?.({});
+        const currentLoggedUser = auth().currentUser;
+        if (currentLoggedUser) {
+          await fetchFromFirestore?.({ currentLoggedUser });
+        }
       }
 
       const lambHearts = userStore.getLambHearts?.();

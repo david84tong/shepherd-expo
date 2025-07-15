@@ -496,5 +496,18 @@
     "reflecting": "Tiempo de Quietud – Reflexionar",
     "capture_thoughts": "Pausa y encuentra a Dios",
     "generate_custom_devotional": "Devocional Personalizado",
-    "create_personalized_devotional": "Basado en un check-in"
+    "create_personalized_devotional": "Basado en un check-in",
+    "pour_out_your_heart": "Vierte tu corazón",
+    "let_your_prayers_fill_your_cup": "Deja que tus oraciones llenen tu copa",
+    "hold_to_begin": "Mantén presionado para comenzar",
+    "onboarding_streak_commitment_3_day": "3 día cátara",
+    "onboarding_streak_commitment_7_day": "7 día cátara",
+    "onboarding_streak_commitment_21_day": "21 día cátara",
+    "onboarding_streak_commitment_faithful": "Fiel",
+    "onboarding_streak_commitment_devoted": "Devoto",
+    "onboarding_streak_commitment_blessed": "Bendito",
+    "onboarding_streak_commitment_sanctified": "Santificado",
+    "onboarding_streak_commitment_button": "Cometer mi compromiso",
+    "covenant_success_title": "¡Cátara Completada! 🎉",
+    "covenant_success_description": "¡Felicidades! Has completado tu cátara de {{days}} días. ¿Te gustaría enfrentar una nueva desafío?"
 }
