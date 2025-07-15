@@ -17,6 +17,7 @@ import { AntDesign, FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
+import useSubscriptionStore from '../stores/subscriptionStore';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
@@ -206,6 +207,16 @@ export default function SaveProgressScreen() {
     });
     if (success && firestoreData) {
       await useUserStore.getState().syncFirestoreData(firestoreData);
+      
+      // Force refresh pro status to ensure it's properly synced after referral code application
+      try {
+        const { forceRefreshProStatus } = useSubscriptionStore.getState();
+        await forceRefreshProStatus();
+        appLog('[syncUser] Pro status refreshed after user sync');
+      } catch (error) {
+        appLog('[syncUser] Error refreshing pro status:', error);
+      }
+      
       const prayerCompleted = useHomeStore.getState().prayerCompleted;
       const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
       const readingCompleted = useHomeStore.getState().readingCompleted;
@@ -362,6 +373,24 @@ export default function SaveProgressScreen() {
         userData.isPro = true;
         userData.proExpiryDate = undefined;
         useUserStore.getState().setProStatus('pro');
+      }
+      
+      // Check if user already has pro status from referral code in Firestore
+      // This handles the case where a referral code was applied before user creation
+      try {
+        const existingUserDoc = await firestore().collection('users').doc(uid).get();
+        if (existingUserDoc.exists) {
+          const existingUserData = existingUserDoc.data();
+          if (existingUserData && (existingUserData.isPro || existingUserData.isProWithReferral)) {
+            appLog('[createUserFromResponses] User already has pro status from referral, updating user data');
+            userData.isPro = true;
+            userData.isProWithReferral = existingUserData.isProWithReferral || false;
+            userData.proExpiryDate = existingUserData.userProExpiryDate;
+            useUserStore.getState().setProStatus('pro');
+          }
+        }
+      } catch (error) {
+        appLog('[createUserFromResponses] Error checking existing pro status:', error);
       }
       // Identify user in Mixpanel
       // Pass isNewUser=true since this is called during user creation
@@ -802,6 +831,43 @@ export default function SaveProgressScreen() {
       const user = await signInAnonymously();
       if (user) {
         await createUserFromResponses(user.uid, 'Anonymous User');
+        
+        // After creating the user, check and sync pro status from Firestore
+        // This ensures that if a referral code was applied before skipping, the pro status is properly reflected
+        try {
+          const userDoc = await firestore().collection('users').doc(user.uid).get();
+          const userData = userDoc.data();
+          
+          if (userData) {
+            appLog('[createAnonymousAccount] Checking pro status from Firestore:', {
+              isPro: userData.isPro,
+              isProWithReferral: userData.isProWithReferral,
+              userProExpiryDate: userData.userProExpiryDate
+            });
+            
+            // Check if user has pro status from referral code
+            if (userData.isPro || userData.isProWithReferral) {
+              appLog('[createAnonymousAccount] User has pro status from referral, updating stores');
+              
+              // Update user store
+              useUserStore.getState().setProStatus('pro');
+              
+              // Update subscription store
+              const { forceRefreshProStatus } = useSubscriptionStore.getState();
+              await forceRefreshProStatus();
+              
+              // Update analytics
+              analytics.setUserProperties({
+                isPro: true,
+                proStatus: 'pro',
+                subscriptionType: 'referral_code',
+              });
+            }
+          }
+        } catch (syncError) {
+          appLog('[createAnonymousAccount] Error syncing pro status:', syncError);
+        }
+        
         await completeOnboarding();
       }
     } catch (error) {

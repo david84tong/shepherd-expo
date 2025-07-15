@@ -32,6 +32,7 @@ import { imageAssets, useAssetsStore } from '../stores/assetsStore';
 import { useDevotionalStore } from '../stores/devotionalStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
+import useSubscriptionStore from '../stores/subscriptionStore';
 import { useMemo, useState, useEffect, useRef } from 'react';
 import type { Devotional } from '../models/Devotional';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
@@ -118,6 +119,12 @@ export default function HomeScreen() {
             console.error('❌ Error syncing Firestore data:', error);
           });
       }
+
+      // Force refresh pro status to ensure it's properly synced after referral code application
+      const { forceRefreshProStatus } = useSubscriptionStore.getState();
+      forceRefreshProStatus().catch((error: any) => {
+        console.error('❌ Error refreshing pro status:', error);
+      });
     } catch (error) {
       console.error('❌ Error initializing:', error);
     }

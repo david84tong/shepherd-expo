@@ -11,7 +11,6 @@ import { appLog } from '~/app/helper/helper';
 
 // Define the screens in order (excluding special screens like auth and LoadingScreen)
 const ORDERED_SCREENS = [
-  'streakCommitment',
   '1',
   '2',
   'username',
@@ -25,6 +24,7 @@ const ORDERED_SCREENS = [
   '9',
   '10',
   'rating',
+  'streakCommitment',
   '11',
 ];
 

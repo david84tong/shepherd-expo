@@ -13,7 +13,6 @@ import { appLog } from '../helper/helper';
 
 // Define the actual screens we have implemented - MOVED HERE
 const IMPLEMENTED_SCREENS = [
-  'streakCommitment',
   '1',
   '2',
   'username',
@@ -27,6 +26,7 @@ const IMPLEMENTED_SCREENS = [
   '9',
   '10', // Ensure 10 is included
   'rating',
+  'streakCommitment',
   '11',
   'auth',
   'lambFound',
