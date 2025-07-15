@@ -24,7 +24,7 @@ import { useUserStore } from '~/app/stores/userStore';
 import { Timestamp } from '@react-native-firebase/firestore';
 import { IS_ANDROID } from '~/app/utils/utils';
 import { useSoundStore } from '~/app/stores/soundStore';
-import useSubscriptionStore from '~/app/stores/subscriptionStore';
+import useSubscriptionStore, { safelyPresentPaywall } from '~/app/stores/subscriptionStore';
 import dayjs from 'dayjs';
 
 // Import gem icon
@@ -280,11 +280,35 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       return;
     }
 
-    // Check if user is pro
-    const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore.getState();
-    if (!isProMember) {
+    // Check if user is pro - check both subscription store and user store
+    const { isProMember, forceRefreshProStatus } = useSubscriptionStore.getState();
+    const userProStatus = useUserStore.getState().proStatus;
+    
+    // First force refresh pro status to get latest from all sources
+    await forceRefreshProStatus();
+    
+    // Re-check pro status after refresh
+    const subscriptionStore = useSubscriptionStore.getState();
+    const userStore = useUserStore.getState();
+    const isProAfterRefresh = subscriptionStore.isProMember;
+    const userProStatusAfterRefresh = userStore.proStatus;
+    const userIsPro = userStore.getUser()?.isPro;
+    
+    // Check all possible pro status sources
+    const isPro = isProAfterRefresh || userProStatusAfterRefresh === 'pro' || userIsPro === true;
+    
+    appLog('[GlobalCheckIn] Pro status check:', {
+      isProMember,
+      isProAfterRefresh,
+      userProStatus,
+      userProStatusAfterRefresh,
+      userIsPro,
+      finalIsPro: isPro
+    });
+    
+    if (!isPro) {
       appLog('[GlobalCheckIn] User is not pro, presenting free trial paywall');
-      await presentFreeTrialPaywall();
+      await safelyPresentPaywall('free');
       return;
     }
 
@@ -1051,10 +1075,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           onPress={async () => {
             if (currentFocus !== '' || currentStruggle !== '') {
               // Check if user is pro before generating custom devotional
-              const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore.getState();
+              const { isProMember } = useSubscriptionStore.getState();
               if (!isProMember) {
                 appLog('[GlobalCheckIn] User is not pro, presenting free trial paywall');
-                await presentFreeTrialPaywall();
+                await safelyPresentPaywall('free');
                 return;
               }
               // Log the current check-in state

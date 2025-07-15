@@ -70,8 +70,7 @@ export default function OnboardingLayout() {
     !pathname.includes('/onboarding/auth') &&
     !pathname.includes('/pricing') &&
     !pathname.includes('/PricingScreen') &&
-    !pathname.includes('/onboarding/pricing/OldPricingScreen') &&
-    !pathname.includes('/onboarding/streakCommitment');
+    !pathname.includes('/onboarding/pricing/OldPricingScreen');
 
   appLog(
     `[OnboardingLayout] Path: ${pathname}, Should show progress bar: ${shouldShowProgressBar}`
@@ -261,7 +260,7 @@ export default function OnboardingLayout() {
             options={{
               contentStyle: {
                 backgroundColor: '#FDEBB8',
-                marginTop: screen === '1' || screen === 'LoadingScreen' ? 0 : insets.top > 20 ? 48 : 0,
+                marginTop: screen === '1' || screen === 'LoadingScreen' || screen === '11' ? 0 : insets.top > 20 ? 48 : 0,
               },
               ...(screen === '1' && {
                 gestureEnabled: false,

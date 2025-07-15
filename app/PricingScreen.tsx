@@ -6,6 +6,10 @@ import {
   ActivityIndicator,
   StatusBar,
   TouchableOpacity,
+  Image,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -74,6 +78,9 @@ const PricingScreen = () => {
   const [trialEnabled, setTrialEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [animationReady, setAnimationReady] = useState(false); // Ensures animations run after mount
+  const [referralModalVisible, setReferralModalVisible] = useState(false);
+  const [referralInput, setReferralInput] = useState('');
+  const [isSubmittingReferral, setIsSubmittingReferral] = useState(false);
 
   const animateScreenFromBottom = params.animateFromBottom === 'true';
   const fromLoading = params.fromLoading === 'true';
@@ -197,13 +204,108 @@ const PricingScreen = () => {
     }
   };
 
+  const handleOpenReferralModal = () => {
+    hapticLight();
+    analytics.logEvent('PricingScreen_ReferralCode_Tapped');
+    setReferralInput('');
+    setReferralModalVisible(true);
+  };
+
+  const handleReferralSubmit = async (code: string) => {
+    setIsSubmittingReferral(true);
+    try {
+      // Check if user is authenticated first
+      if (!isSignedIn()) {
+        appLog('[PricingScreen] User not authenticated, creating anonymous account first');
+        
+        // Import auth functions
+        const auth = (await import('@react-native-firebase/auth')).default;
+        
+        // Create anonymous account
+        try {
+          const userCredential = await auth().signInAnonymously();
+          appLog('[PricingScreen] Anonymous account created:', userCredential.user.uid);
+          
+          // Create user document in Firestore
+          const firestore = (await import('@react-native-firebase/firestore')).default;
+          await firestore().collection('users').doc(userCredential.user.uid).set({
+            id: userCredential.user.uid,
+            displayName: 'Anonymous User',
+            createdAt: firestore.Timestamp.now(),
+            updatedAt: firestore.Timestamp.now(),
+          }, { merge: true });
+          
+          // Update local user store
+          const { useUserStore } = await import('./stores/userStore');
+          useUserStore.getState().setUser({
+            id: userCredential.user.uid,
+            displayName: 'Anonymous User',
+          });
+          
+          appLog('[PricingScreen] Anonymous user setup complete');
+        } catch (authError) {
+          console.error('[PricingScreen] Failed to create anonymous account:', authError);
+          Alert.alert('Error', 'Failed to authenticate. Please try again.');
+          return;
+        }
+      }
+      
+      // Now apply the referral code
+      const { handleReferralCode, forceRefreshProStatus } = useSubscriptionStore.getState();
+      await handleReferralCode(code);
+      
+      // Wait a bit for Firestore to update
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Force refresh pro status across all stores
+      await forceRefreshProStatus();
+      
+      // Double-check and ensure pro status is set
+      const subscriptionState = useSubscriptionStore.getState();
+      appLog('[PricingScreen] After referral code and force refresh, isProMember:', subscriptionState.isProMember);
+      
+      // Update user store pro status to ensure it's reflected everywhere
+      const { useUserStore } = await import('./stores/userStore');
+      const userStore = useUserStore.getState();
+      userStore.setProStatus('pro');
+      
+      // Force update the user properties
+      userStore.setUser({
+        ...userStore.getUser(),
+        isPro: true,
+        proStatus: 'pro'
+      });
+      
+      // Success!
+      Alert.alert('Success!', 'Referral code applied successfully');
+      setReferralModalVisible(false);
+      
+      // Check if onboarding is completed to determine navigation
+      const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+      
+      setTimeout(() => {
+        if (onboardingCompleted === 'true') {
+          // User has completed onboarding before, go to tabs
+          router.replace('/(tabs)');
+        } else {
+          // User hasn't completed onboarding, go to screen 11
+          router.replace('/onboarding/11');
+        }
+      }, 1000);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to apply referral code');
+    } finally {
+      setIsSubmittingReferral(false);
+    }
+  };
+
   // Conditional rendering of animated items to ensure animations trigger correctly
   const renderAnimatedContent = () => {
     if (!animationReady) return null;
     return (
       <>
         {/* Header */}
-        {IS_IOS && (
+        {IS_ANDROID && (
           <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
             <View className="flex-row items-center justify-between px-5 py-3 mb-3">
                 <Animated.View entering={FadeIn.duration(600)}>
@@ -279,7 +381,7 @@ const PricingScreen = () => {
           <AnimatedItem index={2.5} animateItemFromBottom={animateScreenFromBottom}>
             <View className="mb-10 mt-12">
               <Text className="font-feather text-h2 text-textPrimary mb-6 text-center">
-                {i18n.t('pricing_giving_super_shepherd_free')}
+                {IS_ANDROID ? 'Unlock Super Shepherd Today' : i18n.t('pricing_giving_super_shepherd_free')}
               </Text>
               <View
                 className="bg-lightYellow border-2 border-accentGold shadow-lg rounded-[24px] mb-0 overflow-hidden h-48 mt-4"
@@ -331,7 +433,7 @@ const PricingScreen = () => {
                   <View className="flex-1 ml-44 pl-2 mr-2 my-2">
                     {/* Name */}
                     <Text className="font-feather text-lg text-textPrimary mb-1">
-                      {i18n.t('pricing_anointed_lamb')}
+                    LIMITED Time
                     </Text>
 
                     {/* Description */}
@@ -360,7 +462,11 @@ const PricingScreen = () => {
               <View className="flex-row">
                 <View className="flex-1" />
                 <View className="items-center justify-center py-4" style={{ width: '25%' }}>
-                  <Text className="font-din text-md text-textPrimary">{i18n.t('pricing_free')}</Text>
+                  <Image 
+                    source={require('../assets/youversion.png')}
+                    style={{ width: 36, height: 36 }}
+                    resizeMode="contain"
+                  />
                 </View>
                 <View
                   className="items-center justify-center py-4 bg-accentGold/10"
@@ -428,6 +534,12 @@ const PricingScreen = () => {
               </View>
             </View>
 
+            {/* Referral Code Button - Below the table */}
+            <TouchableOpacity onPress={handleOpenReferralModal} className="mt-0 py-3 mb-12">
+              <Text className="text-center text-description underline font-din text-sm">
+                {i18n.t('referral_code_title')}
+              </Text>
+            </TouchableOpacity>
 
           </AnimatedItem>
 
@@ -457,7 +569,7 @@ const PricingScreen = () => {
                 </Text>
               </View>
             ) : (
-              <PrimaryButton title={i18n.t('pricing_see_free_offer')} onPress={handleSubscribe} />
+              <PrimaryButton title={IS_ANDROID ? 'Unlock Super Shepherd' : i18n.t('pricing_see_free_offer')} onPress={handleSubscribe} />
             )}
 
           </View>
@@ -491,6 +603,53 @@ const PricingScreen = () => {
           )}
         </Animated.View>
       </View>
+
+      {/* Referral Code Modal - same as in SettingsSheet */}
+      <Modal
+        visible={referralModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setReferralModalVisible(false)}>
+        <View className="flex-1 bg-black/50 justify-center items-center">
+          <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
+            {/* Title */}
+            <Text className="font-feather text-xl text-textPrimary text-center mb-4">
+              {i18n.t('enter_referral_code')}
+            </Text>
+
+            {/* Input Field */}
+            <View className="mb-4">
+              <TextInput
+                className="bg-white rounded-xl px-4 py-3 text-lg font-din text-textPrimary border border-[#FFE4A8]"
+                placeholder={i18n.t('enter_code_here')}
+                placeholderTextColor="#B89B4C"
+                value={referralInput || ''}
+                onChangeText={setReferralInput}
+                autoCapitalize="characters"
+                maxLength={6}
+                editable={!isSubmittingReferral}
+              />
+            </View>
+
+            {/* Confirm Button */}
+            <TouchableOpacity
+              onPress={() => handleReferralSubmit(referralInput)}
+              className={`bg-[#FFE07D] rounded-xl p-4 mb-2 ${referralInput.length !== 6 ? 'opacity-50' : ''}`}
+              disabled={referralInput.length !== 6 || isSubmittingReferral}>
+              <Text className="font-feather text-textPrimary text-center text-lg">
+                {isSubmittingReferral ? i18n.t('submitting') : i18n.t('confirm_button')}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Cancel Button */}
+            <TouchableOpacity
+              onPress={() => setReferralModalVisible(false)}
+              className="bg-textPrimary/10 rounded-xl p-4">
+              <Text className="font-din text-textPrimary text-center">{i18n.t('cancel_button')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 };

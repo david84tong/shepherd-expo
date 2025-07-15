@@ -428,13 +428,13 @@ export default function StreakCommitmentScreen() {
           transform: [{ scale: rewardCardScale }],
         }}>
         <Text className="text-sm font-din text-[#B89B4C] text-center uppercase mb-2 tracking-wider">
-          Special Reward
+          Special Reward (Limited Time)
         </Text>
         <Animated.View
           className="flex-row items-center justify-center"
           style={{ opacity: gemTextOpacity }}>
           <Text className="font-din text-textPrimary text-2xl font-bold text-center">
-            Unlock Phoenix Lamb
+            Unlock the Phoenix Skin
           </Text>
         </Animated.View>
         <Text className="font-din text-[#B89B4C] text-center text-sm mt-1">

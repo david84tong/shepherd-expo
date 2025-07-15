@@ -132,6 +132,8 @@ interface SubscriptionState {
   checkHasSeenHalfOffPaywall: () => Promise<void>;
   markHalfOffPaywallAsSeen: () => Promise<void>;
   shouldShowFreeTrialPaywall: () => boolean;
+  // Force refresh pro status
+  forceRefreshProStatus: () => Promise<void>;
   // Add other state and actions here
 }
 
@@ -187,6 +189,21 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
   presentFreeTrialPaywall: async () => {
     appLog('[SubscriptionStore] presentFreeTrialPaywall called');
+    // Make sure we have the latest pro status before showing any paywall
+    await get().forceRefreshProStatus();
+    // First check if user is already pro
+    const currentState = get();
+    if (currentState.isProMember) {
+      appLog('[SubscriptionStore] User is already pro, skipping paywall');
+      return PAYWALL_RESULT.CANCELLED;
+    }
+
+    // Also check user store pro status
+    const userProStatus = useUserStore.getState().proStatus;
+    if (userProStatus === 'pro') {
+      appLog('[SubscriptionStore] User is pro according to userStore, skipping paywall');
+      return PAYWALL_RESULT.CANCELLED;
+    }
 
     if(Platform.OS =="android"){
       return get().presentPaywall();
@@ -307,6 +324,22 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
   },
   presentHalfOffPaywall: async () => {
+    // Refresh pro status first
+    await get().forceRefreshProStatus();
+    // First check if user is already pro
+    const currentState = get();
+    if (currentState.isProMember) {
+      appLog('[SubscriptionStore] User is already pro, skipping half-off paywall');
+      return PAYWALL_RESULT.CANCELLED;
+    }
+
+    // Also check user store pro status
+    const userProStatus = useUserStore.getState().proStatus;
+    if (userProStatus === 'pro') {
+      appLog('[SubscriptionStore] User is pro according to userStore, skipping half-off paywall');
+      return PAYWALL_RESULT.CANCELLED;
+    }
+
     // Check if a paywall is already presenting
     if (get().isPaywallPresenting) {
       appLog('[SubscriptionStore] Paywall already presenting, skipping half-off paywall');
@@ -425,6 +458,22 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
 
   presentPaywall: async () => {
+    // Refresh pro status first
+    await get().forceRefreshProStatus();
+    // First check if user is already pro
+    const currentState = get();
+    if (currentState.isProMember) {
+      appLog('[SubscriptionStore] User is already pro, skipping paywall');
+      return PAYWALL_RESULT.CANCELLED;
+    }
+
+    // Also check user store pro status
+    const userProStatus = useUserStore.getState().proStatus;
+    if (userProStatus === 'pro') {
+      appLog('[SubscriptionStore] User is pro according to userStore, skipping paywall');
+      return PAYWALL_RESULT.CANCELLED;
+    }
+
     // Check if a paywall is already presenting
     if (get().isPaywallPresenting) {
       appLog('[SubscriptionStore] Paywall already presenting, skipping paywall');
@@ -715,8 +764,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       appLog('isProFromFirebase ==>', isProFromFirebase);
 
       // 3. Final pro status: Adapty OR Firestore (if not expired)
-      // const finalProStatus = isProAdapty || isProFromFirebase;
-      const finalProStatus = (isProAdapty && isProFromFirebase) || isProWithReferralFromFirebase;
+      const finalProStatus = isProAdapty || isProFromFirebase || isProWithReferralFromFirebase;
       // Track status change if different from current state
       const prevIsPro = get().isProMember;
       if (prevIsPro !== finalProStatus) {
@@ -846,10 +894,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         if (hasUsedCreator) {
           throw new Error('You have already used a creator subscription code');
         }
-        // One month pro access
+        // Special creator code - permanent access
         await userRef.update({
+          userProExpiryDate: null, // null means permanent for creators
           usedReferralCodes: firestore.FieldValue.arrayUnion(code),
           isProWithReferral: true,
+          isPro: true, // Also set isPro to true for CREATE code
         });
         // Save creator status to AsyncStorage
         await AsyncStorage.setItem('isCreator', 'true');
@@ -869,6 +919,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       subscriptionType: 'referral_code',
       referralCode: code.toUpperCase(),
     });
+    
+    // Refresh customer info to ensure pro status is properly reflected
+    await get().getCustomerInfo();
   },
   getUsedReferralCodes: async () => {
     const user = auth().currentUser;
@@ -935,6 +988,42 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   shouldShowFreeTrialPaywall: () => {
     return get().hasSeenHalfOffPaywall;
   },
+  
+  // Force refresh pro status across all stores
+  forceRefreshProStatus: async () => {
+    appLog('[SubscriptionStore] Force refreshing pro status across all stores');
+    
+    // First get the latest customer info
+    await get().getCustomerInfo();
+    
+    // Get the current pro status
+    const isProMember = get().isProMember;
+    
+    // Also check Firestore directly
+    const currentUser = auth().currentUser;
+    if (currentUser) {
+      try {
+        const userDoc = await firestore().collection('users').doc(currentUser.uid).get();
+        const userData = userDoc.data();
+        
+        if (userData && (userData.isPro || userData.isProWithReferral)) {
+          appLog('[SubscriptionStore] User is pro in Firestore, ensuring stores are updated');
+          set({ isProMember: true });
+          useUserStore.getState().setProStatus('pro');
+          
+          // Update analytics
+          analytics.setUserProperties({
+            isPro: true,
+            proStatus: 'pro',
+          });
+        }
+      } catch (error) {
+        appLog('[SubscriptionStore] Error checking Firestore pro status:', error);
+      }
+    }
+    
+    appLog('[SubscriptionStore] Force refresh complete, isProMember:', get().isProMember);
+  },
 }));
 
 // Helper function for navigation after purchase/restore
@@ -947,5 +1036,31 @@ function handlePostPurchaseNavigation() {
     router.replace('/onboarding/11');
   }
 }
+
+// Helper function to safely present paywall only if user is not pro
+export const safelyPresentPaywall = async (paywallType: 'free' | 'halfoff' | 'normal' = 'free') => {
+  const store = useSubscriptionStore.getState();
+  
+  // Force refresh to get latest status
+  await store.forceRefreshProStatus();
+  
+  // Check if user is pro
+  if (store.isProMember || useUserStore.getState().proStatus === 'pro') {
+    appLog('[safelyPresentPaywall] User is pro, not presenting paywall');
+    return PAYWALL_RESULT.CANCELLED;
+  }
+  
+  // Present the appropriate paywall
+  switch (paywallType) {
+    case 'free':
+      return store.presentFreeTrialPaywall();
+    case 'halfoff':
+      return store.presentHalfOffPaywall();
+    case 'normal':
+      return store.presentPaywall();
+    default:
+      return store.presentFreeTrialPaywall();
+  }
+};
 
 export default useSubscriptionStore;

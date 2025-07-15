@@ -205,13 +205,11 @@ const Rating = () => {
 
             {/* shepherd Ratings image */}
               <TestimonialList />
-
             {/* Bottom button */}
             <Animated.View style={buttonStyle} className="items-center mt-24">
               <PrimaryButton title="Leave a rating" onPress={handleRateApp} buttonType="gold" />
-
-              <TouchableOpacity onPress={handleIRatedPress} className="mt-2 items-center ">
-                <Text className="font-din text-description underline text-[16px]">
+              <TouchableOpacity onPress={handleIRatedPress} className="mt-0 items-center ">
+                <Text className="font-din text-description underline text-[16px] -mb-24">
                   👍 Ok, I rated
                 </Text>
               </TouchableOpacity>
