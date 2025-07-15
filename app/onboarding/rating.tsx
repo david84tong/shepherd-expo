@@ -157,7 +157,7 @@ const Rating = () => {
   const handleIRatedPress = () => {
     analytics.logEvent('RatingScreen_Tapped_IRated');
     router.push({
-      pathname: '/onboarding/LoadingScreen',
+      pathname: '/onboarding/streakCommitment',
       params: {
         isOnboarding: 'true',
       },
@@ -207,10 +207,10 @@ const Rating = () => {
               <TestimonialList />
 
             {/* Bottom button */}
-            <Animated.View style={buttonStyle} className="items-center mt-12">
+            <Animated.View style={buttonStyle} className="items-center mt-24">
               <PrimaryButton title="Leave a rating" onPress={handleRateApp} buttonType="gold" />
 
-              <TouchableOpacity onPress={handleIRatedPress} className="mt-6 items-center">
+              <TouchableOpacity onPress={handleIRatedPress} className="mt-2 items-center ">
                 <Text className="font-din text-description underline text-[16px]">
                   👍 Ok, I rated
                 </Text>

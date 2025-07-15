@@ -192,7 +192,7 @@ export default function OnboardingReminderTimeScreen() {
     }
 
     // Navigate to the next screen
-    router.push('/onboarding/streakCommitment');
+    router.push('/onboarding/rating');
   };
 
   const options = [

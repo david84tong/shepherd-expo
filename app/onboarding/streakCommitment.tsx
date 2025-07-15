@@ -320,7 +320,7 @@ export default function StreakCommitmentScreen() {
 
       setTimeout(() => {
         router.push({
-          pathname: abTestValue === 0 ? '/onboarding/PricingScreen' : '/onboarding/OldPricingScreen',
+          pathname: '/onboarding/LoadingScreen',
           params: { animated: true, animation: 'fade', immediate: false },
         } as any);
       }, 300);
