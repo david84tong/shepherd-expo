@@ -114,7 +114,7 @@ export const useHomeStore = create<HomeState>()(
       sawStreakToday: false,
       // Default covenant success modal
       showCovenantSuccessModal: false,
-      completedCovenantDays: 0,
+      completedCovenantDays: 3,
       // Default daily XP tracking
       dailyXpEarned: 0,
       lastXpResetDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
@@ -183,10 +183,10 @@ export const useHomeStore = create<HomeState>()(
       setCompletedCovenantDays: (days) => set({ completedCovenantDays: days }),
 
       handleCovenantSuccess: (days) => {
-        set({ 
-          showCovenantSuccessModal: true,
-          completedCovenantDays: days
-        });
+        appLog(`🎉 [COVENANT MODAL] handleCovenantSuccess called for ${days} days`);
+        set({ completedCovenantDays: days });
+        set({ showCovenantSuccessModal: true });
+        appLog(`🎉 [COVENANT MODAL] Modal state updated - showCovenantSuccessModal: true, completedCovenantDays: ${days}`);
         analytics.logEvent('Covenant_Completed', { days });
       },
 

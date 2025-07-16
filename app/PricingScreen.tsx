@@ -84,6 +84,7 @@ const PricingScreen = () => {
 
   const animateScreenFromBottom = params.animateFromBottom === 'true';
   const fromLoading = params.fromLoading === 'true';
+  const isInReview = (global as any).is_In_Review;
 
   // Track screen view
   useEffect(() => {
@@ -535,11 +536,13 @@ const PricingScreen = () => {
             </View>
 
             {/* Referral Code Button - Below the table */}
-            <TouchableOpacity onPress={handleOpenReferralModal} className="mt-0 py-3 mb-12">
+         {!isInReview && (
+          <TouchableOpacity onPress={handleOpenReferralModal} className="mt-0 py-3 mb-12">
               <Text className="text-center text-description underline font-din text-sm">
                 {i18n.t('referral_code_title')}
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity>  
+         )}
 
           </AnimatedItem>
 

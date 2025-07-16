@@ -453,8 +453,8 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   }
 
   return (
-    <Animated.View style={containerStyle} className="flex-1 bg-surfaceCream justify-between">
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <Animated.View style={[containerStyle, { flex: 1, position: 'relative' }]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         {/* Large flame with streak number */}
         <Animated.View style={flameContainerStyle} className="items-center mt-10 mb-2">
           <View className="relative justify-center items-center mb-1">
@@ -542,38 +542,50 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
             {subText}
           </Animated.Text>
         </Animated.View>
-
-        {/* Continue button */}
-        <Animated.View style={buttonStyle} className="px-6 pb-10 mt-32">
-          <PrimaryButton buttonType="blue" title="Continue" onPress={handleContinue} />
-        </Animated.View>
-
-        {/* Development debug info */}
-        {/* {__DEV__ && debugDisplayInfo && (
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 80,
-            left: 10,
-            right: 10,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            padding: 8,
-            borderRadius: 5,
-          }}>
-          <Text style={{ color: 'white', fontSize: 10 }}>
-            Streak: {debugDisplayInfo.streak} | Dates completed:{' '}
-            {debugDisplayInfo.completedDates?.join(', ')}
-          </Text>
-          <Text style={{ color: 'white', fontSize: 10 }}>
-            Today: {debugDisplayInfo.today} | Created: {debugDisplayInfo.createdDate}
-          </Text>
-          <Text style={{ color: 'white', fontSize: 10 }}>
-            HasToday: {String(debugDisplayInfo.hasTodayCompleted)} | HasYesterday:{' '}
-            {String(debugDisplayInfo.hasYesterdayCompleted)}
-          </Text>
-        </View>
-      )} */}
       </ScrollView>
+
+      {/* Continue button fixed at bottom */}
+      <Animated.View
+        style={[
+          buttonStyle,
+          {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: insets.bottom + 24, // Add safe area and some padding
+            paddingHorizontal: 24,
+            zIndex: 10,
+          },
+        ]}
+      >
+        <PrimaryButton buttonType="blue" title="Continue" onPress={handleContinue} />
+      </Animated.View>
+
+      {/* Development debug info */}
+      {/* {__DEV__ && debugDisplayInfo && (
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 80,
+          left: 10,
+          right: 10,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          padding: 8,
+          borderRadius: 5,
+        }}>
+        <Text style={{ color: 'white', fontSize: 10 }}>
+          Streak: {debugDisplayInfo.streak} | Dates completed:{' '}
+          {debugDisplayInfo.completedDates?.join(', ')}
+        </Text>
+        <Text style={{ color: 'white', fontSize: 10 }}>
+          Today: {debugDisplayInfo.today} | Created: {debugDisplayInfo.createdDate}
+        </Text>
+        <Text style={{ color: 'white', fontSize: 10 }}>
+          HasToday: {String(debugDisplayInfo.hasTodayCompleted)} | HasYesterday:{' '}
+          {String(debugDisplayInfo.hasYesterdayCompleted)}
+        </Text>
+      </View>
+    )} */}
     </Animated.View>
   );
 };

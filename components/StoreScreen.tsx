@@ -70,7 +70,8 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const ownedSkins = useShopStore(state => state.ownedSkins);
   const riveRef = useHomeStore(state => state.riveRef);
   const setCurrentSkin = useHomeStore(state => state.setCurrentSkin);
-  const {currentStreak , targetDays} = useUserStore(state => state.covenantProgress);
+  const {currentStreak} = useUserStore(state => state.covenantProgress);
+
 
   // Use reactive store subscriptions for real-time updates
   const userGems = useUserStore(state => state.gens || 0);
@@ -486,7 +487,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           : isPhoenixSkin
             ? 'border-2 border-orange shadow-lg'
             : 'bg-surfaceCreamLight border border-brownBorder shadow-card'
-          } rounded-[24px] mb-4 overflow-hidden h-48`}
+          } rounded-[24px] mb-4 overflow-hidden`}
         style={isAnointedLamb ? {
           shadowColor: '#FCD34D',
           shadowOffset: { width: 0, height: 4 },
@@ -532,12 +533,12 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           {/* Content - Add left padding to account for image */}
           <View className="flex-1 ml-44 pl-4 mr-2 my-2">
             {/* Name */}
-            <Text className="font-feather text-lg text-textPrimary mb-1">
+            <Text className="font-feather text-lg text-textPrimary mb-1" numberOfLines={1}>
               {item.name}
             </Text>
 
             {/* Description */}
-            <Text className="font-din text-sm text-description -mb-2 h-16" numberOfLines={3}>
+            <Text className="font-din text-sm text-description -mb-2" numberOfLines={3}>
               {item.description}
             </Text>
 
@@ -603,9 +604,13 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                   )
                 ) : (
                   <PrimaryButton
-                    title={`${currentStreak}/21 streak `}
-                    onPress={() => {}}
-                    disabled={true}
+                    title={`${currentStreak < 21 ? `${currentStreak}/21 streak ` : i18n.t('unlocked')}`}
+                    onPress={() => {
+                      if(currentStreak >= 21){
+                        handleEquip(item);
+                      }
+                    }}
+                    disabled={currentStreak < 21}
                     buttonType="blue"
                     buttonHeight={40}
                     width="100%"

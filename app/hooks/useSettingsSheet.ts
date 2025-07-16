@@ -85,6 +85,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
   // Animation shared values
   const timePickerHeight = useSharedValue(0);
   const toggleScale = useSharedValue(1);
+  const isInReview = (global as any).is_In_Review;
 
   // Get path store functions
   const savedTranslation = usePathStore((state) => state.savedTranslation);
@@ -1224,6 +1225,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
     // Constants
     translations,
     appVersion,
-    buildNumber
+    buildNumber,
+    isInReview,
   };
 };

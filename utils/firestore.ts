@@ -331,6 +331,62 @@ export const getFirebaseRequestCount = () => firebaseDebugger.getRequestCount();
 export const getFirebaseRequestLog = () => firebaseDebugger.getRequestLog();
 export const resetFirebaseRequestCount = () => firebaseDebugger.reset();
 export const printFirebaseRequestSummary = () => firebaseDebugger.printSummary();
+
+/**
+ * Check if a username is already taken in Firestore
+ * @param username The username to check
+ * @param excludeUserId Optional user ID to exclude from the check (for updating own username)
+ * @returns Promise<boolean> - true if username is available, false if taken
+ */
+export const checkUsernameAvailability = async (
+  username: string,
+  excludeUserId?: string
+): Promise<boolean> => {
+  try {
+    if (!username || username.trim().length === 0) {
+      return false;
+    }
+
+    const normalizedUsername = username.trim().toLowerCase();
+    
+    // Query Firestore for users with the same username
+    const query = firestore()
+      .collection('users')
+      .where('username', '==', normalizedUsername);
+
+    const snapshot = await query.get();
+    
+    // Log the check operation
+    firebaseDebugger.logRequest(
+      'CHECK_USERNAME',
+      `users?username=${normalizedUsername}`,
+      { excludeUserId }
+    );
+
+    // Filter out the current user if we're updating their own username
+    let isAvailable = true;
+    if (!snapshot.empty) {
+      const docs = snapshot.docs;
+      if (excludeUserId) {
+        // Check if any document (other than the current user) has this username
+        isAvailable = !docs.some(doc => doc.id !== excludeUserId);
+      } else {
+        // Username is taken if any document exists
+        isAvailable = false;
+      }
+    }
+    
+    appLog(`Username "${normalizedUsername}" availability check: ${isAvailable ? 'available' : 'taken'}`);
+    appLog(`Found ${snapshot.size} documents with username "${normalizedUsername}"`);
+    
+    return isAvailable;
+  } catch (error) {
+    appLog('Error checking username availability:', error);
+    // In case of error, assume username is taken to be safe
+    return false;
+  }
+};
+
 // Save feedback to Firestore
 export const saveFeedback = async (feedbackData: {
   type: string;

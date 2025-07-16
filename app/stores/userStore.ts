@@ -464,6 +464,7 @@ export const useUserStore = create<UserStore>()(
       setLamb: (lamb) => set({ lamb }),
 
       setStreakCount: (count) => {
+        appLog(`🏆 [COVENANT] setStreakCount called with count: ${count}`);
         set({ streakCount: count, streak: count });
         if (isAuthenticated()) {
           updateField('streakCount', count);
@@ -473,7 +474,16 @@ export const useUserStore = create<UserStore>()(
         // Check if covenant is completed
         const state = get();
         const covenantProgress = state.covenantProgress;
+        appLog(`🏆 [COVENANT] Current covenant progress:`, {
+          currentStreak: covenantProgress.currentStreak,
+          targetDays: covenantProgress.targetDays,
+          state: covenantProgress.state,
+          newCount: count
+        });
+        
         if (count >= covenantProgress.targetDays && covenantProgress.state !== COVENANT_STATES.COMPLETED) {
+          appLog(`🎉 [COVENANT] SUCCESS! User completed ${covenantProgress.targetDays}-day covenant with streak of ${count}`);
+          
           // Update covenant state to completed
           const updatedProgress = {
             ...covenantProgress,
@@ -488,7 +498,12 @@ export const useUserStore = create<UserStore>()(
           
           // Show success modal
           const homeStore = useHomeStore.getState();
+          appLog(`🎉 [COVENANT] Triggering success modal for ${covenantProgress.targetDays} days`);
           homeStore.handleCovenantSuccess(covenantProgress.targetDays);
+        } else if (count >= covenantProgress.targetDays) {
+          appLog(`🏆 [COVENANT] User already completed this covenant (state: ${covenantProgress.state})`);
+        } else {
+          appLog(`🏆 [COVENANT] Still working towards goal: ${count}/${covenantProgress.targetDays}`);
         }
         
         syncStreakWithWidget(count, get().lastActivityDate);

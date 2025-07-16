@@ -58,9 +58,9 @@ import { initializeLanguage } from './utils/i18n';
 import { useHomeStore } from './stores/homeStore';
 import { useDevotionalStore } from './stores/devotionalStore';
 import { appLog } from './helper/helper';
-import { CovenantSuccessModal } from '../components/CovenantSuccessModal';
 import { COVENANT_STATES } from './hooks/streakHook';
 import { useUserStore } from './stores/userStore';
+import CovenantSuccessSheet, { CovenantSuccessSheetRef } from '../components/CovenantSuccessSheet';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -181,6 +181,7 @@ export default function RootLayout() {
   const statsSheetRef = useRef<StatsSheetRef>(null);
   const checkInRef = useRef<GlobalCheckInRef>(null);
   const devotionalsSheetRef = useRef<DevotionalsSheetRef>(null);
+  const covenantSuccessSheetRef = useRef<CovenantSuccessSheetRef>(null);
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
@@ -725,16 +726,32 @@ export default function RootLayout() {
   const completedCovenantDays = useHomeStore((state) => state.completedCovenantDays);
   const setShowCovenantSuccessModal = useHomeStore((state) => state.setShowCovenantSuccessModal);
   const setCovenantProgress = useUserStore((state) => state.setCovenantProgress);
+  const {covenantProgress} = useUserStore((state) => state);
+
+  useEffect(() => {
+    appLog('[RootLayout] showCovenantSuccessModal:', showCovenantSuccessModal);
+    if(showCovenantSuccessModal && covenantSuccessSheetRef.current){
+      covenantSuccessSheetRef.current?.show();
+    }
+  }, [showCovenantSuccessModal, covenantSuccessSheetRef.current]);
 
   const handleNextCovenant = (days: number) => {
     setCovenantProgress({
-      currentStreak: 0,
+      currentStreak: completedCovenantDays,
       targetDays: days,
-      progress: 0,
+      progress: 0, // TODO: calculate progress
       state: COVENANT_STATES.IN_PROGRESS
     });
     setShowCovenantSuccessModal(false);
   };
+
+  // Watch for covenant success modal state and show sheet
+  useEffect(() => {
+    if (showCovenantSuccessModal && covenantSuccessSheetRef.current) {
+      appLog('[RootLayout] Opening covenant success sheet via ref');
+      covenantSuccessSheetRef.current.show();
+    }
+  }, [showCovenantSuccessModal]);
 
   // Show Rive animation
   if (showRiveAnimation && riveAssets?.[0]?.uri) {
@@ -848,6 +865,13 @@ export default function RootLayout() {
             {/* Global Devotionals Sheet */}
             <GlobalDevotionalsSheet devotionalsSheetRef={devotionalsSheetRef} />
 
+            {/* Global Covenant Success Sheet */}
+            <CovenantSuccessSheet
+              covenantSheetRef={covenantSuccessSheetRef}
+              completedDays={completedCovenantDays}
+              onSelectNextCovenant={handleNextCovenant}
+            />
+
             {/* Dimmed background for modal overlays */}
             {isModalDimActive && (
               <View
@@ -863,13 +887,6 @@ export default function RootLayout() {
 
             {/* Debug button (visible only in development or for creators) */}
             {(__DEV__ || isCreator) && <DebugButton />}
-
-            <CovenantSuccessModal
-              visible={showCovenantSuccessModal}
-              onClose={() => setShowCovenantSuccessModal(false)}
-              completedDays={completedCovenantDays}
-              onSelectNextCovenant={handleNextCovenant}
-            />
           </>
         )}
       </BottomSheetModalProvider>

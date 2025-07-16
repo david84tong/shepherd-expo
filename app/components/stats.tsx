@@ -24,6 +24,7 @@ import i18n from '../utils/i18n';
 import journalIcon from '../../assets/icons/journalIcon.png';
 import { hapticLight } from '~/utils/haptics';
 import { appLog } from '../helper/helper';
+import PhoenixSkinBanner from '../../components/PhoenixSkinBanner';
 
 // Bible book names mapping
 const BIBLE_BOOK_NAMES: { [bookId: number]: string } = {
@@ -681,6 +682,9 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
             )}
           </View>
 
+          {/* Phoenix Skin Banner */}
+          <PhoenixSkinBanner />
+
           {/* Heatmap Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card shadow-lg  border border-brownBorder">
             <View className="flex-row justify-between items-center mb-4">
@@ -748,7 +752,7 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
           </View>
 
           {/* Activity Summary Card - Moved to bottom */}
-          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-cardx mt-8 border border-brownBorder">
+          <View className="mx-6  bg-surfaceCreamLight rounded-[20px] p-6 shadow-cardx mt-8 border border-brownBorder">
             <Text className="font-feather text-heading text-textPrimary mb-4 ">
               {i18n.t('activity_summary')}
             </Text>
