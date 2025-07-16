@@ -558,6 +558,10 @@
     "checkin_struggle_impatience": "Ongeduld",
     "checkin_struggle_gluttony": "Gulzigheid",
     "onboarding_streak_commitment_reward": "Reeks Beloning",
-    "onboarding_streak_commitment_special_reward": "Speciale Beloning (Tijdelijk)",
-    "onboarding_streak_commitment_unlock_skin": "Phoenix-Skin Ontgrendelen"
+    "onboarding_streak_commitment_special_reward": "Speciale Beloning (Beperkte Tijd)",
+    "onboarding_streak_commitment_unlock_skin": "Phoenix-Skin Ontgrendelen",
+    "unlocked": "Ontgrendeld",
+    "phoenix_skin_title": "Phoenix-Skin",
+    "phoenix_skin_description": "21-dagen reeks om te ontgrendelen. {{days}} dagen over!",
+    "phoenix_skin_progress": "Voortgang: {{current}}/21 dagen"
 }

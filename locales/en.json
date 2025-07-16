@@ -564,5 +564,9 @@
     "checkin_struggle_gluttony": "Gluttony",
     "onboarding_streak_commitment_reward": "Streak Reward",
     "onboarding_streak_commitment_special_reward": "Special Reward (Limited Time)",
-    "onboarding_streak_commitment_unlock_skin": "Unlock the Phoenix Skin"
+    "onboarding_streak_commitment_unlock_skin": "Unlock the Phoenix Skin",
+    "unlocked": "Unlocked",
+    "phoenix_skin_title": "Phoenix Skin",
+    "phoenix_skin_description": "21-day streak to unlock. {{days}} days left!",
+    "phoenix_skin_progress": "Progress: {{current}}/21 days"
 }

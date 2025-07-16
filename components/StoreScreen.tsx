@@ -70,7 +70,8 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const ownedSkins = useShopStore(state => state.ownedSkins);
   const riveRef = useHomeStore(state => state.riveRef);
   const setCurrentSkin = useHomeStore(state => state.setCurrentSkin);
-  const {currentStreak , targetDays} = useUserStore(state => state.covenantProgress);
+  const {currentStreak} = useUserStore(state => state.covenantProgress);
+
 
   // Use reactive store subscriptions for real-time updates
   const userGems = useUserStore(state => state.gens || 0);
@@ -603,9 +604,13 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                   )
                 ) : (
                   <PrimaryButton
-                    title={`${currentStreak}/21 streak `}
-                    onPress={() => {}}
-                    disabled={true}
+                    title={`${currentStreak < 21 ? `${currentStreak}/21 streak ` : i18n.t('unlocked')}`}
+                    onPress={() => {
+                      if(currentStreak >= 21){
+                        handleEquip(item);
+                      }
+                    }}
+                    disabled={currentStreak < 21}
                     buttonType="blue"
                     buttonHeight={40}
                     width="100%"

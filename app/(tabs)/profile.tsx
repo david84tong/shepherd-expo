@@ -720,35 +720,35 @@ export default function ProfileScreen() {
           )}
 
           {/* Selected Path Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <View className="flex-row justify-between items-center">
-              <Text className="font-feather text-heading text-textPrimary ">Selected Path</Text>
-              <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
-                <Text className="font-din text-description underline text-accentGold font-bold">
-                  {selectedPath?.title || 'No path selected'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* XP Bar */}
-
-            <View className="flex-row justify-between align-center mb-2 mt-6 border-t border-t-gray-200 pt-6">
-
-              <Text className="font-nunito-bold text-blue">{i18n.t('level')} {levelData.level}</Text>
-
-              <View className="h-3 mt-1.5 w-[55%] bg-black/10 rounded-full overflow-hidden">
-                <View
-                  className="h-full bg-blue rounded-full"
-                  style={{ width: `${levelData.progress}%` }}
-                />
+            <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+              <View className="flex-row justify-between items-center">
+                <Text className="font-feather text-heading text-textPrimary ">Selected Path</Text>
+                <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
+                  <Text className="font-din text-description underline font-bold">
+                    {selectedPath?.title || 'No path selected'}
+                  </Text>
+                </TouchableOpacity>
               </View>
 
-              <Text className="font-nunito-bold text-blue">
-                {levelData.xpCurrent}/{levelData.xpForNextLevel} {i18n.t('xp')}
-              </Text>
+              {/* XP Bar */}
 
+              <View className="flex-row justify-between align-center mb-2 mt-6 border-t border-t-gray-200 pt-6">
+
+                <Text className="font-nunito-bold text-blue">{i18n.t('level')} {levelData.level}</Text>
+
+                <View className="h-3 mt-1.5 w-[35%] bg-black/10 rounded-full overflow-hidden">
+                  <View
+                    className="h-full bg-blue rounded-full"
+                    style={{ width: `${levelData.progress}%` }}
+                  />
+                </View>
+
+                <Text className="font-nunito-bold text-blue">
+                  {levelData.xpCurrent}/{levelData.xpForNextLevel} {i18n.t('xp')}
+                </Text>
+
+              </View>
             </View>
-          </View>
 
 
 
