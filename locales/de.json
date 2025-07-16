@@ -556,5 +556,8 @@
     "checkin_struggle_pride": "Stolz",
     "checkin_struggle_vanity": "Eitelkeit",
     "checkin_struggle_impatience": "Ungeduld",
-    "checkin_struggle_gluttony": "Völlerei"
+    "checkin_struggle_gluttony": "Völlerei",
+    "onboarding_streak_commitment_reward": "Streak Belohnung",
+    "onboarding_streak_commitment_special_reward": "Spezielle Belohnung (Zeitlich begrenzt)",
+    "onboarding_streak_commitment_unlock_skin": "Phoenix-Skin freischalten"
 }

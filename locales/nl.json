@@ -556,5 +556,8 @@
     "checkin_struggle_pride": "Trots",
     "checkin_struggle_vanity": "IJdelheid",
     "checkin_struggle_impatience": "Ongeduld",
-    "checkin_struggle_gluttony": "Gulzigheid"
+    "checkin_struggle_gluttony": "Gulzigheid",
+    "onboarding_streak_commitment_reward": "Reeks Beloning",
+    "onboarding_streak_commitment_special_reward": "Speciale Beloning (Tijdelijk)",
+    "onboarding_streak_commitment_unlock_skin": "Phoenix-Skin Ontgrendelen"
 }

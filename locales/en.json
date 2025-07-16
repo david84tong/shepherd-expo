@@ -561,5 +561,8 @@
     "checkin_struggle_pride": "Pride",
     "checkin_struggle_vanity": "Vanity",
     "checkin_struggle_impatience": "Impatience",
-    "checkin_struggle_gluttony": "Gluttony"
+    "checkin_struggle_gluttony": "Gluttony",
+    "onboarding_streak_commitment_reward": "Streak Reward",
+    "onboarding_streak_commitment_special_reward": "Special Reward (Limited Time)",
+    "onboarding_streak_commitment_unlock_skin": "Unlock the Phoenix Skin"
 }

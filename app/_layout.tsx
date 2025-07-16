@@ -739,7 +739,7 @@ export default function RootLayout() {
 
   // Watch for covenant success modal state and show sheet
   useEffect(() => {
-    if (true && covenantSuccessSheetRef.current) {
+    if (showCovenantSuccessModal && covenantSuccessSheetRef.current) {
       appLog('[RootLayout] Opening covenant success sheet via ref');
       covenantSuccessSheetRef.current.show();
     }
@@ -860,7 +860,7 @@ export default function RootLayout() {
             {/* Global Covenant Success Sheet */}
             <CovenantSuccessSheet
               covenantSheetRef={covenantSuccessSheetRef}
-              completedDays={3}
+              completedDays={completedCovenantDays}
               onSelectNextCovenant={handleNextCovenant}
             />
 
