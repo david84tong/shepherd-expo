@@ -929,9 +929,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 <Text className="font-din text-sm text-textPrimary text-center mb-1">
                   {struggle.label}
                 </Text>
-                <Text className="font-din text-[10px] text-gray-500 text-center">
-                  {struggle.verse}
-                </Text>
+              
               </Pressable>
             ))}
           </View>
