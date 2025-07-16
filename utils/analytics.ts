@@ -153,7 +153,7 @@ class Analytics {
       // Get existing Mixpanel instance or create new one
       this.mixpanel = getMixpanelInstance();
       if (!this.mixpanel) {
-        this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
+        this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false, true); // trackAutomaticEvents=false, useNative=true
         await this.mixpanel.init();
       }
       
