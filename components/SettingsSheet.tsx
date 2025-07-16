@@ -120,7 +120,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     // Constants
     translations,
     appVersion,
-    buildNumber
+    buildNumber,
+    isInReview,
   } = useSettingSheet(settingsSheetRef);
 
   // Custom backdrop renderer
@@ -464,7 +465,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 {/* Promo Code Button */}
 
                 {/* Referral Code Button */}
-                {/* <TouchableOpacity
+              {!isInReview && (
+                <TouchableOpacity
                   onPress={handleOpenReferralModal}
                   className="bg-white rounded-xl p-4 mt-2 shadow-sm flex-row justify-between items-center">
                   <View>
@@ -472,7 +474,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                     <Text className="font-din text-description mt-1">{i18n.t('referral_code_description')}</Text>
                   </View>
                   <Feather name="gift" size={20} color="#B89B4C" />
-                </TouchableOpacity> */}
+                </TouchableOpacity>
+              )}
               </View>
 
               {/* User ID Section - Moved to bottom */}

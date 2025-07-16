@@ -20,9 +20,11 @@ export const useRemoteConfig = () => {
         await remoteConfig().fetchAndActivate();
         const hide_google_login = remoteConfig().getValue('hide_google_login').asBoolean();
         const show_email_password = remoteConfig().getValue('show_email_password').asBoolean();
-        // Get the values
+        const is_In_Review = remoteConfig().getValue('inReview').asBoolean();
+         // Get the values
         (global as any).hideGoogleLogin = hide_google_login;
         (global as any).showEmailPassword = show_email_password;
+        (global as any).is_In_Review = is_In_Review;
       } catch (error) {
         console.error('Error fetching remote config:', error);
       }
