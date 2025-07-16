@@ -760,10 +760,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           paddingTop: RPH(2),
           transform: [{ translateX: moodAnim }],
         }}>
-        <Text className="font-feather text-3xl text-textPrimary mb-8 text-center px-4 max-w-[300px]">
+        <Text className="font-feather text-2xl text-textPrimary mb-2 text-center px-2">
           {i18n.t('checkin_how_are_you_feeling')}
         </Text>
-        <Text className="font-feather text-xl mb-6 text-center px-1 text-textPrimary/70 max-w-[300px]">
+        <Text className="font-feather text-xl mb-6 text-center px-1 text-textPrimary/70">
           {i18n.t('checkin_select_mood_help')}
         </Text>
         <View className="flex-1 w-full flex-row flex-wrap justify-center items-center gap-2  px-2">
@@ -812,10 +812,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           paddingTop: RPH(2),
           transform: [{ translateX: focusAnim }],
         }}>
-        <Text className="font-feather text-3xl text-textPrimary mb-3 text-center px-4 max-w-[300px]">
+        <Text className="font-feather text-2xl text-textPrimary mb-2 text-center px-2">
           {i18n.t('checkin_what_focus_on')}
         </Text>
-        <Text className="font-feather text-xl mb-6 text-center px-4 text-textPrimary/70 max-w-[300px]">
+        <Text className="font-feather text-xl mb-6 text-center px-1 text-textPrimary/70">
           {i18n.t('checkin_select_focus_help')}
         </Text>
         <ScrollView
@@ -888,10 +888,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           justifyContent: 'center',
           transform: [{ translateX: struggleAnim }],
         }}>
-        <Text className="font-feather text-3xl text-textPrimary text-center px-2 max-w-[300px] mb-2">
+        <Text className="font-feather text-2xl text-textPrimary text-center px-2 mb-2 mt-4">
           {i18n.t('checkin_what_struggling_with')}
         </Text>
-        <Text className="font-feather text-xl text-center mb-6 text-textPrimary/70 max-w-[300px]">
+        <Text className="font-feather text-xl text-center mb-6 text-textPrimary/70">
           {i18n.t('checkin_select_struggle_help')}
         </Text>
 
@@ -1011,7 +1011,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         paddingTop: RPH(2),
         transform: [{ translateX: successAnim }],
       }}>
-      <Text className="font-feather text-4xl text-textPrimary text-center px-4">
+      <Text className="font-feather text-2xl text-textPrimary text-center px-4">
         {i18n.t('checkin_complete')}
       </Text>
       {showRewardAnimation && riveAssets ? (
@@ -1063,7 +1063,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         </View>
       )}
 
-      <View className="w-full space-y-3 mt-auto px-4 pb-8 gap-3">
+      <View className="w-full space-y-3 mt-2 px-4 pb-8 gap-3">
         <PrimaryButton
           title={
             currentFocus !== '' || currentStruggle !== ''
