@@ -726,6 +726,14 @@ export default function RootLayout() {
   const completedCovenantDays = useHomeStore((state) => state.completedCovenantDays);
   const setShowCovenantSuccessModal = useHomeStore((state) => state.setShowCovenantSuccessModal);
   const setCovenantProgress = useUserStore((state) => state.setCovenantProgress);
+  const {covenantProgress} = useUserStore((state) => state);
+
+  useEffect(() => {
+    appLog('[RootLayout] showCovenantSuccessModal:', showCovenantSuccessModal);
+    if(showCovenantSuccessModal && covenantSuccessSheetRef.current){
+      covenantSuccessSheetRef.current?.show();
+    }
+  }, [showCovenantSuccessModal, covenantSuccessSheetRef.current]);
 
   const handleNextCovenant = (days: number) => {
     setCovenantProgress({
