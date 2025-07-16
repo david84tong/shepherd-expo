@@ -520,6 +520,7 @@
     "onboarding_streak_commitment_button": "Engager mon alliance",
     "covenant_success_title": "Cérémonie Completée ! 🎉",
     "covenant_success_description": "Félicitations ! Vous avez complété votre cérémonie de {{days}} jours. Souhaitez-vous relever un nouveau défi ?",
+    "covenant_success_description_21_days": "Félicitations ! Vous avez complété votre cérémonie de 21 jours, allez dans votre boutique pour débloquer l'apparence Phoenix",
     "continue": "Continuer",
     "checkin_how_are_you_feeling": "Comment vous sentez-vous maintenant ?",
     "checkin_select_mood_help": "Sélectionnez une humeur pour vous aider à grandir.",
