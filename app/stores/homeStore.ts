@@ -113,8 +113,8 @@ export const useHomeStore = create<HomeState>()(
       tappedReflectAboutVerse: false,
       sawStreakToday: false,
       // Default covenant success modal
-      showCovenantSuccessModal: false,
-      completedCovenantDays: 0,
+      showCovenantSuccessModal: true,
+      completedCovenantDays: 3,
       // Default daily XP tracking
       dailyXpEarned: 0,
       lastXpResetDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format

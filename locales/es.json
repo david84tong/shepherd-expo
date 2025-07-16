@@ -548,5 +548,8 @@
     "checkin_struggle_impatience": "Impaciencia",
     "checkin_struggle_gluttony": "Gula",
     "covenant_success_description_21_days": "¡Felicidades! Has completado tu cátara de 21 días, ve a tu tienda para desbloquear la skin Phoenix",
-    "continue": "Continuar"
+    "continue": "Continuar",
+    "onboarding_streak_commitment_reward": "Recompensa de Racha",
+    "onboarding_streak_commitment_special_reward": "Recompensa Especial (Tiempo Limitado)",
+    "onboarding_streak_commitment_unlock_skin": "Desbloquear la Skin Phoenix"
 }

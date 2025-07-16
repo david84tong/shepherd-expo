@@ -557,5 +557,8 @@
     "checkin_struggle_pride": "Orgueil",
     "checkin_struggle_vanity": "Vanité",
     "checkin_struggle_impatience": "Impatience",
-    "checkin_struggle_gluttony": "Gourmandise"
+    "checkin_struggle_gluttony": "Gourmandise",
+    "onboarding_streak_commitment_reward": "Récompense de Série",
+    "onboarding_streak_commitment_special_reward": "Récompense Spéciale (Temps Limité)",
+    "onboarding_streak_commitment_unlock_skin": "Débloquer l'Apparence Phoenix"
 }

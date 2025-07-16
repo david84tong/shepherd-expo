@@ -125,7 +125,7 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
   const gemTextOpacity = useRef(new Animated.Value(1)).current;
 
   // Snap points for the bottom sheet
-  const snapPoints = useMemo(() => ['90%'], []);
+  const snapPoints = useMemo(() => ['60%', '70%', '80%', '90%'], []);
 
   // Memoized computed values
   const completedReward = useMemo(() => {

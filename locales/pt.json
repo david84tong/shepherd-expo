@@ -557,5 +557,8 @@
     "checkin_struggle_pride": "Orgulho",
     "checkin_struggle_vanity": "Vaidade",
     "checkin_struggle_impatience": "Impaciência",
-    "checkin_struggle_gluttony": "Gula"
+    "checkin_struggle_gluttony": "Gula",
+    "onboarding_streak_commitment_reward": "Recompensa de Sequência",
+    "onboarding_streak_commitment_special_reward": "Recompensa Especial (Tempo Limitado)",
+    "onboarding_streak_commitment_unlock_skin": "Desbloquear a Skin Phoenix"
 }

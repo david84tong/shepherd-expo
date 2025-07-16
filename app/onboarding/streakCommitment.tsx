@@ -34,6 +34,7 @@ import CustomAnimatedView from '../components/CustomAnimatedView';
 
 // Assets
 import gemIcon from '../../assets/icons/greenGemIcon.png';
+import useHomeScreen from '../hooks/useHomeScreen';
 
 // Constants
 const STATE_MACHINE = 'State Machine 1';
@@ -100,6 +101,7 @@ export default function StreakCommitmentScreen() {
   const rewardCardScale = useRef(new Animated.Value(1)).current;
   const gemTextOpacity = useRef(new Animated.Value(1)).current;
   const chestScale = useRef(new Animated.Value(1)).current; // Default to 21-day scale
+
 
   // Shared Values
   const screenOpacity = useSharedValue(0);
@@ -263,6 +265,7 @@ export default function StreakCommitmentScreen() {
     }
   };
 
+
   // Render Methods
   const renderLambAnimation = () => {
     if (!showFireLambAnimation || !riveAssets) return null;
@@ -274,6 +277,8 @@ export default function StreakCommitmentScreen() {
             ref={riveRef10}
             resourceName={'new_shepherd'}
             artboardName="[Main] Shpeherd"
+            autoplay
+
             stateMachineName="State Machine 1"
             style={{ width: '100%', height: '100%' }}
           />
@@ -281,6 +286,7 @@ export default function StreakCommitmentScreen() {
           <Rive
             ref={riveRef10}
             url={riveAssets[1].uri!}
+            autoplay
             artboardName="[Main] Shpeherd"
             stateMachineName="State Machine 1"
             style={{ width: "100%", height: "100%" }}
@@ -331,7 +337,7 @@ export default function StreakCommitmentScreen() {
             transform: [{ scale: rewardCardScale }],
           }}>
           <Text className="text-sm font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
-            STREAK REWARD
+           {i18n.t('onboarding_streak_commitment_reward')}
           </Text>
           <Animated.View
             className="flex-row items-center justify-center"
@@ -365,19 +371,16 @@ export default function StreakCommitmentScreen() {
           transform: [{ scale: rewardCardScale }],
         }}>
         <Text className="text-sm font-din text-[#B89B4C] text-center uppercase mb-2 tracking-wider">
-          Special Reward (Limited Time)
+          {i18n.t('onboarding_streak_commitment_special_reward')}
         </Text>
         <Animated.View
           className="flex-row items-center justify-center"
           style={{ opacity: gemTextOpacity }}>
-          <Text className="font-din text-textPrimary text-2xl font-bold text-center">
-            Unlock the Phoenix Skin
-          </Text>
           <Animated.View
             className="flex-row items-center justify-center"
             style={{ opacity: gemTextOpacity }}>
             <Text className="font-din text-textPrimary text-2xl font-bold text-center">
-              Unlock the Phoenix Skin
+              {i18n.t('onboarding_streak_commitment_unlock_skin')}
             </Text>
           </Animated.View>
         </Animated.View>
