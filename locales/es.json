@@ -547,4 +547,7 @@
     "checkin_struggle_vanity": "Vanidad",
     "checkin_struggle_impatience": "Impaciencia",
     "checkin_struggle_gluttony": "Gula"
+    "covenant_success_description": "¡Felicidades! Has completado tu cátara de {{days}} días. ¿Te gustaría enfrentar una nueva desafío?",
+    "covenant_success_description_21_days": "¡Felicidades! Has completado tu cátara de 21 días, ve a tu tienda para desbloquear la skin Phoenix",
+    "continue": "Continuar"
 }

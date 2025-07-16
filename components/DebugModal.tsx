@@ -19,6 +19,7 @@ import WidgetHowToSheet from './WidgetHowToSheet';
 import { useCheckInStore } from '~/app/stores/checkInStore';
 import dayjs from 'dayjs';
 import { appLog } from '~/app/helper/helper';
+import { COVENANT_STATES } from '~/app/hooks/streakHook';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -1172,6 +1173,37 @@ export function DebugButton() {
                   </View>
                 </View>
 
+                {/* Test Covenant Success */}
+                <View className="mb-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    🏆 Test Covenant Success
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {[3, 7, 21].map((days) => (
+                      <TouchableOpacity
+                        key={days}
+                        className="bg-[#E0F0FF] px-3 py-2 rounded-lg border border-[#4A90E2] mb-1"
+                        onPress={() => {
+                          //const userStore = useUserStore.getState();
+                          const homeStore = useHomeStore.getState();
+                          homeStore.handleCovenantSuccess(days);
+
+                          appLog(`🏆 Debug: Testing ${days}-day covenant completion`);
+
+                          Toast.show({
+                            type: 'success',
+                            text1: `${days}-Day Covenant!`,
+                            text2: 'Success modal should appear! 🎉',
+                            position: 'top',
+                            visibilityTime: 3000,
+                          });
+                        }}>
+                        <Text className="font-din text-sm text-textPrimary">{`${days} Day 🏆`}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
                 {/* Set Only Penalty Dates Buttons */}
                 <View className="mb-4">
                   <Text className="font-feather text-base text-textPrimary mb-2">
@@ -1736,7 +1768,36 @@ export function DebugButton() {
                 ))}
               </View>
 
-            
+              {/* Show Current Covenant Status */}
+              <View className="mb-4">
+                <Text className="font-feather text-base text-textPrimary mb-2">
+                  📊 Current Covenant Status
+                </Text>
+                <TouchableOpacity
+                  className="bg-[#F0F0FF] px-4 py-3 rounded-lg border border-[#9090FF] mb-1"
+                  onPress={() => {
+                    const userStore = useUserStore.getState();
+                    const covenantProgress = userStore.getCovenantProgress();
+                    const currentStreak = userStore.getStreakCount();
+                    
+                    appLog('📊 Current Covenant Status:', {
+                      streakCount: currentStreak,
+                      covenantProgress,
+                      rawCovenantData: userStore.covenantProgress
+                    });
+
+                    Alert.alert(
+                      'Covenant Status',
+                      `Current Streak: ${currentStreak}\n` +
+                      `Target Days: ${covenantProgress.targetDays}\n` +
+                      `Progress: ${covenantProgress.progress.toFixed(1)}%\n` +
+                      `State: ${covenantProgress.state}\n\n` +
+                      `Next streak increment will ${currentStreak + 1 >= covenantProgress.targetDays ? 'TRIGGER SUCCESS MODAL! 🎉' : `make progress ${currentStreak + 1}/${covenantProgress.targetDays}`}`
+                    );
+                  }}>
+                  <Text className="font-din text-sm text-textPrimary text-center">Show Covenant Info 📊</Text>
+                </TouchableOpacity>
+              </View>
 
               {/* Hide Debug Button */}
               <View className="mt-6 pt-4 border-t border-buttonBorder">
