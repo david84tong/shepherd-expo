@@ -91,8 +91,8 @@ android {
         applicationId 'second.round.shepherd'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 44
-        versionName "1.4.7"
+        versionCode 48
+        versionName "1.4.8"
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
         }

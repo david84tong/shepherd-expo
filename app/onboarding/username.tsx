@@ -22,7 +22,8 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import { toBool } from '../utils/toBool';
-import { validateName } from '../../utils/validation';
+import { validateName, validateUsername } from '../../utils/validation';
+import { checkUsernameAvailability } from '../../utils/firestore';
 import i18n from '../utils/i18n';
 import { RPH } from '../helper/helper';
 
@@ -34,7 +35,13 @@ export default function OnboardingUsernameScreen() {
   const [inputUsername, setInputUsername] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [isUsernameAvailable, setIsUsernameAvailable] = useState(true);
   const inputRef = useRef<TextInput>(null);
+  const usernameCheckTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Debug initial state
+  console.log('🚀 Initial isUsernameAvailable state:', true);
 
   // Get translated text
   const titleText = i18n.t('onboarding_username_title');
@@ -121,6 +128,15 @@ export default function OnboardingUsernameScreen() {
     }
   }, [riveAssets]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (usernameCheckTimeout.current) {
+        clearTimeout(usernameCheckTimeout.current);
+      }
+    };
+  }, []);
+
   // Keyboard listeners
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener('keyboardWillShow', () =>
@@ -164,15 +180,74 @@ export default function OnboardingUsernameScreen() {
     transform: [{ translateY: buttonTranslateY.value }],
   }));
 
+  // Debounced username availability check
+  const checkUsernameAvailabilityDebounced = async (username: string) => {
+    // Clear existing timeout
+    if (usernameCheckTimeout.current) {
+      clearTimeout(usernameCheckTimeout.current);
+    }
+
+    // Set a new timeout for debouncing
+    usernameCheckTimeout.current = setTimeout(async () => {
+      if (username.trim().length >= 3) { // Only check if username is at least 3 characters
+        console.log('🔍 Checking username availability for:', username);
+        setIsCheckingUsername(true);
+        try {
+          const isAvailable = await checkUsernameAvailability(username);
+          console.log('✅ Username availability result:', isAvailable);
+          setIsUsernameAvailable(isAvailable);
+          
+          // Update error state based on availability
+          const validation = validateUsername(username, isAvailable);
+          console.log('📝 Validation result:', validation);
+          setError(validation.error);
+        } catch (error) {
+          console.error('❌ Error checking username availability:', error);
+          // In case of error, assume username is taken to be safe
+          setIsUsernameAvailable(false);
+          const validation = validateUsername(username, false);
+          setError(validation.error);
+        } finally {
+          setIsCheckingUsername(false);
+        }
+      } else {
+        // Reset availability for short usernames
+        console.log('📏 Username too short, resetting availability');
+        setIsUsernameAvailable(true);
+        const validation = validateName(username);
+        setError(validation.error);
+      }
+    }, 500); // 500ms debounce delay
+  };
+
   const handleInputChange = (text: string) => {
+    console.log('📝 Input changed to:', text);
     setInputUsername(text);
-    const validation = validateName(text);
-    setError(validation.error);
+    
+    // Basic validation first
+    const basicValidation = validateName(text);
+    console.log('🔍 Basic validation:', basicValidation);
+    setError(basicValidation.error);
+    
+    // If basic validation passes, check availability
+    if (basicValidation.isValid && text.trim().length >= 3) {
+      console.log('🚀 Starting availability check for:', text);
+      checkUsernameAvailabilityDebounced(text);
+    } else {
+      console.log('⏹️ Skipping availability check - invalid or too short');
+      // Clear any pending username checks
+      if (usernameCheckTimeout.current) {
+        clearTimeout(usernameCheckTimeout.current);
+      }
+      setIsCheckingUsername(false);
+      setIsUsernameAvailable(true);
+    }
   };
 
   const handleContinue = async () => {
-    const validation = validateName(inputUsername);
-    if (validation.isValid) {
+    // Use the username validation that includes uniqueness check
+    const validation = validateUsername(inputUsername, isUsernameAvailable);
+    if (validation.isValid && !isCheckingUsername) {
       // Log button press
       const username = inputUsername.trim();
       analytics.logEvent('OnboardingUsernameScreen_Tapped_Continue', {
@@ -249,6 +324,14 @@ export default function OnboardingUsernameScreen() {
             autoCapitalize="none"
             autoCorrect={false}
           />
+          {isCheckingUsername && (
+            <View className="flex-row items-center justify-center mt-2">
+              <ActivityIndicator size="small" color="#3C584A" />
+              <Text className="font-din text-sm text-textSecondary ml-2">
+                Checking availability...
+              </Text>
+            </View>
+          )}
           {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{error}</Text>}
         </Animated.View>
 
@@ -259,8 +342,8 @@ export default function OnboardingUsernameScreen() {
           <PrimaryButton
             title={continueText}
             onPress={handleContinue}
-            disabled={!inputUsername.trim() || !!error}
-            isActive={!!inputUsername.trim() && !error}
+            disabled={!inputUsername.trim() || !!error || isCheckingUsername}
+            isActive={!!inputUsername.trim() && !error && !isCheckingUsername}
           />
         </Animated.View>
       </Animated.View>
