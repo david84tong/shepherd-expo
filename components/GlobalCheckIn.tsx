@@ -26,6 +26,7 @@ import { IS_ANDROID } from '~/app/utils/utils';
 import { useSoundStore } from '~/app/stores/soundStore';
 import useSubscriptionStore, { safelyPresentPaywall } from '~/app/stores/subscriptionStore';
 import dayjs from 'dayjs';
+import i18n from '~/app/utils/i18n';
 
 // Import gem icon
 import gemIcon from '../assets/icons/greenGemIcon.png';
@@ -557,37 +558,37 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const moods = [
     {
       emoji: '😊',
-      label: 'Great',
+      label: i18n.t('checkin_mood_great'),
       value: 'Great',
       image: require('../assets/icons/moods/greatLamb.png'),
     },
     {
       emoji: '😔',
-      label: 'Good',
+      label: i18n.t('checkin_mood_good'),
       value: 'good',
       image: require('../assets/icons/moods/goodLamb.png'),
     },
     {
       emoji: '😌',
-      label: 'Meh',
+      label: i18n.t('checkin_mood_meh'),
       value: 'meb',
       image: require('../assets/icons/moods/sheepIcon.png'),
     },
     {
       emoji: '😤',
-      label: 'Bad',
+      label: i18n.t('checkin_mood_bad'),
       value: 'bad',
       image: require('../assets/icons/moods/sadLamb.png'),
     },
     {
       emoji: '😴',
-      label: 'Very Bad',
+      label: i18n.t('checkin_mood_very_bad'),
       value: 'veryBad',
       image: require('../assets/icons/moods/reallyBadLamb.png'),
     },
     {
       emoji: '🤗',
-      label: 'Angry',
+      label: i18n.t('checkin_mood_angry'),
       value: 'angry',
       image: require('../assets/icons/moods/angryLamb.png'),
     },
@@ -598,7 +599,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'leaf',
       iconType: 'ionicon',
-      label: 'Peace',
+      label: i18n.t('checkin_focus_peace'),
       value: 'peace',
       color: '#24CA17',
       bgColor: 'bg-lightGreen',
@@ -606,7 +607,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'hands-praying',
       iconType: 'fontawesome6',
-      label: 'Gratitude',
+      label: i18n.t('checkin_focus_gratitude'),
       value: 'gratitude',
       color: '#E64132',
       bgColor: 'bg-lightRed',
@@ -614,7 +615,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'flower',
       iconType: 'ionicon',
-      label: 'Humility',
+      label: i18n.t('checkin_focus_humility'),
       value: 'humility',
       color: '#7B2BFF',
       bgColor: 'bg-lightPurple',
@@ -622,7 +623,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'hand-holding-heart',
       iconType: 'fontawesome6',
-      label: 'Compassion',
+      label: i18n.t('checkin_focus_compassion'),
       value: 'compassion',
       color: '#E6319E',
       bgColor: 'bg-lightPink',
@@ -630,7 +631,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'shield',
       iconType: 'ionicon',
-      label: 'Courage',
+      label: i18n.t('checkin_focus_courage'),
       value: 'courage',
       color: '#2196F3',
       bgColor: 'bg-lightBlue',
@@ -638,7 +639,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'sunny',
       iconType: 'ionicon',
-      label: 'Peace',
+      label: i18n.t('checkin_focus_peace'),
       value: 'peace2',
       color: '#F7B500',
       bgColor: 'bg-lightYellow',
@@ -646,7 +647,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'star',
       iconType: 'ionicon',
-      label: 'Faith',
+      label: i18n.t('checkin_focus_faith'),
       value: 'faith',
       color: '#17CABC',
       bgColor: 'bg-lightTeal',
@@ -654,7 +655,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'time',
       iconType: 'ionicon',
-      label: 'Patience',
+      label: i18n.t('checkin_focus_patience'),
       value: 'patience',
       color: '#F7B500',
       bgColor: 'bg-lightYellow',
@@ -666,7 +667,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'eye',
       iconType: 'ionicon',
-      label: 'Lust',
+      label: i18n.t('checkin_struggle_lust'),
       value: 'lust',
       color: '#E64132',
       bgColor: 'bg-lightRed',
@@ -675,7 +676,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'face-angry',
       iconType: 'fontawesome6',
-      label: 'Envy',
+      label: i18n.t('checkin_struggle_envy'),
       value: 'envy',
       color: '#E64132',
       bgColor: 'bg-lightRed',
@@ -684,7 +685,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'flash',
       iconType: 'ionicon',
-      label: 'Anger',
+      label: i18n.t('checkin_struggle_anger'),
       value: 'anger',
       color: '#C81E28',
       bgColor: 'bg-lightCrimson',
@@ -693,7 +694,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'cash',
       iconType: 'ionicon',
-      label: 'Greed',
+      label: i18n.t('checkin_struggle_greed'),
       value: 'greed',
       color: '#24CA17',
       bgColor: 'bg-lightGreen',
@@ -702,7 +703,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'bed',
       iconType: 'ionicon',
-      label: 'Laziness',
+      label: i18n.t('checkin_struggle_laziness'),
       value: 'laziness',
       color: '#7B2BFF',
       bgColor: 'bg-lightPurple',
@@ -711,7 +712,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'trophy',
       iconType: 'ionicon',
-      label: 'Pride',
+      label: i18n.t('checkin_struggle_pride'),
       value: 'pride',
       color: '#FF8C1A',
       bgColor: 'bg-lightOrange',
@@ -720,7 +721,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'glasses',
       iconType: 'ionicon',
-      label: 'Vanity',
+      label: i18n.t('checkin_struggle_vanity'),
       value: 'vanity',
       color: '#E6319E',
       bgColor: 'bg-lightPink',
@@ -729,7 +730,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'hourglass',
       iconType: 'ionicon',
-      label: 'Impatience',
+      label: i18n.t('checkin_struggle_impatience'),
       value: 'impatience',
       color: '#18B2B6',
       bgColor: 'bg-lightCyan',
@@ -738,7 +739,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     {
       icon: 'restaurant',
       iconType: 'ionicon',
-      label: 'Gluttony',
+      label: i18n.t('checkin_struggle_gluttony'),
       value: 'gluttony',
       color: '#2196F3',
       bgColor: 'bg-lightBlue',
@@ -760,10 +761,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           transform: [{ translateX: moodAnim }],
         }}>
         <Text className="font-feather text-3xl text-textPrimary mb-8 text-center px-4 max-w-[300px]">
-          How are you feeling right now?
+          {i18n.t('checkin_how_are_you_feeling')}
         </Text>
         <Text className="font-feather text-xl mb-6 text-center px-1 text-textPrimary/70 max-w-[300px]">
-          Select a mood to help you grow.
+          {i18n.t('checkin_select_mood_help')}
         </Text>
         <View className="flex-1 w-full flex-row flex-wrap justify-center gap-4 px-2">
           {moods.map((mood) => (
@@ -812,10 +813,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           transform: [{ translateX: focusAnim }],
         }}>
         <Text className="font-feather text-3xl text-textPrimary mb-3 text-center px-4 max-w-[300px]">
-          What would you like to focus on?
+          {i18n.t('checkin_what_focus_on')}
         </Text>
         <Text className="font-feather text-xl mb-6 text-center px-4 text-textPrimary/70 max-w-[300px]">
-          Select a focus to help you grow.
+          {i18n.t('checkin_select_focus_help')}
         </Text>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -866,7 +867,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             }}
             className="border-accentGold/40">
             <Text className="font-din text-base text-gray-600 text-center underline">
-              Skip this step
+              {i18n.t('checkin_skip_this_step')}
             </Text>
           </Pressable>
         </View>
@@ -888,10 +889,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           transform: [{ translateX: struggleAnim }],
         }}>
         <Text className="font-feather text-3xl text-textPrimary text-center px-2 max-w-[300px] mb-2">
-          What are you struggling with?
+          {i18n.t('checkin_what_struggling_with')}
         </Text>
         <Text className="font-feather text-xl text-center mb-6 text-textPrimary/70 max-w-[300px]">
-          Select a struggle to help you grow.
+          {i18n.t('checkin_select_struggle_help')}
         </Text>
 
         <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
@@ -950,7 +951,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             }}
             className="border-accentGold/40">
             <Text className="font-din text-base text-gray-600 text-center underline">
-              Skip this step
+              {i18n.t('checkin_skip_this_step')}
             </Text>
           </Pressable>
         </View>
@@ -1014,7 +1015,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         transform: [{ translateX: successAnim }],
       }}>
       <Text className="font-feather text-4xl text-textPrimary text-center px-4">
-        Check-in Complete!
+        {i18n.t('checkin_complete')}
       </Text>
       {showRewardAnimation && riveAssets ? (
         <View className="w-full items-center justify-center" style={{ height: RPH(20) }}>
@@ -1053,13 +1054,13 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               transform: [{ scale: rewardCardScale }],
             }}>
             <Text className="text-sm font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
-              CHECK-IN REWARDS
+              {i18n.t('checkin_rewards')}
             </Text>
             <Animated.View
               className="flex-row items-center justify-center"
               style={{ opacity: gemTextOpacity }}>
               <Image source={gemIcon} style={{ width: RPH(4), height: RPH(4) }} className="mr-3" />
-              <Text className="font-din text-textPrimary text-3xl font-bold">+20 Gems</Text>
+              <Text className="font-din text-textPrimary text-3xl font-bold">{i18n.t('checkin_gems_awarded')}</Text>
             </Animated.View>
           </Animated.View>
         </View>
@@ -1069,8 +1070,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         <PrimaryButton
           title={
             currentFocus !== '' || currentStruggle !== ''
-              ? 'Generate Custom Devotional'
-              : "Start Today's Devotional"
+              ? i18n.t('checkin_generate_custom_devotional')
+              : i18n.t('checkin_start_todays_devotional')
           }
           onPress={async () => {
             if (currentFocus !== '' || currentStruggle !== '') {
@@ -1186,7 +1187,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
         {isGenerating && (
           <Text className="font-din text-sm text-gray-500 text-center py-2">
-            Generating your personalized devotional...
+            {i18n.t('checkin_generating_personalized')}
           </Text>
         )}
 
@@ -1267,7 +1268,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             }}
             className=" border-accentGold/40">
             <Text className="font-din text-base text-gray-600 text-center underline">
-              Start worldwide devotional
+              {i18n.t('checkin_start_worldwide_devotional')}
             </Text>
           </Pressable>
         )}
