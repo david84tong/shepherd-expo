@@ -564,5 +564,7 @@
     "unlocked": "Débloqué",
     "phoenix_skin_title": "Skin Phoenix",
     "phoenix_skin_description": "Série de 21 jours pour débloquer. {{days}} jours restants !",
-    "phoenix_skin_progress": "Progression : {{current}}/21 jours"
+    "phoenix_skin_progress": "Progression : {{current}}/21 jours",
+    "no_mood_data": "Aucune donnée d'humeur pour le moment",
+    "no_struggles_data": "Aucune donnée de luttes pour le moment"
 }
