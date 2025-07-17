@@ -52,7 +52,7 @@ import { IS_ANDROID } from './utils/utils';
 // Import highlight store setup function
 import useHighlightStore from './stores/highlightStore';
 import './stores/userStore';
-import './stores/subscriptionStore';
+import useSubscriptionStore from './stores/subscriptionStore';
 import { useRemoteConfig } from './hooks/useRemoteConfig';
 import { initializeLanguage } from './utils/i18n';
 import { useHomeStore } from './stores/homeStore';
@@ -638,14 +638,12 @@ export default function RootLayout() {
     };
   }, []);
 
-  // Add state for isCreator
-  const [isCreator, setIsCreator] = useState(false);
+  // Add state for isCreator - now from subscription store
+  const hasEnteredCreateCode = useSubscriptionStore((state) => state.hasEnteredCreateCode);
 
-  // Check isCreator from AsyncStorage
+  // Check CREATE code status on initialization
   useEffect(() => {
-    AsyncStorage.getItem('isCreator').then((val) => {
-      setIsCreator(val === 'true');
-    });
+    useSubscriptionStore.getState().checkHasEnteredCreateCode();
   }, []);
 
   // Add deep linking handler
@@ -885,8 +883,8 @@ export default function RootLayout() {
               />
             )}
 
-            {/* Debug button (visible only in development or for creators) */}
-            {(__DEV__ || isCreator) && <DebugButton />}
+            {/* Debug button (visible only when CREATE code has been entered) */}
+            {hasEnteredCreateCode && <DebugButton />}
           </>
         )}
       </BottomSheetModalProvider>

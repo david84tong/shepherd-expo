@@ -577,12 +577,13 @@ export default function HomeScreen() {
   }, [bottomSheetRef]);
 
   // Define riveComponent after state declarations so it can access showJournalContent and showPrayerContent
+  const artboardName = useHomeStore((state) => state.artboardName);
+
   const riveComponent = useMemo(() => {
     if (!preloadedRiveAssets || !riveReady || !riveAssetsLoaded) return null;
 
     // Always use the main lamb asset (index 0)
     const lambAssetIndex = 0;
-    const useArtboardName = '[Main] Shpeherd';
 
     return (
       <View
@@ -633,7 +634,7 @@ export default function HomeScreen() {
               key={riveKey}
               ref={riveRef}
               resourceName="new_shepherd"
-              artboardName={useArtboardName}
+              artboardName={artboardName}
               stateMachineName="State Machine 1"
               autoplay
               onError={handleRiveAnimationError}
@@ -649,7 +650,7 @@ export default function HomeScreen() {
               key={riveKey}
               ref={riveRef}
               url={preloadedRiveAssets[lambAssetIndex].uri!}
-              artboardName={useArtboardName}
+              artboardName={artboardName}
               onPlay={handleRivePlay}
               stateMachineName="State Machine 1"
               autoplay
@@ -676,6 +677,7 @@ export default function HomeScreen() {
     riveSkinInitialized,
     riveInitialized,
     riveEntranceAnim,
+    artboardName,
   ]);
 
   // Gate of rendering: only render the screen if the assets are ready

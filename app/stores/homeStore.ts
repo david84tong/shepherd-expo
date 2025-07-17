@@ -28,6 +28,7 @@ interface HomeState {
   bottomSheetRef: React.RefObject<any> | null;
   riveRef: React.RefObject<any> | null;
   currentSkin: string; // Track the currently equipped skin
+  artboardName: string; // Current Rive artboard
 
   // Completion tracking states
   readingCompleted: boolean;
@@ -70,6 +71,7 @@ interface HomeState {
   setBottomSheetRef: (ref: React.RefObject<any> | null) => void;
   setRiveRef: (ref: React.RefObject<any> | null) => void;
   setCurrentSkin: (skin: string) => void;
+  setArtboardName: (name: string) => void;
   setShowCovenantSuccessModal: (show: boolean) => void;
   setCompletedCovenantDays: (days: number) => void;
   handleCovenantSuccess: (days: number) => void;
@@ -104,6 +106,7 @@ export const useHomeStore = create<HomeState>()(
       bottomSheetRef: null,
       riveRef: null,
       currentSkin: '',
+      artboardName: '[Main] Shpeherd',
       // Default completion states
       readingCompleted: false,
       prayerCompleted: false,
@@ -179,6 +182,7 @@ export const useHomeStore = create<HomeState>()(
       setBottomSheetRef: (ref) => set({ bottomSheetRef: ref }),
       setRiveRef: (ref) => set({ riveRef: ref }),
       setCurrentSkin: (skin) => set({ currentSkin: skin }),
+      setArtboardName: (name) => set({ artboardName: name }),
       setShowCovenantSuccessModal: (show) => set({ showCovenantSuccessModal: show }),
       setCompletedCovenantDays: (days) => set({ completedCovenantDays: days }),
 
@@ -293,6 +297,7 @@ export const useHomeStore = create<HomeState>()(
         lastStreakDate: state.lastStreakDate,
         showCovenantSuccessModal: state.showCovenantSuccessModal,
         completedCovenantDays: state.completedCovenantDays,
+        artboardName: state.artboardName,
       }),
     }
   )

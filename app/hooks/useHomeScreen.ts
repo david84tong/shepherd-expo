@@ -253,6 +253,9 @@ export const useHomeScreen = () => {
     return getLevelData(lamb.xp);
   }, [lamb?.xp]);
 
+  // Track previous lamb level to detect level-up transitions for evolution
+  const prevLevelRef = useRef<number>(levelInfo.level);
+
   const buttonTitle = useMemo(() => devotionalReaderVisible ? i18n.t('continue_button') : i18n.t('amen_button'), [devotionalReaderVisible]);
   const isDarkContant = useMemo(() => new Date().getHours() >= 19, []);
 
@@ -1278,6 +1281,45 @@ function resetOpenedDevotionalFromParam(){
       appLog('[LevelFallback] Error applying Level-Number:', e);
     }
   }, [riveReady, levelInfo?.level, riveSkinInitialized]);
+
+  // Trigger evolution animation once lamb levels up past baby threshold
+  useEffect(() => {
+    if (!riveReady || !riveRef.current) return;
+
+    const previousLevel = prevLevelRef.current;
+    const currentLevel   = levelInfo?.level ?? 1;
+
+    // Evolution condition: transitioned from <10  →  >=10
+    if (previousLevel < 10 && currentLevel >= 10) {
+      appLog('🦋 Evolution: level-up detected – triggering evolution animation');
+
+      try {
+        // Update shared artboard name via home store – this will re-render Rive components
+        const setArtboardName = useHomeStore.getState().setArtboardName;
+        setArtboardName('Evolution Animation');
+
+        // Trigger switch input to start animation
+        if (typeof riveRef.current?.setInputState === 'function') {
+          riveRef.current.setInputState('State Machine 1', 'Switch', 1);
+        }
+
+        // After animation, reset switch and artboard back to main
+        setTimeout(() => {
+          const resetArtboardName = useHomeStore.getState().setArtboardName;
+          resetArtboardName('[Main] Shpeherd');
+
+          if (typeof riveRef.current?.setInputState === 'function') {
+            riveRef.current.setInputState('State Machine 1', 'Switch', 0);
+          }
+        }, 3500);
+      } catch (err) {
+        appLog('❌ Evolution animation error:', err);
+      }
+    }
+
+    // Update the tracker
+    prevLevelRef.current = currentLevel;
+  }, [levelInfo?.level, riveReady]);
 
   // Reset Rive to default state when returning to home screen
   useEffect(() => {

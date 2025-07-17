@@ -164,6 +164,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       image: pinkSkin,
       skinNumber: 1,
       unlockLevel: 15,
+      isOwned: hasSkin('1'), // Check if unlocked via PINK code
     },
     {
       id: 'skin_noah',
@@ -231,11 +232,11 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       image: phoenixSkin,
       skinNumber: 10,
       unlockLevel: 1, // Level requirement is not the main unlock condition
-      isOwned: false
+      isOwned: currentStreak >= 21 || hasSkin('10')
     },
 
 
-  ], [userLevel, isProMember, currentStreak]);
+  ], [userLevel, isProMember, currentStreak, hasSkin]);
 
   // Filter items by category
   const filteredItems = useMemo(() =>

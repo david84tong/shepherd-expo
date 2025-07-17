@@ -895,7 +895,7 @@ export default function SaveProgressScreen() {
 
           {/* Header */}
           <Animated.View style={headerStyle} className="items-center mt-16 mb-8">
-            <Text className="font-feather text-h1 text-center text-textPrimary mb-3">
+            <Text className="font-feather text-h1 text-center text-textPrimary mb-3 mt-8">
               {isLoginMode ? i18n.t('onboarding_welcome_back') : i18n.t('onboarding_save_progress')}
             </Text>
             <Text className="font-din text-body text-center text-description mb-6">

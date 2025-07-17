@@ -887,6 +887,42 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
   const handleReferralSubmit = async (selectedCode: string) => {
     setIsSubmittingReferral(true);
     try {
+      // Check if user entered "PINKKK" to unlock the Pink skin
+      if (selectedCode.toUpperCase() === 'PINKKK') {
+        appLog('🎀 User entered PINKKK code, unlocking Pink skin');
+        
+        // Import shopStore
+        const { useShopStore } = await import('../stores/shopStore');
+        const { addSkin, hasSkin } = useShopStore.getState();
+        
+        // Check if user already has the Pink skin
+        if (hasSkin('1')) { // Pink skin has skinNumber: 1
+          Alert.alert('Already Owned', 'You already own the Pink Lamb skin!', [
+            { text: 'OK', onPress: () => setReferralModalVisible(false) },
+          ]);
+        } else {
+          // Add the Pink skin to user's collection
+          addSkin('1');
+          hapticSuccess();
+          
+          analytics.logEvent('Store_Skin_Unlocked', {
+            skinId: '1',
+            skinName: 'Pink Lamb',
+            method: 'secret_code',
+            code: 'PINKKK'
+          });
+          
+          Alert.alert(
+            '🎉 Pink Lamb Unlocked!',
+            'The Pink Lamb skin has been added to your collection! You can equip it from the Store.',
+            [{ text: 'Awesome!', onPress: () => setReferralModalVisible(false) }]
+          );
+        }
+        setIsSubmittingReferral(false);
+        return;
+      }
+      
+      // Normal referral code handling
       await handleReferralCode(selectedCode);
       Alert.alert('Success!', 'Referral code applied successfully', [
         { text: 'OK', onPress: () => setReferralModalVisible(false) },
@@ -1049,16 +1085,20 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
 
       setCancellationModalVisible(false);
 
-      appLog('🎯 Showing half-off paywall...');
-      const paywallResult = await presentHalfOffPaywall();
+      if (!isInReview) {
+        appLog('🎯 Showing half-off paywall...');
+        const paywallResult = await presentHalfOffPaywall();
 
-      if (paywallResult === PAYWALL_RESULT.CANCELLED || paywallResult === PAYWALL_RESULT.ERROR) {
-        appLog('💔 User cancelled paywall, redirecting to Apple subscriptions...');
-      } else if (
-        paywallResult === PAYWALL_RESULT.PURCHASED ||
-        paywallResult === PAYWALL_RESULT.RESTORED
-      ) {
-        appLog('🎉 User purchased or restored subscription!');
+        if (paywallResult === PAYWALL_RESULT.CANCELLED || paywallResult === PAYWALL_RESULT.ERROR) {
+          appLog('💔 User cancelled paywall, redirecting to Apple subscriptions...');
+        } else if (
+          paywallResult === PAYWALL_RESULT.PURCHASED ||
+          paywallResult === PAYWALL_RESULT.RESTORED
+        ) {
+          appLog('🎉 User purchased or restored subscription!');
+        }
+      } else {
+        appLog('ℹ️ In review mode – skipping half-off paywall presentation');
       }
 
       hapticSuccess();
@@ -1069,7 +1109,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
       setIsSubmittingCancellation(false);
       appLog('🏁 Cancellation submission completed');
     }
-  }, [cancellationReasons, cancellationFeedback, userId, presentHalfOffPaywall]);
+  }, [cancellationReasons, cancellationFeedback, userId, presentHalfOffPaywall, isInReview]);
 
   const backgroundMusicEnabled = useSoundStore((state) => state.backgroundMusicEnabled);
   const soundEffectsEnabled = useSoundStore((state) => state.soundEffectsEnabled);
