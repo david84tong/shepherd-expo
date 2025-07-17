@@ -140,6 +140,13 @@ async function enableAllAnalytics(): Promise<void> {
     if (!mixpanelInstance) {
       mixpanelInstance = new Mixpanel(MIXPANEL_TOKEN, false);
       await mixpanelInstance.init();
+      
+      // Set platform super properties immediately after init
+      mixpanelInstance.registerSuperProperties({
+        platform: Platform.OS,
+        $os: Platform.OS === 'ios' ? 'iOS' : 'Android',
+      });
+      console.log('Mixpanel platform super properties set');
     }
     mixpanelInstance.optInTracking();
     console.log('✅ Mixpanel enabled');

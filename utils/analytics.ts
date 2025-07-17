@@ -162,6 +162,7 @@ class Analytics {
         platform: Platform.OS,
         $os: Platform.OS === 'ios' ? 'iOS' : 'Android'
       });
+      appLog("Platform super properties set immediately");
 
       // Initialize Amplitude
       await amplitudeInit(AMPLITUDE_API_KEY);
@@ -284,6 +285,9 @@ class Analytics {
         ...params,
         timestamp: now.toISOString(),
         userId: this.userId || 'anonymous',
+        // Always include platform information in every event to prevent "Not Set" issues
+        platform: Platform.OS,
+        $os: Platform.OS === 'ios' ? 'iOS' : 'Android',
       };
 
       // Log to console in development
