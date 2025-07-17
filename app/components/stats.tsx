@@ -25,6 +25,7 @@ import journalIcon from '../../assets/icons/journalIcon.png';
 import { hapticLight } from '~/utils/haptics';
 import { appLog } from '../helper/helper';
 import PhoenixSkinBanner from '../../components/PhoenixSkinBanner';
+import MoodStrugglesGraphs from './MoodStrugglesGraphs';
 
 // Bible book names mapping
 const BIBLE_BOOK_NAMES: { [bookId: number]: string } = {
@@ -684,6 +685,11 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
 
           {/* Phoenix Skin Banner */}
           <PhoenixSkinBanner />
+
+          {/* Mood & Struggles Graphs */}
+          <View className="mx-6 mt-4">
+            <MoodStrugglesGraphs />
+          </View>
 
           {/* Heatmap Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card shadow-lg  border border-brownBorder">

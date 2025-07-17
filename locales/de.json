@@ -563,5 +563,7 @@
     "unlocked": "Freigeschaltet",
     "phoenix_skin_title": "Phoenix-Skin",
     "phoenix_skin_description": "21-Tage-Serie zum Freischalten. {{days}} Tage übrig!",
-    "phoenix_skin_progress": "Fortschritt: {{current}}/21 Tage"
+    "phoenix_skin_progress": "Fortschritt: {{current}}/21 Tage",
+    "no_mood_data": "Noch keine Stimmungsdaten",
+    "no_struggles_data": "Noch keine Kampfdaten"
 }

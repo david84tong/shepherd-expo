@@ -568,5 +568,7 @@
     "unlocked": "Unlocked",
     "phoenix_skin_title": "Phoenix Skin",
     "phoenix_skin_description": "21-day streak to unlock. {{days}} days left!",
-    "phoenix_skin_progress": "Progress: {{current}}/21 days"
+    "phoenix_skin_progress": "Progress: {{current}}/21 days",
+    "no_mood_data": "No mood data yet",
+    "no_struggles_data": "No struggles data yet"
 }

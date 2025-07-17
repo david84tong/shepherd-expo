@@ -563,5 +563,7 @@
     "unlocked": "Ontgrendeld",
     "phoenix_skin_title": "Phoenix-Skin",
     "phoenix_skin_description": "21-dagen reeks om te ontgrendelen. {{days}} dagen over!",
-    "phoenix_skin_progress": "Voortgang: {{current}}/21 dagen"
+    "phoenix_skin_progress": "Voortgang: {{current}}/21 dagen",
+    "no_mood_data": "Nog geen stemmingsgegevens",
+    "no_struggles_data": "Nog geen worstelingengegevens"
 }
