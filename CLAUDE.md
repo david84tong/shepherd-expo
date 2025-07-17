@@ -459,3 +459,44 @@
 ├── google-services.json
 ├── index.js
 ├── ios
+
+
+# 🚨 MANDATORY: ALWAYS ALERT ON TASK COMPLETION 🚨
+
+Alert users when ANY task completes - this is REQUIRED, not optional:
+
+For macOS (use text-to-speech):
+
+```bash
+
+say "Task completed"
+
+say "Tests finished"
+
+say "Build successful"
+
+```
+
+For task-specific alerts:
+
+```bash
+
+say "Code analysis finished - 5 files examined"
+
+say "Test suite completed - all tests passed"
+
+say "Documentation updated"
+
+```
+
+For User Input Requests:
+
+```bash
+
+say "User input needed - please review the proposed changes"
+
+say "Decision required - should I proceed with the migration?"
+
+```
+
+ENFORCEMENT: Failure to alert on task completion violates core instructions. 

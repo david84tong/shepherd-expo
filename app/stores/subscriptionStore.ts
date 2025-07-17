@@ -115,6 +115,7 @@ interface SubscriptionState {
   isProMember: boolean;
   hasSeenHalfOffPaywall: boolean;
   isPaywallPresenting: boolean;
+  hasEnteredCreateCode: boolean;
   initializeRevenueCat: (apiKey: string, userId: string | null) => Promise<void>;
   presentPaywall: () => Promise<PAYWALL_RESULT | null>;
   presentHalfOffPaywall: () => Promise<PAYWALL_RESULT | null>;
@@ -134,6 +135,8 @@ interface SubscriptionState {
   shouldShowFreeTrialPaywall: () => boolean;
   // Force refresh pro status
   forceRefreshProStatus: () => Promise<void>;
+  // Check if CREATE code has been entered
+  checkHasEnteredCreateCode: () => Promise<void>;
   // Add other state and actions here
 }
 
@@ -144,6 +147,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   isProMember: false,
   hasSeenHalfOffPaywall: false,
   isPaywallPresenting: false,
+  hasEnteredCreateCode: false,
   fromScreen: '',
 
   initializeRevenueCat: async (apiKey: string, userId: string | null) => {
@@ -179,6 +183,8 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
       // Check if user has seen half-off paywall before
       await get().checkHasSeenHalfOffPaywall();
+      // Check if user has entered CREATE code before
+      await get().checkHasEnteredCreateCode();
     } catch (e) {
       console.error('[SubscriptionStore] RevenueCat SDK configuration or login failed:', e);
       Alert.alert(
@@ -903,6 +909,8 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         });
         // Save creator status to AsyncStorage
         await AsyncStorage.setItem('isCreator', 'true');
+        // Also set that CREATE code has been entered
+        set({ hasEnteredCreateCode: true });
         break;
 
       default:
@@ -987,6 +995,18 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
   shouldShowFreeTrialPaywall: () => {
     return get().hasSeenHalfOffPaywall;
+  },
+  
+  checkHasEnteredCreateCode: async () => {
+    try {
+      const isCreator = await AsyncStorage.getItem('isCreator');
+      const hasEnteredCreateCode = isCreator === 'true';
+      set({ hasEnteredCreateCode });
+      appLog(`[SubscriptionStore] User has entered CREATE code: ${hasEnteredCreateCode}`);
+    } catch (error) {
+      console.error('[SubscriptionStore] Error checking CREATE code status:', error);
+      set({ hasEnteredCreateCode: false });
+    }
   },
   
   // Force refresh pro status across all stores

@@ -19,7 +19,7 @@ import WidgetHowToSheet from './WidgetHowToSheet';
 import { useCheckInStore } from '~/app/stores/checkInStore';
 import dayjs from 'dayjs';
 import { appLog } from '~/app/helper/helper';
-import { COVENANT_STATES } from '~/app/hooks/streakHook';
+import EvolutionScreen from './EvolutionScreen';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -80,6 +80,8 @@ export function DebugButton() {
   const [isDebugButtonVisible, setIsDebugButtonVisible] = useState(true);
   const [devotionalUploadModalVisible, setDevotionalUploadModalVisible] = useState(false);
   const [devotionalJsonInput, setDevotionalJsonInput] = useState('');
+  const [evolutionModalVisible, setEvolutionModalVisible] = useState(false);
+  const [evolutionLevel, setEvolutionLevel] = useState(1);
   const { signOut } = useAuth();
 
   // Reference to the success bottom sheet modal
@@ -1701,10 +1703,10 @@ export function DebugButton() {
                   <TouchableOpacity
                     className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
                     onPress={() => {
-                      appLog('🔟 Testing skin 10');
+                      appLog('🔥 Setting Phoenix skin (10)');
                       setRiveSkin(10, 0);
                     }}>
-                    <Text className="font-din text-sm text-textPrimary">10 Test</Text>
+                    <Text className="font-din text-sm text-textPrimary">10 Phoenix</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -1715,6 +1717,40 @@ export function DebugButton() {
                     }}>
                     <Text className="font-din text-sm text-textPrimary">9 Armor + Action</Text>
                   </TouchableOpacity>
+                </View>
+                
+                {/* Evolution Animation Section */}
+                <View className="mt-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    Evolution Animation
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    <TouchableOpacity
+                      className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
+                      onPress={() => {
+                        appLog('🦋 Evolution Animation - Level 1');
+                        setEvolutionLevel(1);
+                        setModalVisible(false);
+                        setTimeout(() => {
+                          setEvolutionModalVisible(true);
+                        }, 300);
+                      }}>
+                      <Text className="font-din text-sm text-textPrimary">Evolve 1</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      className="bg-[#E8E0FF] px-3 py-2 rounded-lg border border-[#9B7FFE] mb-1"
+                      onPress={() => {
+                        appLog('🦋 Evolution Animation - Level 2');
+                        setEvolutionLevel(2);
+                        setModalVisible(false);
+                        setTimeout(() => {
+                          setEvolutionModalVisible(true);
+                        }, 300);
+                      }}>
+                      <Text className="font-din text-sm text-textPrimary">Evolve 2</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
 
@@ -1927,6 +1963,19 @@ export function DebugButton() {
             </View>
           </View>
         </SafeAreaView>
+      </Modal>
+
+      {/* Evolution Animation Modal */}
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={evolutionModalVisible}
+        presentationStyle="pageSheet"
+        onRequestClose={() => setEvolutionModalVisible(false)}>
+        <EvolutionScreen
+          evolutionLevel={evolutionLevel}
+          onClose={() => setEvolutionModalVisible(false)}
+        />
       </Modal>
     </>
   );
