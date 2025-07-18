@@ -152,17 +152,29 @@ class Analytics {
 
       // Get existing Mixpanel instance or create new one
       this.mixpanel = getMixpanelInstance();
+      console.log("Mixpanel instance:", this.mixpanel);
       if (!this.mixpanel) {
         this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false, true); // trackAutomaticEvents=false, useNative=true
         await this.mixpanel.init();
+        
+        // Set platform super properties immediately after init
+        // Note: Mixpanel native SDK should automatically detect $os, but we'll set it explicitly
+        this.mixpanel.registerSuperProperties({ 
+          platform: Platform.OS,
+          $os: Platform.OS === 'ios' ? 'iOS' : 'Android',
+          // Add device type for better segmentation
+          $device: Platform.OS === 'ios' ? 'iPhone' : 'Android Phone'
+        });
+        appLog("Platform super properties set immediately after Mixpanel init");
+      } else {
+        // Even if instance exists, ensure platform properties are set
+        this.mixpanel.registerSuperProperties({ 
+          platform: Platform.OS,
+          $os: Platform.OS === 'ios' ? 'iOS' : 'Android',
+          $device: Platform.OS === 'ios' ? 'iPhone' : 'Android Phone'
+        });
+        appLog("Platform super properties updated on existing Mixpanel instance");
       }
-      
-      // Always set platform as a super property (not just once)
-      this.mixpanel.registerSuperProperties({ 
-        platform: Platform.OS,
-        $os: Platform.OS === 'ios' ? 'iOS' : 'Android'
-      });
-      appLog("Platform super properties set immediately");
 
       // Initialize Amplitude
       await amplitudeInit(AMPLITUDE_API_KEY);
@@ -288,6 +300,9 @@ class Analytics {
         // Always include platform information in every event to prevent "Not Set" issues
         platform: Platform.OS,
         $os: Platform.OS === 'ios' ? 'iOS' : 'Android',
+        $device: Platform.OS === 'ios' ? 'iPhone' : 'Android Phone',
+        // Force override any existing $os property to ensure correct value
+        ...(Platform.OS && { $os: Platform.OS === 'ios' ? 'iOS' : 'Android' })
       };
 
       // Log to console in development
@@ -506,8 +521,18 @@ class Analytics {
       testParam: 'test_value',
       timestamp: new Date().toISOString(),
       source: 'manual_test',
+      explicit_platform: Platform.OS,
+      explicit_os: Platform.OS === 'ios' ? 'iOS' : 'Android',
     });
     appLog('🧪 Test analytics event sent to both Mixpanel and Amplitude');
+    
+    // Debug log current Mixpanel configuration
+    if (this.mixpanel) {
+      appLog('🔍 Mixpanel Debug Info:');
+      appLog('  - Instance exists:', !!this.mixpanel);
+      appLog('  - Platform.OS:', Platform.OS);
+      appLog('  - Expected $os:', Platform.OS === 'ios' ? 'iOS' : 'Android');
+    }
   }
 
   /**

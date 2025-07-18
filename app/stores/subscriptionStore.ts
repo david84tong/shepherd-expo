@@ -330,6 +330,11 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
   },
   presentHalfOffPaywall: async () => {
+    // Skip showing half-off paywall during App Store review (remote config flag)
+    if ((global as any)?.is_In_Review) {
+      appLog('[SubscriptionStore] In review mode – skipping half-off paywall');
+      return PAYWALL_RESULT.CANCELLED;
+    }
     // Refresh pro status first
     await get().forceRefreshProStatus();
     // First check if user is already pro

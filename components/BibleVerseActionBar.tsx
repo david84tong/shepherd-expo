@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CircleButton from './Shared/CircleButton';
 import { AntDesign } from '@expo/vector-icons';
@@ -36,7 +36,7 @@ export function BibleVerseActionBar({
         position: 'absolute',
         left: 0,
         right: 0,
-        bottom: insets.bottom + TAB_BAR_HEIGHT - (IS_ANDROID ? 0 : RPH(3)),
+        bottom: Platform.OS === 'ios' && Dimensions.get('window').height <= 667 ? 58 : insets.bottom + TAB_BAR_HEIGHT - (IS_ANDROID ? 0 : RPH(3)),
         backgroundColor: '#FDEBB8',
         flexDirection: 'row',
         alignItems: 'center',

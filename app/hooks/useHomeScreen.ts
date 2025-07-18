@@ -350,6 +350,22 @@ export const useHomeScreen = () => {
     }
   }, [currentSkin, riveSkinInitialized, isPro]);
 
+  // Listen for heart changes and update Rive animation when lamb dies
+  useEffect(() => {
+    if (!riveRef.current || !riveSkinInitialized) return;
+    
+    // Check if lamb is dead (0 hearts)
+    if (lambHearts === 0) {
+      try {
+        riveRef.current.setInputState('State Machine 1', 'Action-Number', 8);
+        setCurrentStateInput(8);
+        appLog('🔥 Lamb died! Set Rive to dead state (Action-Number: 8)');
+      } catch (error) {
+        appLog('Error setting Rive to dead state:', error);
+      }
+    }
+  }, [lambHearts, riveSkinInitialized]);
+
   useEffect(() => {
     if (isPrayPresses === 'true') handlePrayerPress();
     if (isReflectPresses === 'true') handleReflectionPress();

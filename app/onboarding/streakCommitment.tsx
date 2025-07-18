@@ -395,7 +395,7 @@ export default function StreakCommitmentScreen() {
       <CustomAnimatedView style={screenStyle} className="px-6 pt-12">
         <ScrollView 
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom:120 }}
           className="flex-1"
         >
           <View className="flex-1 items-center">

@@ -8,6 +8,7 @@ import {
   Platform,
   ActivityIndicator,
   StatusBar,
+  Dimensions,
 } from 'react-native';
 import Lottie from 'lottie-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +29,10 @@ import { TestimonialList } from '../components/TestimonialList';
 const Rating = () => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { width, height } = Dimensions.get('window');
+  
+  // Check if device is iPhone SE (1st or 2nd gen)
+  const isIPhoneSE = (width === 375 && height === 667) || (width === 320 && height === 568);
 
   // Animation refs
   const animationsInitialized = useRef(false);
@@ -209,7 +214,7 @@ const Rating = () => {
             <Animated.View style={buttonStyle} className="items-center mt-24">
               <PrimaryButton title="Leave a rating" onPress={handleRateApp} buttonType="gold" />
               <TouchableOpacity onPress={handleIRatedPress} className="mt-0 items-center ">
-                <Text className="font-din text-description underline text-[16px] -mb-24">
+                <Text className={`font-din text-description underline text-[16px] ${isIPhoneSE ? '-mb-1' : '-mb-24'}`}>
                   👍 Ok, I rated
                 </Text>
               </TouchableOpacity>

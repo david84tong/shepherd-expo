@@ -718,7 +718,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       <StatusBar barStyle="dark-content" backgroundColor="#FFF4DC" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.container, { marginBottom: Math.max(insets.bottom + TAB_BAR_HEIGHT - 10, 16) }]}
+        style={[styles.container, { marginBottom: SCREEN_HEIGHT <= 667 ? 60 : Math.max(insets.bottom + TAB_BAR_HEIGHT - 10, 16), }]}
         keyboardVerticalOffset={0}
       >
         <Reanimated.View

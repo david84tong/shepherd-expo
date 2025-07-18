@@ -138,15 +138,16 @@ async function enableAllAnalytics(): Promise<void> {
 
     // Initialize and enable Mixpanel
     if (!mixpanelInstance) {
-      mixpanelInstance = new Mixpanel(MIXPANEL_TOKEN, false);
+      mixpanelInstance = new Mixpanel(MIXPANEL_TOKEN, false, true); // Enable native SDK
       await mixpanelInstance.init();
       
       // Set platform super properties immediately after init
       mixpanelInstance.registerSuperProperties({
         platform: Platform.OS,
         $os: Platform.OS === 'ios' ? 'iOS' : 'Android',
+        $device: Platform.OS === 'ios' ? 'iPhone' : 'Android Phone'
       });
-      console.log('Mixpanel platform super properties set');
+      console.log('Mixpanel platform super properties set with native SDK');
     }
     mixpanelInstance.optInTracking();
     console.log('✅ Mixpanel enabled');
@@ -192,6 +193,14 @@ export async function updateAnalyticsForAgeChange(newAgeRange: string): Promise<
  * Get Mixpanel instance (for use in analytics.ts)
  */
 export function getMixpanelInstance(): Mixpanel | null {
+  // Ensure platform properties are set on the instance
+  if (mixpanelInstance) {
+    mixpanelInstance.registerSuperProperties({
+      platform: Platform.OS,
+      $os: Platform.OS === 'ios' ? 'iOS' : 'Android',
+      $device: Platform.OS === 'ios' ? 'iPhone' : 'Android Phone'
+    });
+  }
   return mixpanelInstance;
 }
 
