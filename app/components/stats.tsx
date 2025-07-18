@@ -687,9 +687,9 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
           <PhoenixSkinBanner />
 
           {/* Mood & Struggles Graphs */}
-          <View className="mx-6 mt-4">
+          {/* <View className="mx-6 mt-4">
             <MoodStrugglesGraphs />
-          </View>
+          </View> */}
 
           {/* Heatmap Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card shadow-lg  border border-brownBorder">
