@@ -125,7 +125,7 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
   const gemTextOpacity = useRef(new Animated.Value(1)).current;
 
   // Snap points for the bottom sheet
-  const snapPoints = useMemo(() => ['70%', '80%', '90%'], []);
+  const snapPoints = useMemo(() => ['90%'], []);
 
   // Memoized computed values
   const completedReward = useMemo(() => {
@@ -417,7 +417,8 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
     <BottomSheet
       ref={bottomSheetRef}
       index={-1}
-      snapPoints={snapPoints}
+      snapPoints={['86%', '90%', '95%']}
+      enableDynamicSizing={true}
       enablePanDownToClose
       backgroundStyle={{
         backgroundColor: '#FFF4D9',
@@ -454,6 +455,8 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
           flex: 1,
           paddingHorizontal: 24,
           paddingTop: 16,
+          paddingBottom: 16,
+          height: '100%',
         }}>
         
         {/* Close Button */}

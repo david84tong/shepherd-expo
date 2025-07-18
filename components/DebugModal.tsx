@@ -354,8 +354,59 @@ export function DebugButton() {
 
   // Handler to set lamb hearts to a specific value
   const setLambHearts = useCallback((hearts: number) => {
-    useUserStore.getState().setLambHearts(hearts);
-    Alert.alert('Set Hearts', `Lamb hearts set to ${hearts}`);
+    const userStore = useUserStore.getState();
+    userStore.setLambHearts(hearts);
+    
+    // Update lamb mood based on new heart value
+    const getLambMoodByHearts = (hearts: number) => {
+      if (hearts <= 10) return 'lamb-skinny dying';
+      if (hearts <= 20) return 'lamb-angry';
+      if (hearts <= 40) return 'lamb-sleepy';
+      if (hearts <= 80) return 'lamb-idle';
+      return 'lamb-full';
+    };
+    
+    const newMood = getLambMoodByHearts(hearts);
+    userStore.setLambMood(newMood);
+    
+    // Force sync to Firestore
+    syncWithFirestore();
+    
+    // Trigger a re-render of the Rive animation with new mood
+    const homeStore = useHomeStore.getState();
+    const riveRef = homeStore.riveRef;
+    
+    if (riveRef && riveRef.current && riveRef.current.setInputState) {
+      try {
+        // Get the state input for the new mood
+        const moodToStateInput: Record<string, number> = {
+          'lamb-idle': 0,
+          'lamb-sleepy': 4,
+          'lamb-angry': 5,
+          'lamb-chubby dying': 6,
+          'lamb-skinny dying': 7,
+          'smoking': 8,
+          'lamb-full': 3,
+        };
+        
+        const targetStateInput = moodToStateInput[newMood] || 0;
+        riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+        
+        appLog(`Updated lamb hearts to ${hearts}, mood to ${newMood}, Rive state to ${targetStateInput}`);
+        
+        Toast.show({
+          type: 'success',
+          text1: `Hearts set to ${hearts}!`,
+          text2: `Lamb mood: ${newMood}`,
+          position: 'top',
+          visibilityTime: 2000,
+        });
+      } catch (error) {
+        appLog('Error updating Rive state after heart change:', error);
+      }
+    }
+    
+    Alert.alert('Set Hearts', `Lamb hearts set to ${hearts}\nMood: ${newMood}`);
   }, []);
 
   // Sync activity dates with penalty dates
@@ -1060,7 +1111,43 @@ export function DebugButton() {
                       <TouchableOpacity
                         key={hearts}
                         className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
-                        onPress={() => setLambHearts(hearts)}>
+                        onPress={() => {
+                          if (hearts === 0) {
+                            // Special handling for 0 hearts - set to dead state
+                            const userStore = useUserStore.getState();
+                            userStore.setLambHearts(0);
+                            userStore.setLambMood('dead');
+                            
+                            // Force sync to Firestore
+                            syncWithFirestore();
+                            
+                            // Set Rive animation to dead state (8)
+                            const homeStore = useHomeStore.getState();
+                            const riveRef = homeStore.riveRef;
+                            
+                            if (riveRef && riveRef.current && riveRef.current.setInputState) {
+                              try {
+                                riveRef.current.setInputState('State Machine 1', 'Action-Number', 8);
+                                appLog('Set lamb to dead state (0 hearts, Action-Number: 8)');
+                                
+                                Toast.show({
+                                  type: 'info',
+                                  text1: '💀 Lamb is dead!',
+                                  text2: 'Hearts set to 0, animation set to dead state',
+                                  position: 'top',
+                                  visibilityTime: 3000,
+                                });
+                              } catch (error) {
+                                appLog('Error setting Rive to dead state:', error);
+                              }
+                            }
+                            
+                            Alert.alert('💀 Dead', 'Lamb hearts set to 0\nState: Dead');
+                          } else {
+                            // Normal heart setting for other values
+                            setLambHearts(hearts);
+                          }
+                        }}>
                         <Text className="font-din text-sm text-textPrimary">{`${hearts} ❤️`}</Text>
                       </TouchableOpacity>
                     ))}
