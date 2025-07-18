@@ -194,7 +194,7 @@ export const EvolutionScreen: React.FC<EvolutionScreenProps> = ({
                 ref={riveRef}
                 url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
                 autoplay={true}
-                artboardName="Evolution Animation"
+                artboardName="Main"
                 stateMachineName="State Machine 1"
                 style={{
                   width: '100%',
