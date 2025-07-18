@@ -9,6 +9,7 @@ import { useHomeStore } from '../stores/homeStore';
 import analytics from '../../utils/analytics';
 import { appLog } from '../helper/helper';
 import { initializeAnalyticsConfig, configureAnalyticsFromUserData } from '../../utils/analyticsConfig';
+import { initializePostHogConfig, handlePostHogUserSignIn } from '../../utils/posthogConfig';
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'app_initialized';
 // Generate a unique UUID for anonymous users
@@ -34,6 +35,9 @@ export const onAppForegroundOrInit = async () => {
   // Initialize analytics configuration if not already initialized
   await initializeAnalyticsConfig();
   
+  // Initialize PostHog configuration
+  await initializePostHogConfig();
+  
   // Initialize analytics if not already initialized
   if (!analytics.isInitialized) {
     appLog('🔧 Initializing analytics on app foreground...');
@@ -57,6 +61,9 @@ export const onAppForegroundOrInit = async () => {
       
       // Configure analytics based on user's age range
       await configureAnalyticsFromUserData(firestoreData.ageRange);
+      
+      // Configure PostHog based on user's age range
+      await handlePostHogUserSignIn(firestoreData.ageRange);
       
       // Debug: Log current user age range from store
       const { getCurrentUserAgeRange } = require('../../utils/analyticsConfig');
@@ -113,6 +120,9 @@ const restoreUserState = async () => {
     
     // Configure analytics based on user's age range
     await configureAnalyticsFromUserData(firestoreData.ageRange);
+    
+    // Configure PostHog based on user's age range
+    await handlePostHogUserSignIn(firestoreData.ageRange);
     
     // Debug: Log current user age range from store
     const { getCurrentUserAgeRange } = require('../../utils/analyticsConfig');
@@ -201,6 +211,11 @@ export const useAppInitialization = () => {
         appLog('🔧 Initializing analytics configuration...');
         await initializeAnalyticsConfig();
         appLog('✅ Analytics configuration initialized');
+        
+        // Initialize PostHog configuration
+        appLog('🔧 Initializing PostHog configuration...');
+        await initializePostHogConfig();
+        appLog('✅ PostHog configuration initialized');
         
         // Initialize analytics
         appLog('🔧 Initializing analytics...');

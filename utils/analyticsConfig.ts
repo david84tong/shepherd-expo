@@ -1,8 +1,10 @@
 import analytics from '@react-native-firebase/analytics';
 import { init as initAmplitude, setOptOut } from '@amplitude/analytics-react-native';
 import { Mixpanel } from 'mixpanel-react-native';
+import { PostHog } from 'posthog-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { initializePostHog } from './posthogConfig';
 
 // Analytics configuration constants
 const MIXPANEL_TOKEN = '7178bfcd1e0972001d3e6c066e8fb18b';
@@ -15,6 +17,7 @@ const ANALYTICS_ENABLED_KEY = 'analytics_enabled';
 
 // Global instances
 let mixpanelInstance: Mixpanel | null = null;
+let posthogInstance: PostHog | null = null;
 let isAnalyticsConfigured = false;
 
 /**
@@ -117,6 +120,12 @@ async function disableAllAnalytics(): Promise<void> {
       mixpanelInstance.optOutTracking();
       console.log('🚫 Mixpanel disabled');
     }
+
+    // Disable PostHog
+    if (posthogInstance) {
+      posthogInstance.optOut();
+      console.log('🚫 PostHog disabled');
+    }
   } catch (error) {
     console.error('❌ Error disabling analytics:', error);
   }
@@ -150,6 +159,16 @@ async function enableAllAnalytics(): Promise<void> {
     }
     mixpanelInstance.optInTracking();
     console.log('✅ Mixpanel enabled');
+
+    // Initialize and enable PostHog
+    if (!posthogInstance) {
+      posthogInstance = await initializePostHog();
+      console.log('PostHog initialized');
+    }
+    if (posthogInstance) {
+      posthogInstance.optIn();
+      console.log('✅ PostHog enabled');
+    }
   } catch (error) {
     console.error('❌ Error enabling analytics:', error);
   }
@@ -237,6 +256,7 @@ export async function resetAnalyticsConfig(): Promise<void> {
     console.log('🔄 Resetting analytics configuration...');
     isAnalyticsConfigured = false;
     mixpanelInstance = null;
+    posthogInstance = null;
     await AsyncStorage.removeItem(USER_AGE_KEY);
     await AsyncStorage.removeItem(ANALYTICS_ENABLED_KEY);
     console.log('✅ Analytics configuration reset');

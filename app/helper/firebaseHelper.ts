@@ -6,6 +6,7 @@ import { useUserStore } from '../stores/userStore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
 import { appLog } from './helper';
 import { configureAnalyticsFromUserData } from '../../utils/analyticsConfig';
+import analytics from '../../utils/analytics';
 
 // Constants
 const USER_FETCH_CACHE_DURATION = 5000; // 5 seconds
@@ -141,6 +142,11 @@ export const fetchFromFirestore = async ({
 
         // Configure analytics based on user age range
         await configureAnalyticsFromUserData(convertedUserData.ageRange);
+        
+        // Identify user in all analytics platforms (including PostHog)
+        if (analytics.isInitialized) {
+          await analytics.setUserId(currentUser.uid, false); // false = existing user
+        }
         
         // Debug: Log current user age range from store
         const { getCurrentUserAgeRange } = require('../../utils/analyticsConfig');

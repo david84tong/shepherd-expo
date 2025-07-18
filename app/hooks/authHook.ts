@@ -208,9 +208,11 @@ export const useAuth = () => {
       // Fetch the complete user data to ensure all fields are synced
       await fetchFromFirestore({ currentLoggedUser: userCredential.user });
 
-      // Log successful sign in
+      // Log successful sign in and identify user in analytics
       if (analytics.isInitialized) {
         analytics.logEvent('auth_success');
+        // Identify user in all analytics platforms (including PostHog)
+        await analytics.setUserId(uid, false); // false = existing user
       }
 
       return userCredential.user;
@@ -278,9 +280,11 @@ export const useAuth = () => {
       });
 
       syncStreakDataToWidget(0, firestore.Timestamp.now()?.toDate());
-      // Log successful anonymous sign in
+      // Log successful anonymous sign in and identify user in analytics
       if (analytics.isInitialized) {
         analytics.logEvent('auth_success_anonymously_by_clicking_skip_button');
+        // Identify anonymous user in all analytics platforms (including PostHog)
+        await analytics.setUserId(uid, false); // false = existing user
       }
 
       // Adapty: login user after successful anonymous sign in
@@ -414,6 +418,8 @@ export const useAuth = () => {
           method: 'google',
           uid: uid.substring(0, 8),
         });
+        // Identify user in all analytics platforms (including PostHog)
+        await analytics.setUserId(uid, false); // false = existing user
       }
       return userCredential.user;
     } catch (err) {
@@ -509,6 +515,8 @@ export const useAuth = () => {
           method: 'email',
           uid: uid.substring(0, 8),
         });
+        // Identify user in all analytics platforms (including PostHog)
+        await analytics.setUserId(uid, true); // true = new user
       }
 
       return userCredential.user;
@@ -583,6 +591,8 @@ export const useAuth = () => {
           method: 'email',
           uid: uid.substring(0, 8),
         });
+        // Identify user in all analytics platforms (including PostHog)
+        await analytics.setUserId(uid, false); // false = existing user
       }
 
       return userCredential.user;
@@ -658,6 +668,11 @@ export const useAuth = () => {
         // Fetch and sync user data
         await fetchFromFirestore({ currentLoggedUser: result.user });
 
+        // Identify user in all analytics platforms (including PostHog)
+        if (analytics.isInitialized) {
+          await analytics.setUserId(result.user.uid, false); // false = existing user
+        }
+
         appLog('[Auth] Successfully upgraded to Apple account');
         return result;
       } catch (error: any) {
@@ -667,6 +682,12 @@ export const useAuth = () => {
           appLog('[Auth] Apple ID already in use, signing in with existing account');
           const result = await auth().signInWithCredential(firebaseCredential);
           await fetchFromFirestore({ currentLoggedUser: result.user });
+          
+          // Identify user in all analytics platforms (including PostHog)
+          if (analytics.isInitialized) {
+            await analytics.setUserId(result.user.uid, false); // false = existing user
+          }
+          
           return result;
         }
         throw error;

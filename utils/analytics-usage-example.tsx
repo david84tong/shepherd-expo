@@ -1,93 +1,139 @@
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { useAnalytics } from '../app/hooks/useAnalytics';
+/**
+ * PostHog Analytics Usage Examples
+ * 
+ * This file demonstrates how to use PostHog analytics in the Shepherd app.
+ * PostHog is now integrated alongside Mixpanel and Amplitude.
+ */
+
+import analytics, { AnalyticsEvent } from './analytics';
 
 /**
- * Example component demonstrating how to use the analytics hook
- * This is just for documentation - not actual app code
+ * Example: Track a screen view
  */
-const AnalyticsExampleComponent = () => {
-  // Get analytics methods from the hook
-  const { 
-    logScreenView, 
-    logButtonPress, 
-    logSpiritualActivity,
-    logError,
-    AnalyticsEvent,
-    EventCategory
-  } = useAnalytics();
-
-  // Log screen view when component mounts
-  useEffect(() => {
-    logScreenView('ExampleScreen', {
-      customParam: 'custom value'
-    });
-
-    // Handle any errors during component initialization
-    try {
-      // Initialization code...
-    } catch (error: any) {
-      logError(
-        'Failed to initialize ExampleComponent',
-        'INIT_ERROR',
-        { errorDetails: error.message }
-      );
-    }
-  }, [logScreenView, logError]);
-
-  // Example button handler
-  const handleStartReading = () => {
-    // Log the button press
-    logButtonPress('startReading', 'ExampleScreen', {
-      buttonLabel: 'Start Reading'
-    });
-
-    // Log the spiritual activity
-    logSpiritualActivity(AnalyticsEvent.BIBLE_READING_STARTED, {
-      bookName: 'Genesis',
-      chapter: 1
-    });
-
-    // Continue with actual functionality...
-  };
-
-  // Example error handling
-  const handleRiskyAction = () => {
-    try {
-      // Some code that might fail
-      throw new Error('Example error');
-    } catch (error: any) {
-      // Log the error
-      logError(
-        'Failed to complete risky action',
-        'RISKY_ACTION_ERROR',
-        { errorMessage: error.message }
-      );
-      
-      // Show user-friendly error message
-      alert('Something went wrong. Please try again.');
-    }
-  };
-
-  return (
-    <View className="p-4">
-      <Text className="text-heading font-feather">Analytics Example</Text>
-      
-      <TouchableOpacity 
-        className="mt-4 bg-accentGreen p-4 rounded-md"
-        onPress={handleStartReading}
-      >
-        <Text className="text-white font-din text-center">Start Reading</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity 
-        className="mt-4 bg-accentRed p-4 rounded-md"
-        onPress={handleRiskyAction}
-      >
-        <Text className="text-white font-din text-center">Try Risky Action</Text>
-      </TouchableOpacity>
-    </View>
-  );
+export const trackScreenView = (screenName: string, additionalParams?: Record<string, any>) => {
+  analytics.logEvent(AnalyticsEvent.SCREEN_VIEW, {
+    screen_name: screenName,
+    ...additionalParams
+  });
 };
 
-export default AnalyticsExampleComponent; 
+/**
+ * Example: Track user engagement with Bible reading
+ */
+export const trackBibleReadingStarted = (book: string, chapter: number, translation: string) => {
+  analytics.logEvent(AnalyticsEvent.BIBLE_READING_STARTED, {
+    book,
+    chapter,
+    translation,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
+ * Example: Track prayer completion
+ */
+export const trackPrayerCompleted = (prayerType: string, duration: number) => {
+  analytics.logEvent(AnalyticsEvent.PRAYER_COMPLETED, {
+    prayer_type: prayerType,
+    duration_seconds: duration,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
+ * Example: Track streak milestone
+ */
+export const trackStreakMilestone = (streakDays: number, milestoneType: string) => {
+  analytics.logEvent(AnalyticsEvent.STREAK_MILESTONE, {
+    streak_days: streakDays,
+    milestone_type: milestoneType,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
+ * Example: Track onboarding progress
+ */
+export const trackOnboardingStep = (stepNumber: number, stepName: string, completed: boolean) => {
+  analytics.logEvent(AnalyticsEvent.ONBOARDING_STEP_COMPLETED, {
+    step_number: stepNumber,
+    step_name: stepName,
+    completed,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
+ * Example: Track in-app purchase
+ */
+export const trackPurchase = (productId: string, price: number, currency: string, success: boolean) => {
+  const eventName = success ? AnalyticsEvent.PURCHASE_COMPLETED : AnalyticsEvent.PURCHASE_FAILED;
+  
+  analytics.logEvent(eventName, {
+    product_id: productId,
+    price,
+    currency,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
+ * Example: Track user preferences
+ */
+export const trackUserPreferenceChange = (preferenceKey: string, oldValue: any, newValue: any) => {
+  analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
+    preference_key: preferenceKey,
+    old_value: oldValue,
+    new_value: newValue,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
+ * Example: Track feature usage
+ */
+export const trackFeatureUsage = (featureName: string, action: string, additionalData?: Record<string, any>) => {
+  analytics.logEvent('feature_used', {
+    feature_name: featureName,
+    action,
+    ...additionalData,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
+ * Example: Track error events
+ */
+export const trackError = (errorMessage: string, errorCode?: string, context?: Record<string, any>) => {
+  analytics.logError(errorMessage, errorCode, context);
+};
+
+/**
+ * Example: Set user properties for segmentation
+ */
+export const setUserProperties = (properties: Record<string, any>) => {
+  analytics.setUserProperties(properties);
+};
+
+/**
+ * Example: Test analytics integration
+ */
+export const testAnalyticsIntegration = () => {
+  analytics.testAnalytics();
+};
+
+/**
+ * Usage in React components:
+ * 
+ * import { trackScreenView, trackBibleReadingStarted } from '~/utils/analytics-usage-example';
+ * 
+ * // In your component
+ * useEffect(() => {
+ *   trackScreenView('HomeScreen');
+ * }, []);
+ * 
+ * const handleBibleReading = () => {
+ *   trackBibleReadingStarted('John', 3, 'NIV');
+ *   // ... rest of your logic
+ * };
+ */ 
