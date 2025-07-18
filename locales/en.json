@@ -570,5 +570,8 @@
     "phoenix_skin_description": "21-day streak to unlock. {{days}} days left!",
     "phoenix_skin_progress": "Progress: {{current}}/21 days",
     "no_mood_data": "No mood data yet",
-    "no_struggles_data": "No struggles data yet"
+    "no_struggles_data": "No struggles data yet",
+    "next_reward": "NEXT REWARD",
+    "unlock_phoenix_lamb": "Unlock Phoenix Lamb",
+    "covenant_success_gems_earned": "You earned {{gems}} gems"
 }

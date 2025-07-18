@@ -320,7 +320,7 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
     if (!showPhoenix || !riveAssets) return null;
     
     return (
-      <View className="w-[250px] h-[250px] mt-[-40px]" key={`lamb-${animationKey}`}>
+      <View className="w-[250px] h-[250px] mt-[-60px]" key={`lamb-${animationKey}`}>
         {IS_ANDROID ? (
           <Rive
             ref={riveRefPhoenix}
@@ -386,14 +386,14 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
             transform: [{ scale: rewardCardScale }],
           }}>
           <Text className="text-sm font-din text-description text-center uppercase mb-2 tracking-wider">
-            NEXT REWARD
+            {i18n.t('next_reward')}
           </Text>
           <Animated.View
             className="flex-row items-center justify-center"
             style={{ opacity: gemTextOpacity }}>
             {isPhoenixLamb ? (
               <Text className="font-din text-textPrimary text-xl font-bold text-center">
-                Unlock Phoenix Lamb
+                {i18n.t('unlock_phoenix_lamb')}
               </Text>
             ) : (
               <>
@@ -475,10 +475,10 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
 
         {completedDays !== 21 && (
           <Text 
-            className="font-din text-center text-description mb-6"
+            className="font-din text-center text-description"
             style={{ fontSize: AppFonts[16] }}
           >
-            You earned {completedDays === 3 ? '100' : '300'} gems of Covenant
+            {i18n.t('covenant_success_gems_earned', { gems: completedDays === 3 ? '100' : '300' })}
           </Text>
         )}
 

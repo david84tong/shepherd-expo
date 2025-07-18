@@ -557,5 +557,8 @@
     "phoenix_skin_description": "Racha de 21 días para desbloquear. ¡{{days}} días restantes!",
     "phoenix_skin_progress": "Progreso: {{current}}/21 días",
     "no_mood_data": "Aún no hay datos de estado de ánimo",
-    "no_struggles_data": "Aún no hay datos de luchas"
+    "no_struggles_data": "Aún no hay datos de luchas",
+    "next_reward": "PRÓXIMA RECOMPENSA",
+    "unlock_phoenix_lamb": "Desbloquear Cordero Phoenix",
+    "covenant_success_gems_earned": "Has ganado {{gems}} gemas"
 }

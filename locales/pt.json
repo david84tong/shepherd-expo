@@ -566,5 +566,8 @@
     "phoenix_skin_description": "Sequência de 21 dias para desbloquear. {{days}} dias restantes!",
     "phoenix_skin_progress": "Progresso: {{current}}/21 dias",
     "no_mood_data": "Ainda não há dados de humor",
-    "no_struggles_data": "Ainda não há dados de lutas"
+    "no_struggles_data": "Ainda não há dados de lutas",
+    "next_reward": "PRÓXIMA RECOMPENSA",
+    "unlock_phoenix_lamb": "Desbloquear Cordeiro Phoenix",
+    "covenant_success_gems_earned": "Você ganhou {{gems}} gemas"
 }

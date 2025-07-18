@@ -566,5 +566,8 @@
     "phoenix_skin_description": "Série de 21 jours pour débloquer. {{days}} jours restants !",
     "phoenix_skin_progress": "Progression : {{current}}/21 jours",
     "no_mood_data": "Aucune donnée d'humeur pour le moment",
-    "no_struggles_data": "Aucune donnée de luttes pour le moment"
+    "no_struggles_data": "Aucune donnée de luttes pour le moment",
+    "next_reward": "PROCHAIN RECOMPENSE",
+    "unlock_phoenix_lamb": "Débloquer l'Agneau Phoenix",
+    "covenant_success_gems_earned": "Vous avez gagné {{gems}} gemmes"
 }

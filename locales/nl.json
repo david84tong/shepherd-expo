@@ -565,5 +565,8 @@
     "phoenix_skin_description": "21-dagen reeks om te ontgrendelen. {{days}} dagen over!",
     "phoenix_skin_progress": "Voortgang: {{current}}/21 dagen",
     "no_mood_data": "Nog geen stemmingsgegevens",
-    "no_struggles_data": "Nog geen worstelingengegevens"
+    "no_struggles_data": "Nog geen worstelingengegevens",
+    "next_reward": "VOLGENDE BELONING",
+    "unlock_phoenix_lamb": "Phoenix-Lam Ontgrendelen",
+    "covenant_success_gems_earned": "Je hebt {{gems}} edelstenen verdiend"
 }

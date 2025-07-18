@@ -565,5 +565,8 @@
     "phoenix_skin_description": "21-Tage-Serie zum Freischalten. {{days}} Tage übrig!",
     "phoenix_skin_progress": "Fortschritt: {{current}}/21 Tage",
     "no_mood_data": "Noch keine Stimmungsdaten",
-    "no_struggles_data": "Noch keine Kampfdaten"
+    "no_struggles_data": "Noch keine Kampfdaten",
+    "next_reward": "NÄCHSTE BELOHNUNG",
+    "unlock_phoenix_lamb": "Phoenix-Lamm freischalten",
+    "covenant_success_gems_earned": "Du hast {{gems}} Edelsteine verdient"
 }
