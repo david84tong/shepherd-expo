@@ -102,6 +102,28 @@ export async function createDevotionalFromVerse(
       return createFallbackDevotional(verseContext);
     }
 
+    // Get user onboarding data from user store
+    const { useUserStore } = require('../stores/userStore');
+    const { useLanguageStore } = require('../stores/languageStore');
+    
+    const userStore = useUserStore.getState();
+    const languageStore = useLanguageStore.getState();
+    
+    // Extract user onboarding information
+    const userName = userStore.getDisplayName() || 'Friend';
+    const userAge = userStore.getAgeRange() || '';
+    const userDenomination = userStore.getDenomination() || '';
+    const userBibleFamiliarity = userStore.getExperienceLevel() || 'new';
+    const userLanguage = languageStore.language || 'en';
+    
+    appLog('[AI API] User context for verse devotional:', {
+      name: userName,
+      age: userAge,
+      denomination: userDenomination,
+      bibleFamiliarity: userBibleFamiliarity,
+      language: userLanguage
+    });
+
     // Create an AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -111,6 +133,37 @@ export async function createDevotionalFromVerse(
 
     try {
       appLog('[AI API] Making fetch request to API...');
+      
+      // Build user context for the prompt
+      let userContext = '';
+      if (userName && userName !== 'Anonymous User') {
+        userContext += ` Their name is ${userName}.`;
+      }
+      if (userAge) {
+        userContext += ` They are in the ${userAge} age range.`;
+      }
+      if (userDenomination) {
+        userContext += ` They identify as ${userDenomination}.`;
+      }
+      if (userBibleFamiliarity) {
+        const familiarityDescription = userBibleFamiliarity === 'new' ? 'new to the Bible' : 
+                                     userBibleFamiliarity === 'growing' ? 'growing in Bible knowledge' : 
+                                     userBibleFamiliarity === 'mature' ? 'mature in Bible knowledge' : 
+                                     'familiar with the Bible';
+        userContext += ` They are ${familiarityDescription}.`;
+      }
+      if (userLanguage && userLanguage !== 'en') {
+        const languageNames: Record<string, string> = {
+          'es': 'Spanish',
+          'fr': 'French',
+          'de': 'German',
+          'pt': 'Portuguese',
+          'nl': 'Dutch'
+        };
+        const languageName = languageNames[userLanguage] || userLanguage;
+        userContext += ` They primarily speak ${languageName}.`;
+      }
+
       const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-4.1-mini', {
         method: 'POST',
         headers: {
@@ -121,15 +174,15 @@ export async function createDevotionalFromVerse(
           "messages": [
             {
               "role": "system",
-              "content": `You are a Christian devotional writer. Create a meaningful devotional based on the Bible verse: ${verseContext.bookName} ${verseContext.chapter}:${verseContext.verse} - "${verseContext.verseText}". 
+              "content": `You are a Christian devotional writer who creates personalized devotionals based on the Bible verse: ${verseContext.bookName} ${verseContext.chapter}:${verseContext.verse} - "${verseContext.verseText}".${userContext}
 
 Please respond with a JSON object containing exactly these four fields:
 - "title": A compelling, short title (3-6 words) for this devotional that captures the main theme
-- "context": 4-5 sentences explaining the historical and spiritual context of this verse
+- "context": 4-5 sentences explaining the historical and spiritual context of this verse, written at an appropriate level for their Bible familiarity
 - "prayer": A heartfelt prayer (2-3 sentences) related to this verse that someone could pray
 - "reflectionPrompt": A thoughtful question or prompt (1-2 sentences) to help someone reflect on how this verse applies to their life
 
-Make sure your response is valid JSON format.`
+Make sure your response is valid JSON format and is personalized to their spiritual background and experience level.`
             },
             {
               "role": "user",
@@ -300,6 +353,28 @@ export async function createDevotionalFromCheckIn(
       return createCheckInFallbackDevotional(checkInData);
     }
 
+    // Get user onboarding data from user store
+    const { useUserStore } = require('../stores/userStore');
+    const { useLanguageStore } = require('../stores/languageStore');
+    
+    const userStore = useUserStore.getState();
+    const languageStore = useLanguageStore.getState();
+    
+    // Extract user onboarding information
+    const userName = userStore.getDisplayName() || 'Friend';
+    const userAge = userStore.getAgeRange() || '';
+    const userDenomination = userStore.getDenomination() || '';
+    const userBibleFamiliarity = userStore.getExperienceLevel() || 'new';
+    const userLanguage = languageStore.language || 'en';
+    
+    appLog('[AI API] User context for devotional:', {
+      name: userName,
+      age: userAge,
+      denomination: userDenomination,
+      bibleFamiliarity: userBibleFamiliarity,
+      language: userLanguage
+    });
+
     // Create an AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -310,7 +385,7 @@ export async function createDevotionalFromCheckIn(
     try {
       appLog('[AI API] Making fetch request to API...');
       
-      // Build a context-aware prompt based on check-in data
+      // Build a comprehensive context-aware prompt based on check-in data and user profile
       let promptContext = `The person is feeling ${checkInData.mood.toLowerCase()}.`;
       
       if (checkInData.focus) {
@@ -319,6 +394,36 @@ export async function createDevotionalFromCheckIn(
       
       if (checkInData.struggle) {
         promptContext += ` They are currently struggling with ${checkInData.struggle.toLowerCase()}.`;
+      }
+
+      // Add user profile context
+      let userContext = '';
+      if (userName && userName !== 'Anonymous User') {
+        userContext += ` Their name is ${userName}.`;
+      }
+      if (userAge) {
+        userContext += ` They are in the ${userAge} age range.`;
+      }
+      if (userDenomination) {
+        userContext += ` They identify as ${userDenomination}.`;
+      }
+      if (userBibleFamiliarity) {
+        const familiarityDescription = userBibleFamiliarity === 'new' ? 'new to the Bible' : 
+                                     userBibleFamiliarity === 'growing' ? 'growing in Bible knowledge' : 
+                                     userBibleFamiliarity === 'mature' ? 'mature in Bible knowledge' : 
+                                     'familiar with the Bible';
+        userContext += ` They are ${familiarityDescription}.`;
+      }
+      if (userLanguage && userLanguage !== 'en') {
+        const languageNames: Record<string, string> = {
+          'es': 'Spanish',
+          'fr': 'French',
+          'de': 'German',
+          'pt': 'Portuguese',
+          'nl': 'Dutch'
+        };
+        const languageName = languageNames[userLanguage] || userLanguage;
+        userContext += ` They primarily speak ${languageName}.`;
       }
 
       const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-4.1-mini', {
@@ -331,19 +436,21 @@ export async function createDevotionalFromCheckIn(
           "messages": [
             {
               "role": "system",
-              "content": `You are a compassionate Christian devotional writer who creates personalized devotionals based on someone's emotional state and spiritual needs. ${promptContext}
+              "content": `You are a compassionate Christian devotional writer who creates deeply personalized devotionals based on someone's emotional state, spiritual needs, and personal background. 
 
-Create a meaningful devotional that specifically addresses their current emotional state${checkInData.focus ? ', area of focus' : ''}${checkInData.struggle ? ', and struggle' : ''}.
+${promptContext}${userContext}
+
+Create a meaningful devotional that specifically addresses their current emotional state${checkInData.focus ? ', area of focus' : ''}${checkInData.struggle ? ', and struggle' : ''}, while being mindful of their spiritual background and experience level.
 
 Please respond with a JSON object containing exactly these fields:
 - "title": A compelling, short title (3-6 words) that relates to their mood${checkInData.focus ? ' and focus area' : ''}
-- "context": 4-5 sentences that acknowledge their feelings and provide biblical wisdom specific to their situation
+- "context": 4-5 sentences that acknowledge their feelings and provide biblical wisdom specific to their situation, written at an appropriate level for their Bible familiarity
 - "verse": The actual Bible verse text (not the reference, but the full verse text)
 - "bibleReference": The Bible reference (e.g., "Philippians 4:13" or "Romans 8:28")
 - "prayer": A heartfelt prayer (2-3 sentences) that specifically addresses their mood${checkInData.focus ? ', focus area' : ''}${checkInData.struggle ? ', and struggle' : ''}
 - "reflectionPrompt": A thoughtful question or prompt (1-2 sentences) to help them process their emotions and find God's guidance
 
-Make sure your response is valid JSON format and is deeply personalized to their specific situation. The verse should be particularly relevant to their current emotional state and needs.`
+Make sure your response is valid JSON format and is deeply personalized to their specific situation. The verse should be particularly relevant to their current emotional state and needs. Consider their denomination and Bible familiarity when choosing language and theological depth.`
             },
             {
               "role": "user",
