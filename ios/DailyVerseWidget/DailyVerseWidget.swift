@@ -160,10 +160,7 @@ struct DailyVerseWidgetEntryView : View {
                                     .foregroundColor(Color.white.opacity(0.8))
                                     .padding(.bottom, 6)
 
-                                Text(verse)
-                                    .font(.custom("Nunito-SemiBold", size: 16))
-                                    .foregroundColor(.white)
-                                    .lineSpacing(4)
+                                AdaptiveVerseText(text: verse)
                             }
                         }
                         Spacer()
@@ -253,6 +250,62 @@ struct DailyVerseWidget: Widget {
 }
 
 // MARK: - Reusable UI Components
+
+struct AdaptiveVerseText: View {
+    let text: String
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let textSize = calculateTextSize(text: text, font: UIFont(name: "Nunito-SemiBold", size: 16)!, maxWidth: geometry.size.width)
+            let lineCount = Int(ceil(textSize.height / (UIFont(name: "Nunito-SemiBold", size: 16)!.lineHeight)))
+            
+            Text(text)
+                .font(.custom("Nunito-SemiBold", size: getFontSize(for: lineCount)))
+                .foregroundColor(.white)
+                .lineSpacing(getLineSpacing(for: lineCount))
+                .lineLimit(4)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+    
+    private func getFontSize(for lineCount: Int) -> CGFloat {
+        switch lineCount {
+        case 1...2:
+            return 16
+        case 3:
+            return 15
+        case 4:
+            return 13
+        default:
+            return 12
+        }
+    }
+    
+    private func getLineSpacing(for lineCount: Int) -> CGFloat {
+        switch lineCount {
+        case 1...2:
+            return 4
+        case 3:
+            return 2
+        case 4:
+            return 1
+        default:
+            return 0
+        }
+    }
+    
+    private func calculateTextSize(text: String, font: UIFont, maxWidth: CGFloat) -> CGSize {
+        let constraintRect = CGSize(width: maxWidth, height: .greatestFiniteMagnitude)
+        let boundingBox = text.boundingRect(
+            with: constraintRect,
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: [.font: font],
+            context: nil
+        )
+        return boundingBox.size
+    }
+}
 
 struct StarsOverlay: View {
     var body: some View {
