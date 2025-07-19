@@ -568,5 +568,6 @@
     "no_struggles_data": "Noch keine Kampfdaten",
     "next_reward": "NÄCHSTE BELOHNUNG",
     "unlock_phoenix_lamb": "Phoenix-Lamm freischalten",
-    "covenant_success_gems_earned": "Du hast {{gems}} Edelsteine verdient"
+    "covenant_success_gems_earned": "Du hast {{gems}} Edelsteine verdient",
+    "report_bug_title": "Fehler melden"
 }

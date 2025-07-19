@@ -569,5 +569,6 @@
     "no_struggles_data": "Aucune donnée de luttes pour le moment",
     "next_reward": "PROCHAIN RECOMPENSE",
     "unlock_phoenix_lamb": "Débloquer l'Agneau Phoenix",
-    "covenant_success_gems_earned": "Vous avez gagné {{gems}} gemmes"
+    "covenant_success_gems_earned": "Vous avez gagné {{gems}} gemmes",
+    "report_bug_title": "Signaler un Bug"
 }

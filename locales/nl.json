@@ -568,5 +568,6 @@
     "no_struggles_data": "Nog geen worstelingengegevens",
     "next_reward": "VOLGENDE BELONING",
     "unlock_phoenix_lamb": "Phoenix-Lam Ontgrendelen",
-    "covenant_success_gems_earned": "Je hebt {{gems}} edelstenen verdiend"
+    "covenant_success_gems_earned": "Je hebt {{gems}} edelstenen verdiend",
+    "report_bug_title": "Bug Melden"
 }
