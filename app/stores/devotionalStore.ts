@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePathStore } from './pathStore';
 import dayjs from 'dayjs';
 import { appLog } from '../helper/helper';
+import { Image as ExpoImage } from 'expo-image';
 
 // Helper function to get a random devotional background
 const getRandomDevotionalBackground = (excludeUrl?: string) => {
@@ -445,6 +446,17 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       verse: quickDevotional.verse?.substring(0, 50) + '...',
     });
     set({ customDevotional: quickDevotional, currentDevotional: quickDevotional });
+    
+    // Preload the quick devotional's background image
+    if (quickDevotional?.imageURL) {
+      ExpoImage.prefetch(quickDevotional.imageURL)
+        .then(() => {
+          appLog('✅ [DevotionalStore] Successfully preloaded quick devotional image:', quickDevotional.imageURL);
+        })
+        .catch((error) => {
+          appLog('⚠️ [DevotionalStore] Failed to preload quick devotional image:', error);
+        });
+    }
 
     // Share the quick devotional with the widget
     if (reference && verseText) {
@@ -554,6 +566,17 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         isCreatingDevotional: false,
         error: null,
       });
+      
+      // Preload the AI devotional's background image
+      if (aiDevotional?.imageURL) {
+        ExpoImage.prefetch(aiDevotional.imageURL)
+          .then(() => {
+            appLog('✅ [DevotionalStore] Successfully preloaded AI devotional image:', aiDevotional.imageURL);
+          })
+          .catch((error) => {
+            appLog('⚠️ [DevotionalStore] Failed to preload AI devotional image:', error);
+          });
+      }
 
       // Share the AI devotional with the widget
       if (reference && verseText) {
@@ -660,6 +683,17 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       customDevotional: devotional,
       currentDevotional: devotional,
     });
+    
+    // Preload the custom devotional's background image
+    if (devotional?.imageURL) {
+      ExpoImage.prefetch(devotional.imageURL)
+        .then(() => {
+          appLog('✅ [DevotionalStore] Successfully preloaded custom devotional image:', devotional.imageURL);
+        })
+        .catch((error) => {
+          appLog('⚠️ [DevotionalStore] Failed to preload custom devotional image:', error);
+        });
+    }
   },
 
   setIsFromCheckIn: (value: boolean) => {
@@ -704,6 +738,17 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         currentDevotional: devotionalWithId,
         isFromCheckIn: true,
       });
+      
+      // Preload the check-in devotional's background image
+      if (devotionalWithId?.imageURL) {
+        ExpoImage.prefetch(devotionalWithId.imageURL)
+          .then(() => {
+            appLog('✅ [DevotionalStore] Successfully preloaded check-in devotional image:', devotionalWithId.imageURL);
+          })
+          .catch((error) => {
+            appLog('⚠️ [DevotionalStore] Failed to preload check-in devotional image:', error);
+          });
+      }
 
       // Also track in user document
       try {
