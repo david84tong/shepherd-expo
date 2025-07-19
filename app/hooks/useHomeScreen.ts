@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import auth from '@react-native-firebase/auth';
 import { useLocalSearchParams } from 'expo-router';
+import { Image as ExpoImage } from 'expo-image';
 
 import {  useHomeStore } from '../stores/homeStore';
 import { usePathStore } from '../stores/pathStore';
@@ -749,6 +750,18 @@ function resetOpenedDevotionalFromParam(){
     setShowGlobalButtons(true);
     setDevotionalReaderVisible(true);
     
+    // Preload the devotional's background image in the background (non-blocking)
+    const devotionalToPreload = customDevotional || currentDevotional;
+    if (devotionalToPreload?.imageURL) {
+      ExpoImage.prefetch(devotionalToPreload.imageURL)
+        .then(() => {
+          appLog('✅ [useHomeScreen] Successfully preloaded devotional image:', devotionalToPreload.imageURL);
+        })
+        .catch((error) => {
+          appLog('⚠️ [useHomeScreen] Failed to preload devotional image:', error);
+        });
+    }
+    
 
 
     // Snap to 60% (index 0) when opening devotional manually
@@ -793,7 +806,9 @@ function resetOpenedDevotionalFromParam(){
       hasDevotional: !!currentDevotional,
       bibleReference: currentDevotional?.bibleReference,
     });
-  }, [currentDevotional]);
+
+
+  }, [currentDevotional, customDevotional]);
 
   const handleReflectionPress = useCallback(() => {
     // If reflection is already completed, redirect to pricing
