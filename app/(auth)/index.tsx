@@ -278,7 +278,7 @@ export default function LoginScreen() {
             ) : (
               <Rive
                 ref={riveRef}
-                url={riveAssets[0].localUri!}
+                resourceName={'new_shepherd'}
                 artboardName="[Main] Shpeherd"
                 stateMachineName="State Machine 1"
                 autoplay

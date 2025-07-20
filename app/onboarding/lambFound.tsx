@@ -14,7 +14,7 @@ export default function OnboardingWelcomeScreen() {
   const { setResponse } = useOnboardingStore();
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/home_lamb.riv')]);
 
   // Create animated values
   const titleAnimation = new Animated.Value(0);
@@ -106,7 +106,7 @@ export default function OnboardingWelcomeScreen() {
               />
             ) : (
               <Rive
-                url={riveAssets[0].uri!}
+                resourceName='home_lamb'
                 artboardName="lamb-idle"
                 autoplay
                 style={{ width: '80%', height: '80%' }}

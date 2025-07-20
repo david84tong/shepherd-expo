@@ -28,8 +28,8 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
 
   // Load Rive assets
   const [riveAssets] = useAssets([
-    require('../assets/riveAnimations/homeLamb.riv'),
-    require('../assets/riveAnimations/lamb-wings-idle.riv'),
+    require('../assets/riveAnimations/home_lamb.riv'),
+    require('../assets/riveAnimations/lamb_wings_idle.riv'),
   ]);
 
   // Animation shared values
@@ -163,7 +163,7 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
               {riveAssets && (
                 <View className="w-20 h-20">
                   <Rive
-                    {...(IS_ANDROID ? { resourceName: 'home_lamb' } : { url: riveAssets[0].uri! })}
+                    {...(IS_ANDROID ? { resourceName: 'home_lamb' } : { resourceName: 'home_lamb' })}
                     artboardName="lamb-idle"
                     style={{ width: '100%', height: '100%' }}
                   />
@@ -188,7 +188,7 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
               {riveAssets && (
                 <View className="w-[110px] h-[110px]">
                   <Rive
-                    {...(IS_ANDROID ? { resourceName: 'home_lamb' } : { url: riveAssets[0].uri! })}
+                    {...(IS_ANDROID ? { resourceName: 'home_lamb' } : { resourceName: 'home_lamb' })}
                     artboardName="lamb-idle"
                     style={{ width: '100%', height: '100%' }}
                   />
@@ -219,7 +219,7 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
                     <Rive
                       {...(IS_ANDROID
                         ? { resourceName: 'home_lamb' }
-                        : { url: riveAssets[0].uri! })}
+                        : { resourceName: 'home_lamb' })}
                       artboardName="lamb-idle"
                       style={{ width: '100%', height: '100%' }}
                     />
@@ -247,7 +247,7 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
                 <View className="w-[140px] h-[140px]">
                   <Rive
                     {...(IS_IOS
-                      ? { url: riveAssets[1].uri! }
+                      ? { resourceName: 'lamb_wings_idle' }
                       : { resourceName: 'lamb_wings_idle' })}
                     style={{ width: '100%', height: '100%' }}
                   />

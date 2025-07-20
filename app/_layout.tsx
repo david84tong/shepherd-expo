@@ -142,7 +142,7 @@ export default function RootLayout() {
     'Nunito-Regular': require('../assets/fonts/Nunito-Regular.ttf'),
     'Nunito-BlackItalic': require('../assets/fonts/Nunito-BlackItalic.ttf'),
   });
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/shepherd-splash_screen.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/shepherd_splash_screen.riv')]);
 
   // Loading states
   const [appReady, setAppReady] = useState(false);
@@ -822,10 +822,10 @@ export default function RootLayout() {
             onError={() => {
               setShowRiveAnimation(false);
             }}
-          />
-        ) : (
-          <Rive
-            url={riveAssets[0].uri!}
+            />
+          ) : (
+            <Rive
+            resourceName={'shepherd_splash_screen'}
             style={styles.riveAnimation}
             autoplay={true}
             onPause={() => {

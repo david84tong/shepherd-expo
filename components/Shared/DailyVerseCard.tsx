@@ -186,16 +186,16 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
     try {
       // 1. Download the image to a temporary local file
-      const localUri = FileSystem.cacheDirectory + 'share_image.jpg';
-      await FileSystem.downloadAsync(devotional.imageURL, localUri);
+      const uri = FileSystem.cacheDirectory + 'share_image.jpg';
+      await FileSystem.downloadAsync(devotional.imageURL, uri);
 
       const message = `"${devotional.verse}" - ${devotional.bibleReference}`;
 
       // 2. Use RN's Share API with the local file URI
       const result = await Share.share({
         title: 'Share Daily Verse',
-        message: Platform.OS === 'android' ? `${message}\n${localUri}` : message,
-        url: localUri,
+        message: Platform.OS === 'android' ? `${message}\n${uri}` : message,
+        url: uri,
       });
 
       // 3. Only increment if the share was successful

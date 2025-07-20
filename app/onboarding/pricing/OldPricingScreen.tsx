@@ -142,7 +142,7 @@ const OldPricingScreen = () => {
   const { presentFreeTrialPaywall } = useSubscriptionStore();
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../../../assets/riveAnimations/goldLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../../assets/riveAnimations/gold_lamb.riv')]);
 
   const toggleSwitch = () => {
     hapticLight();
@@ -476,7 +476,7 @@ const OldPricingScreen = () => {
                           />
                         ) : (
                           <Rive
-                            url={riveAssets[0].localUri!}
+                            resourceName='gold_lamb'
                             style={{ width: 192, height: 192, position: 'absolute', bottom: -20 }}
                             artboardName="lamb-idle"
                             autoplay={true}

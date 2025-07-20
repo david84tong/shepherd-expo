@@ -81,7 +81,7 @@ export default function StreakCommitmentScreen() {
   const { setResponse } = useOnboardingStore();
   const { playButtonSound, playChestOpeningSound } = useSoundStore();
   const [riveAssets] = useAssets([
-    require('../../assets/riveAnimations/successLamb.riv'),
+    require('../../assets/riveAnimations/success_lamb.riv'),
     require('../../assets/riveAnimations/new_shepherd.riv'),
   ]);
   const [riveLoaded, setRiveLoaded] = useState(false);
@@ -285,7 +285,7 @@ export default function StreakCommitmentScreen() {
         ) : (
           <Rive
             ref={riveRef10}
-            url={riveAssets[1].uri!}
+            resourceName='new_shepherd'
             autoplay
             artboardName="[Main] Shpeherd"
             stateMachineName="State Machine 1"
@@ -315,7 +315,7 @@ export default function StreakCommitmentScreen() {
         ) : (
           <Rive
             ref={riveRef}
-            url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
+            resourceName='success_lamb'
             artboardName="chest"
             autoplay={true}
             style={{ width: '120%', height: '130%' , position: 'absolute', top: 0 }}

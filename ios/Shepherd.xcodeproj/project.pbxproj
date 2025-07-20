@@ -8,12 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		0D40F8B0850A4AA2144CE60F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EAEDFBA39C7EF1B9EA065ADD /* PrivacyInfo.xcprivacy */; };
+		1325E77F8593410B87A4A3FD /* gold_lamb.riv in Resources */ = {isa = PBXBuildFile; fileRef = 8AA2CD56ED5E40E1BF04F552 /* gold_lamb.riv */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
+		387844548E744EB2A3984138 /* home_lamb.riv in Resources */ = {isa = PBXBuildFile; fileRef = 2B583E13DEC64721AF4BF38C /* home_lamb.riv */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
+		41E7DA932BFD4354BBACB4BC /* .DS_Store in Resources */ = {isa = PBXBuildFile; fileRef = 445D30FE8BE04D8882BB95A5 /* .DS_Store */; };
 		4647E2810ABA4F1786BB3734 /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0E3B2B85B248499530241A /* noop-file.swift */; };
+		5419A68B5EEE4C2BBFF56BF7 /* baby_lamb_waking.riv in Resources */ = {isa = PBXBuildFile; fileRef = 68518B1DE7604598AD0A6972 /* baby_lamb_waking.riv */; };
+		5966A07B74BD49619E7C0545 /* shepherd_splash_screen.riv in Resources */ = {isa = PBXBuildFile; fileRef = 0D26D278206F4D5297275BB9 /* shepherd_splash_screen.riv */; };
 		87E0E3079CAB4BA3A2440AF5 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2748DD966C7A40ADBAD1846C /* GoogleService-Info.plist */; };
+		8C190273E6F54600AE946A39 /* make_lamb.riv in Resources */ = {isa = PBXBuildFile; fileRef = 4FC519EABD7C4612AAEAB37B /* make_lamb.riv */; };
+		8DB3F13839824F368BA89B71 /* stars.json in Resources */ = {isa = PBXBuildFile; fileRef = BD0F6852ECA2471B8B412A26 /* stars.json */; };
+		9081E2160CCF4866B4003E17 /* new_shepherd.riv in Resources */ = {isa = PBXBuildFile; fileRef = 1294E25FA53042C58A745B13 /* new_shepherd.riv */; };
+		9C7F66969F2D4FE59C675BFE /* lamb_wings_idle.riv in Resources */ = {isa = PBXBuildFile; fileRef = EABE0631B5374343A2602D6E /* lamb_wings_idle.riv */; };
 		AB7CE70C2287F1FC8055D1EC /* Pods_Shepherd.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 25E6F56B41F3A00DCBD4BEEB /* Pods_Shepherd.framework */; };
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
@@ -27,6 +36,8 @@
 		D79076742E04DAC10003A2E4 /* DailyVerseWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D79076612E04DABE0003A2E4 /* DailyVerseWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D7AECDC82E063C8B008131FC /* WidgetDataSharer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7AECDC72E063C8B008131FC /* WidgetDataSharer.swift */; };
 		D7AECDC92E063C8B008131FC /* WidgetDataSharer.m in Sources */ = {isa = PBXBuildFile; fileRef = D7AECDC62E063C8B008131FC /* WidgetDataSharer.m */; };
+		E0F4238569F0489A93631048 /* bg_green.riv in Resources */ = {isa = PBXBuildFile; fileRef = 7F43EF81BA7C41C5ACAC2122 /* bg_green.riv */; };
+		F4136F2720554F62AF677AAA /* success_lamb.riv in Resources */ = {isa = PBXBuildFile; fileRef = 4A73157776B74B6E919F5086 /* success_lamb.riv */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,6 +73,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0D26D278206F4D5297275BB9 /* shepherd_splash_screen.riv */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = shepherd_splash_screen.riv; path = "/Users/dev/Documents/Projects/own-project/shepherd-expo/ios/Assets/shepherd_splash_screen.riv"; sourceTree = "<group>"; };
+		1294E25FA53042C58A745B13 /* new_shepherd.riv */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = new_shepherd.riv; path = "/Users/dev/Documents/Projects/own-project/shepherd-expo/ios/Assets/new_shepherd.riv"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* Shepherd.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Shepherd.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = Shepherd/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = Shepherd/AppDelegate.mm; sourceTree = "<group>"; };
@@ -70,9 +83,17 @@
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = Shepherd/main.m; sourceTree = "<group>"; };
 		25E6F56B41F3A00DCBD4BEEB /* Pods_Shepherd.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Shepherd.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		2748DD966C7A40ADBAD1846C /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Shepherd/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		2B583E13DEC64721AF4BF38C /* home_lamb.riv */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = home_lamb.riv; path = "/Users/dev/Documents/Projects/own-project/shepherd-expo/ios/Assets/home_lamb.riv"; sourceTree = "<group>"; };
+		445D30FE8BE04D8882BB95A5 /* .DS_Store */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = .DS_Store; path = "/Users/dev/Documents/Projects/own-project/shepherd-expo/ios/Assets/.DS_Store"; sourceTree = "<group>"; };
+		4A73157776B74B6E919F5086 /* success_lamb.riv */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = success_lamb.riv; path = "/Users/dev/Documents/Projects/own-project/shepherd-expo/ios/Assets/success_lamb.riv"; sourceTree = "<group>"; };
+		4FC519EABD7C4612AAEAB37B /* make_lamb.riv */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = make_lamb.riv; path = "/Users/dev/Documents/Projects/own-project/shepherd-expo/ios/Assets/make_lamb.riv"; sourceTree = "<group>"; };
+		68518B1DE7604598AD0A6972 /* baby_lamb_waking.riv */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = baby_lamb_waking.riv; path = "/Users/dev/Documents/Projects/own-project/shepherd-expo/ios/Assets/baby_lamb_waking.riv"; sourceTree = "<group>"; };
+		7F43EF81BA7C41C5ACAC2122 /* bg_green.riv */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = bg_green.riv; path = "/Users/dev/Documents/Projects/own-project/shepherd-expo/ios/Assets/bg_green.riv"; sourceTree = "<group>"; };
 		87B7D6B66C29C7AEB90B512F /* Pods-Shepherd.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Shepherd.debug.xcconfig"; path = "Target Support Files/Pods-Shepherd/Pods-Shepherd.debug.xcconfig"; sourceTree = "<group>"; };
+		8AA2CD56ED5E40E1BF04F552 /* gold_lamb.riv */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = gold_lamb.riv; path = "/Users/dev/Documents/Projects/own-project/shepherd-expo/ios/Assets/gold_lamb.riv"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Shepherd/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		BD0F6852ECA2471B8B412A26 /* stars.json */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = stars.json; path = "/Users/dev/Documents/Projects/own-project/shepherd-expo/ios/Assets/stars.json"; sourceTree = "<group>"; };
 		BF0E3B2B85B248499530241A /* noop-file.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = "noop-file.swift"; path = "Shepherd/noop-file.swift"; sourceTree = "<group>"; };
 		D47AEE6BEBBA4896A18140A8 /* Shepherd-Bridging-Header.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = "Shepherd-Bridging-Header.h"; path = "Shepherd/Shepherd-Bridging-Header.h"; sourceTree = "<group>"; };
 		D77C645E2DE55085000F5441 /* ShepherdStreakWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShepherdStreakWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -86,6 +107,7 @@
 		D7AECDC72E063C8B008131FC /* WidgetDataSharer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WidgetDataSharer.swift; path = Shepherd/WidgetDataSharer.swift; sourceTree = "<group>"; };
 		D7AECDCA2E064076008131FC /* DailyVerseWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DailyVerseWidgetExtension.entitlements; sourceTree = "<group>"; };
 		E41EE0604960528E6AFC8F61 /* Pods-Shepherd.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Shepherd.release.xcconfig"; path = "Target Support Files/Pods-Shepherd/Pods-Shepherd.release.xcconfig"; sourceTree = "<group>"; };
+		EABE0631B5374343A2602D6E /* lamb_wings_idle.riv */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = lamb_wings_idle.riv; path = "/Users/dev/Documents/Projects/own-project/shepherd-expo/ios/Assets/lamb_wings_idle.riv"; sourceTree = "<group>"; };
 		EAEDFBA39C7EF1B9EA065ADD /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Shepherd/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Shepherd/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
@@ -210,6 +232,17 @@
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				D65327D7A22EEC0BE12398D9 /* Pods */,
 				D7E4C46ADA2E9064B798F356 /* ExpoModulesProviders */,
+				445D30FE8BE04D8882BB95A5 /* .DS_Store */,
+				68518B1DE7604598AD0A6972 /* baby_lamb_waking.riv */,
+				7F43EF81BA7C41C5ACAC2122 /* bg_green.riv */,
+				8AA2CD56ED5E40E1BF04F552 /* gold_lamb.riv */,
+				2B583E13DEC64721AF4BF38C /* home_lamb.riv */,
+				EABE0631B5374343A2602D6E /* lamb_wings_idle.riv */,
+				4FC519EABD7C4612AAEAB37B /* make_lamb.riv */,
+				1294E25FA53042C58A745B13 /* new_shepherd.riv */,
+				0D26D278206F4D5297275BB9 /* shepherd_splash_screen.riv */,
+				BD0F6852ECA2471B8B412A26 /* stars.json */,
+				4A73157776B74B6E919F5086 /* success_lamb.riv */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -380,6 +413,17 @@
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
 				87E0E3079CAB4BA3A2440AF5 /* GoogleService-Info.plist in Resources */,
 				0D40F8B0850A4AA2144CE60F /* PrivacyInfo.xcprivacy in Resources */,
+				41E7DA932BFD4354BBACB4BC /* .DS_Store in Resources */,
+				5419A68B5EEE4C2BBFF56BF7 /* baby_lamb_waking.riv in Resources */,
+				E0F4238569F0489A93631048 /* bg_green.riv in Resources */,
+				1325E77F8593410B87A4A3FD /* gold_lamb.riv in Resources */,
+				387844548E744EB2A3984138 /* home_lamb.riv in Resources */,
+				9C7F66969F2D4FE59C675BFE /* lamb_wings_idle.riv in Resources */,
+				8C190273E6F54600AE946A39 /* make_lamb.riv in Resources */,
+				9081E2160CCF4866B4003E17 /* new_shepherd.riv in Resources */,
+				5966A07B74BD49619E7C0545 /* shepherd_splash_screen.riv in Resources */,
+				8DB3F13839824F368BA89B71 /* stars.json in Resources */,
+				F4136F2720554F62AF677AAA /* success_lamb.riv in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

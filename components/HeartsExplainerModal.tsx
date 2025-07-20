@@ -24,7 +24,7 @@ export default function HeartsExplainerModal({ visible, onClose }: HeartsExplain
 
   // Load Rive assets
   const [riveAssets] = useAssets([
-    require('../assets/riveAnimations/homeLamb.riv'),
+    require('../assets/riveAnimations/home_lamb.riv'),
   ]);
 
   // Animation shared values
@@ -159,7 +159,7 @@ export default function HeartsExplainerModal({ visible, onClose }: HeartsExplain
                     <Rive
                       {...(IS_ANDROID
                         ? { resourceName: 'home_lamb' }
-                        : { url: riveAssets[0].uri! }
+                        : { resourceName: 'home_lamb' }
                       )}
                       artboardName={state.artboard}
                       style={{ width: '100%', height: '100%' }}

@@ -232,7 +232,7 @@ export default function SelfFundedMissionScreen() {
                         riveAssets && (
                           <Rive
                             ref={armorRiveRef}
-                            url={riveAssets[0].uri!}
+                            resourceName='new_shepherd'
                             artboardName="[Main] Shpeherd"
                             stateMachineName="State Machine 1"
                             autoplay
@@ -259,7 +259,7 @@ export default function SelfFundedMissionScreen() {
                         riveAssets && (
                           <Rive
                             ref={whaleRiveRef}
-                            url={riveAssets[0].uri!}
+                            resourceName='new_shepherd'
                             artboardName="[Main] Shpeherd"
                             stateMachineName="State Machine 1"
                             autoplay

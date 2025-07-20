@@ -241,7 +241,7 @@ export default function OnboardingLambNameScreen() {
               riveAssets[0]?.uri && (
                 <Rive
                   ref={riveRef}
-                  url={riveAssets[0].uri}
+                 resourceName='new_shepherd'
                   artboardName="[Main] Shpeherd"
                   stateMachineName="State Machine 1"
                   autoplay

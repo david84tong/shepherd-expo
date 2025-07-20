@@ -71,8 +71,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/successLamb.riv')]);
-  const [homeLambAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/success_lamb.riv')]);
+  const [homeLambAssets] = useAssets([require('../assets/riveAnimations/home_lamb.riv')]);
 
   // -------- Other hooks below (must appear before any conditional return) --------
   // Get completion states
@@ -173,7 +173,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   let subMessage = propSubMessage || i18n.t('success_reading_complete_desc');
   let heartReward = 0;
   let xpReward = 0;
-  const riveResource = 'successLamb'; // Default animation
+  const riveResource = 'success_lamb'; // Default animation
   let riveArtboard: string | undefined = undefined;
   let rewardTitle = i18n.t('reading_rewards');
 
@@ -798,7 +798,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                   ) : (
                     <Rive
                       ref={riveRef}
-                      url={(homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri) || ''}
+                      resourceName='home_lamb'
                       autoplay={true}
                       artboardName="lamb-milestone"
                       style={{
@@ -824,7 +824,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                   ) : (
                     <Rive
                       ref={riveRef}
-                      url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
+                      resourceName='home_lamb'
                       autoplay={true}
                       style={{ width: '100%', height: '100%' }}
                       {...(riveArtboard ? { artboardName: riveArtboard } : {})}

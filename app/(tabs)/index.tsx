@@ -649,7 +649,7 @@ export default function HomeScreen() {
             <Rive
               key={riveKey}
               ref={riveRef}
-              url={preloadedRiveAssets[lambAssetIndex].uri!}
+              resourceName="new_shepherd"
               artboardName={artboardName}
               onPlay={handleRivePlay}
               stateMachineName="State Machine 1"
@@ -801,7 +801,7 @@ export default function HomeScreen() {
               showBgRive &&
               preloadedRiveAssets && (
                 <Rive
-                  url={preloadedRiveAssets[1].uri!}
+                 resourceName='bg_green'
                   autoplay={true}
                   style={{ width: '160%', height: '160%', top: -300, left: -128 }}
                 />

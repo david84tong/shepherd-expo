@@ -11,9 +11,7 @@
     "developmentClient": {
       "silentLaunch": true
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+   "assetBundlePatterns": ["**/*.riv"],
     "splash": {
       "image": "./assets/custom_splash_icon.png",
       "resizeMode": "cover"

@@ -22,7 +22,7 @@ const imageAssets = [
 // List of Rive assets used in the app
 const riveAssetList = [
   require('../../assets/riveAnimations/new_shepherd.riv'),
-  require('../../assets/riveAnimations/bg-green.riv'),
+  require('../../assets/riveAnimations/bg_green.riv'),
 ];
 
 type AssetsState = {

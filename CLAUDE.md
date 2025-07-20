@@ -266,7 +266,7 @@
 │   │   ├── Nunito-Regular.ttf
 │   │   ├── Nunito-SemiBold.ttf
 │   │   └── Nunito-SemiBoldItalic.ttf
-│   ├── goldLamb.png
+│   ├── gold_lamb.png
 │   ├── icon.png
 │   ├── icons
 │   │   ├── apostlePaul.png
@@ -360,16 +360,16 @@
 │   │   └── walkingWithJesus.png
 │   ├── redShadow.png
 │   ├── riveAnimations
-│   │   ├── babyLambWaking.riv
-│   │   ├── bg-green.riv
-│   │   ├── goldLamb.riv
-│   │   ├── homeLamb.riv
+│   │   ├── baby_lamb_waking.riv
+│   │   ├── bg_green.riv
+│   │   ├── gold_lamb.riv
+│   │   ├── home_lamb.riv
 │   │   ├── lamb-wings-idle.riv
-│   │   ├── makeLamb.riv
+│   │   ├── make_lamb.riv
 │   │   ├── new_shepherd.riv
 │   │   ├── shepherd-splash_screen.riv
 │   │   ├── stars.json
-│   │   └── successLamb.riv
+│   │   └── success_lamb.riv
 │   ├── sounds
 │   │   ├── Bread_Eating.m4a
 │   │   ├── Chest_Opening.m4a

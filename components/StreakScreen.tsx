@@ -403,7 +403,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   }));
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/successLamb.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/success_lamb.riv')]);
 
   const subText = getStreakSubtext(streak);
 
@@ -475,7 +475,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
               ) : (
                 <Rive
                   key={`rive-streak-${streak}`}
-                  url={riveAssets[0].uri!}
+                  resourceName='success_lamb'
                   artboardName="streak"
                   autoplay
                   style={{

@@ -44,7 +44,7 @@ type BibleSection = {
 // Optimize NextNodeIndicator with memo
 // const NextNodeIndicator = React.memo(({ alignment }: { alignment: 'start' | 'center' | 'end' }) => {
 //   // Load Rive assets
-//   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+//   const [riveAssets] = useAssets([require('../../assets/riveAnimations/home_lamb.riv')]);
 
 //   // Only render on non-center alignments (left or right of path)
 //   if (alignment === 'center') return null;
@@ -287,8 +287,8 @@ export default function MapScreen() {
 
   // Load all Rive assets needed for sections
   const [riveAssets] = useAssets([
-    require('../../assets/riveAnimations/homeLamb.riv'),
-    require('../../assets/riveAnimations/successLamb.riv'),
+    require('../../assets/riveAnimations/home_lamb.riv'),
+    require('../../assets/riveAnimations/success_lamb.riv'),
   ]);
 
   const handleNodePress = (unit: Unit, isLastUnitInSection: boolean) => {
@@ -462,9 +462,9 @@ export default function MapScreen() {
   const getRiveAssetUri = (riveName?: string) => {
     if (!riveAssets || !riveName) return null;
 
-    if (riveName === 'homeLamb') {
+    if (riveName === 'home_lamb') {
       return riveAssets[0].uri!;
-    } else if (riveName === 'successLamb') {
+    } else if (riveName === 'success_lamb') {
       return riveAssets[1].uri!;
     }
 
@@ -535,7 +535,7 @@ export default function MapScreen() {
           {/* Sheep decoration at second node position in every section - Only render when visible */}
           {isSecondNodeInSection && section.riveName && section.artboardName && false && (
             <View
-              className={`absolute ${section.riveName === 'successLamb' ? 'right-24' : 'right-2'} top-1/2 -translate-y-1/2`}
+              className={`absolute ${section.riveName === 'success_lamb' ? 'right-24' : 'right-2'} top-1/2 -translate-y-1/2`}
               style={{ zIndex: 10 }}>
               <View className="w-44 h-44">
                 {/* Rive animations temporarily disabled for performance */}

@@ -117,7 +117,7 @@ export default function SaveProgressScreen() {
   const buttonsTranslateY = useSharedValue(40);
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/home_lamb.riv')]);
 
   // Add new state for email auth
   const [email, setEmail] = useState('');
@@ -919,7 +919,7 @@ export default function SaveProgressScreen() {
                     />
                   ) : (
                     <Rive
-                      url={riveAssets[0].uri!}
+                     resourceName='home_lamb'
                       artboardName={'lamb-workout'}
                       autoplay={true}
                       fit={Fit.Contain}
