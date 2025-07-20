@@ -819,6 +819,9 @@ export default function RootLayout() {
             onStop={() => {
               setShowRiveAnimation(false);
             }}
+            onError={() => {
+              setShowRiveAnimation(false);
+            }}
           />
         ) : (
           <Rive
@@ -829,6 +832,9 @@ export default function RootLayout() {
               setShowRiveAnimation(false);
             }}
             onStop={() => {
+              setShowRiveAnimation(false);
+            }}
+            onError={() => {
               setShowRiveAnimation(false);
             }}
           />

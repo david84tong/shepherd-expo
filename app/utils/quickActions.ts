@@ -1,5 +1,6 @@
 import * as QuickActions from 'expo-quick-actions';
 import { Linking } from 'react-native';
+import { analytics } from '../../utils/analytics';
 
 // Define the quick action types
 export const QUICK_ACTION_TYPES = {
@@ -55,17 +56,45 @@ export const setupQuickActions = async () => {
  * Handle quick action selection
  */
 export const handleQuickAction = async (action: QuickActions.Action) => {
+  // Track the quick action press
+  analytics.logEvent('quick_action_pressed', {
+    action_id: action.id,
+    action_title: action.title,
+    action_subtitle: action.subtitle,
+    source: 'quick_actions'
+  });
+
   // Handle discount action with deep link
   if (action.id === QUICK_ACTION_TYPES.GET_DISCOUNT) {
     try {
       const supported = await Linking.canOpenURL(DISCOUNT_DEEP_LINK);
       if (supported) {
         await Linking.openURL(DISCOUNT_DEEP_LINK);
+        // Track successful deep link opening
+        analytics.logEvent('quick_action_deep_link_opened', {
+          action_id: action.id,
+          deep_link: DISCOUNT_DEEP_LINK,
+          success: true
+        });
       } else {
         console.error('Cannot open deep link:', DISCOUNT_DEEP_LINK);
+        // Track failed deep link opening
+        analytics.logEvent('quick_action_deep_link_failed', {
+          action_id: action.id,
+          deep_link: DISCOUNT_DEEP_LINK,
+          success: false,
+          error: 'unsupported_url'
+        });
       }
     } catch (error) {
       console.error('Error opening deep link:', error);
+      // Track error opening deep link
+      analytics.logEvent('quick_action_deep_link_error', {
+        action_id: action.id,
+        deep_link: DISCOUNT_DEEP_LINK,
+        success: false,
+        error: error instanceof Error ? error.message : 'unknown_error'
+      });
     }
     return;
   }
@@ -78,11 +107,31 @@ export const handleQuickAction = async (action: QuickActions.Action) => {
       const supported = await Linking.canOpenURL(url);
       if (supported) {
         await Linking.openURL(url);
+        // Track successful form URL opening
+        analytics.logEvent('quick_action_form_opened', {
+          action_id: action.id,
+          form_url: url,
+          success: true
+        });
       } else {
         console.error('Cannot open URL:', url);
+        // Track failed form URL opening
+        analytics.logEvent('quick_action_form_failed', {
+          action_id: action.id,
+          form_url: url,
+          success: false,
+          error: 'unsupported_url'
+        });
       }
     } catch (error) {
       console.error('Error opening URL:', error);
+      // Track error opening form URL
+      analytics.logEvent('quick_action_form_error', {
+        action_id: action.id,
+        form_url: url,
+        success: false,
+        error: error instanceof Error ? error.message : 'unknown_error'
+      });
     }
   }
 };
