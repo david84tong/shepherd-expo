@@ -824,7 +824,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                   ) : (
                     <Rive
                       ref={riveRef}
-                      resourceName='home_lamb'
+                      resourceName='success_lamb'
                       autoplay={true}
                       style={{ width: '100%', height: '100%' }}
                       {...(riveArtboard ? { artboardName: riveArtboard } : {})}
