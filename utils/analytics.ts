@@ -308,9 +308,7 @@ class Analytics {
         // Always include platform information in every event to prevent "Not Set" issues
         platform: Platform.OS,
         $os: Platform.OS === 'ios' ? 'iOS' : 'Android',
-        $device: Platform.OS === 'ios' ? 'iPhone' : 'Android Phone',
-        // Force override any existing $os property to ensure correct value
-        ...(Platform.OS && { $os: Platform.OS === 'ios' ? 'iOS' : 'Android' })
+        $device: Platform.OS === 'ios' ? 'iPhone' : 'Android Phone'
       };
 
       // Log to console in development
@@ -481,9 +479,11 @@ class Analytics {
 
       // Set properties in PostHog
       if (this.posthog) {
-        // PostHog doesn't have a direct setUserProperties method, so we'll capture an event
-        this.posthog.capture('user_properties_updated', properties);
-        appLog("✅ PostHog: User properties event captured");
+        // PostHog uses the register method to set user properties
+        console.log('📊 [POSTHOG] Sending user properties to PostHog:', properties);
+        this.posthog.register(properties);
+        console.log('📊 [POSTHOG] Sending user properties to PostHog 2:', properties);
+        appLog("✅ PostHog: User properties set");
       }
     } catch (error) {
       appLog('❌ Failed to set user properties:', error);

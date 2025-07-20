@@ -65,6 +65,25 @@ export const onAppForegroundOrInit = async () => {
       // Configure PostHog based on user's age range
       await handlePostHogUserSignIn(firestoreData.ageRange);
       
+      // Set user properties for analytics (including PostHog)
+      if (analytics.isInitialized) {
+        analytics.setUserProperties({
+          $name: firestoreData.displayName,
+          age_range: firestoreData.ageRange,
+          denomination: firestoreData.denomination,
+          spiritual_goal: firestoreData.spiritualGoal,
+          experience_level: firestoreData.experienceLevel,
+          selected_path: firestoreData.selectedPathId,
+          notification_enabled: firestoreData.notificationEnabled,
+          notification_time: firestoreData.notificationTime,
+          lamb_level: firestoreData.lamb?.level,
+          lamb_xp: firestoreData.lamb?.xp,
+          lamb_name: firestoreData.lamb?.name,
+          isPro: firestoreData.isPro,
+          proStatus: firestoreData.proStatus,
+        });
+      }
+      
       // Debug: Log current user age range from store
       const { getCurrentUserAgeRange } = require('../../utils/analyticsConfig');
       const currentUserAgeRange = getCurrentUserAgeRange();
@@ -123,6 +142,25 @@ const restoreUserState = async () => {
     
     // Configure PostHog based on user's age range
     await handlePostHogUserSignIn(firestoreData.ageRange);
+    
+    // Set user properties for analytics (including PostHog)
+    if (analytics.isInitialized) {
+      analytics.setUserProperties({
+        $name: firestoreData.displayName,
+        age_range: firestoreData.ageRange,
+        denomination: firestoreData.denomination,
+        spiritual_goal: firestoreData.spiritualGoal,
+        experience_level: firestoreData.experienceLevel,
+        selected_path: firestoreData.selectedPathId,
+        notification_enabled: firestoreData.notificationEnabled,
+        notification_time: firestoreData.notificationTime,
+        lamb_level: firestoreData.lamb?.level,
+        lamb_xp: firestoreData.lamb?.xp,
+        lamb_name: firestoreData.lamb?.name,
+        isPro: firestoreData.isPro,
+        proStatus: firestoreData.proStatus,
+      });
+    }
     
     // Debug: Log current user age range from store
     const { getCurrentUserAgeRange } = require('../../utils/analyticsConfig');

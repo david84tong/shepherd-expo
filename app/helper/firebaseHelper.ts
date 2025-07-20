@@ -146,6 +146,23 @@ export const fetchFromFirestore = async ({
         // Identify user in all analytics platforms (including PostHog)
         if (analytics.isInitialized) {
           await analytics.setUserId(currentUser.uid, false); // false = existing user
+          
+          // Set user properties for analytics (including PostHog)
+          analytics.setUserProperties({
+            $name: convertedUserData.displayName,
+            age_range: convertedUserData.ageRange,
+            denomination: convertedUserData.denomination,
+            spiritual_goal: convertedUserData.spiritualGoal,
+            experience_level: convertedUserData.experienceLevel,
+            selected_path: convertedUserData.selectedPathId,
+            notification_enabled: convertedUserData.notificationEnabled,
+            notification_time: convertedUserData.notificationTime,
+            lamb_level: convertedUserData.lamb?.level,
+            lamb_xp: convertedUserData.lamb?.xp,
+            lamb_name: convertedUserData.lamb?.name,
+            isPro: convertedUserData.isPro,
+            proStatus: convertedUserData.proStatus,
+          });
         }
         
         // Debug: Log current user age range from store
