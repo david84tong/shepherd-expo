@@ -138,7 +138,8 @@
         }
       ],
       "expo-audio",
-      "expo-localization"
+      "expo-localization",
+      "expo-quick-actions"
     ],
     "experiments": {
       "typedRoutes": true,

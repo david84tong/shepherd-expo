@@ -48,6 +48,7 @@ import { disableFontScaling } from './helper/disableFontScaling';
 import { adapty } from 'react-native-adapty';
 import './stores/userStore';
 import { IS_ANDROID } from './utils/utils';
+import { initializeQuickActions } from './utils/quickActions';
 
 // Import highlight store setup function
 import useHighlightStore from './stores/highlightStore';
@@ -152,6 +153,7 @@ export default function RootLayout() {
   const [showRiveAnimation, setShowRiveAnimation] = useState(false);
   const [isRiveReady, setIsRiveReady] = useState(false);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+  const [pendingDiscountDeepLink, setPendingDiscountDeepLink] = useState(false);
 
   // Global modal state
   const isModalDimActive = useUIStore((state) => state.isModalDimActive);
@@ -632,9 +634,11 @@ export default function RootLayout() {
     activateAdapty();
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const quickActionsSubscription = initializeQuickActions();
 
     return () => {
       subscription.remove();
+      quickActionsSubscription?.remove();
     };
   }, []);
 
@@ -646,6 +650,45 @@ export default function RootLayout() {
     useSubscriptionStore.getState().checkHasEnteredCreateCode();
   }, []);
 
+  // Handle pending discount deep link when app is ready
+  useEffect(() => {
+    if (appReady && pendingDiscountDeepLink) {
+      appLog('App is ready, handling pending discount deep link...');
+      setPendingDiscountDeepLink(false);
+      
+      // Add a delay to ensure everything is fully loaded
+      setTimeout(async () => {
+        try {
+          appLog('Triggering discount paywall from pending deep link...');
+          
+          // Check if Adapty is activated
+          const isActivated = await adapty.isActivated();
+          if (!isActivated) {
+            appLog('Adapty not activated yet, waiting...');
+            return;
+          }
+          
+          // Check user pro status
+          const userProStatus = useUserStore.getState().proStatus;
+          const subscriptionProStatus = useSubscriptionStore.getState().isProMember;
+          appLog('User pro status check:', { userProStatus, subscriptionProStatus });
+          
+          if (userProStatus === 'pro' || subscriptionProStatus) {
+            appLog('User is already pro, skipping paywall');
+            return;
+          }
+          
+          const result = await useSubscriptionStore.getState().presentHalfOffPaywall();
+          appLog('Discount paywall result:', result);
+        } catch (error) {
+          appLog('Error triggering discount paywall:', error);
+        }
+      }, 2000);
+    }
+  }, [appReady, pendingDiscountDeepLink]);
+
+
+
   // Add deep linking handler
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {
@@ -653,6 +696,12 @@ export default function RootLayout() {
       if (event.url === 'io.bytehouse://stay') {
         // Navigate to the stay screen or handle the deep link as needed
         router.replace('/(tabs)');
+      } else if (event.url === 'io.bytehouse://discount') {
+        // Handle discount deep link - trigger Adapty paywall
+        appLog('Discount deep link received, setting pending flag...');
+        // Navigate to tabs first, then set pending flag
+        router.replace('/(tabs)');
+        setPendingDiscountDeepLink(true);
       }
     };
 
@@ -663,6 +712,10 @@ export default function RootLayout() {
     Linking.getInitialURL().then((url) => {
       if (url && url === 'io.bytehouse://stay') {
         router.replace('/(tabs)');
+      } else if (url && url === 'io.bytehouse://discount') {
+        appLog('Initial discount deep link received, setting pending flag...');
+        router.replace('/(tabs)');
+        setPendingDiscountDeepLink(true);
       }
     });
 
