@@ -7,7 +7,7 @@ import { appLog } from '../app/helper/helper';
 const POSTHOG_API_KEY = 'phc_Lurx2XwAPPAqvzhBpMOZVNRqWsADywGwJwRJSo32u62'; // Your PostHog API key
 
 // PostHog host configuration
-// For PostHog Cloud: https://app.posthog.com
+// For PostHog Cloud: https://app.posthog.co
 // For self-hosted: https://your-posthog-instance.com
 const POSTHOG_HOST = 'https://app.posthog.com'; // PostHog Cloud instance
 

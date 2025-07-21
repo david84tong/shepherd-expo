@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   TextInput,
   Platform,
+  Linking,
 } from 'react-native';
 import BottomSheet, {
   BottomSheetBackdrop,
@@ -416,6 +417,17 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   <View style={styles.discordButtonContent}>
                     <FontAwesome6 name="discord" size={20} color="#5865F2" />
                     <Text style={styles.discordButtonText}>{i18n.t('join_discord')}</Text>
+                  </View>
+                  <Feather name="external-link" size={18} color="#3C584A" />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.bugButton} onPress={() => {
+                  hapticLight();
+                  Linking.openURL('https://www.notion.so/tryshepherd/22a6cf0c24228160961be095f59191b1');
+                }}>
+                  <View style={styles.bugButtonContent}>
+                    <Feather name="alert-circle" size={20} color="#DC2626" />
+                    <Text style={styles.bugButtonText}>Bug Report</Text>
                   </View>
                   <Feather name="external-link" size={18} color="#3C584A" />
                 </TouchableOpacity>
@@ -1156,6 +1168,27 @@ const styles = StyleSheet.create({
   },
   refreshButton: {
     padding: 5,
+  },
+  bugButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+    borderLeftColor: '#DC2626',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    padding: 16,
+  },
+  bugButtonContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  bugButtonText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    marginLeft: 10,
   },
   roadmapButton: {
     alignItems: 'center',

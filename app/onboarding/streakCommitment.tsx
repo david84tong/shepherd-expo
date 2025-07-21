@@ -14,6 +14,7 @@ import {
   withSpring,
   useSharedValue,
   withDelay,
+  useReducedMotion,
 } from 'react-native-reanimated';
 
 // Store & Utils
@@ -75,6 +76,9 @@ const STREAK_OPTIONS = [
 ];
 
 export default function StreakCommitmentScreen() {
+  // Check if reduced motion is enabled
+  const reducedMotion = useReducedMotion();
+
   // Hooks
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -104,11 +108,11 @@ export default function StreakCommitmentScreen() {
 
 
   // Shared Values
-  const screenOpacity = useSharedValue(0);
-  const optionsOpacity = useSharedValue(0);
-  const optionsTranslateY = useSharedValue(20);
-  const buttonOpacity = useSharedValue(0);
-  const buttonTranslateY = useSharedValue(20);
+  const screenOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const optionsOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const optionsTranslateY = useSharedValue(reducedMotion ? 0 : 20);
+  const buttonOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const buttonTranslateY = useSharedValue(reducedMotion ? 0 : 20);
 
   // Animated Styles
   const screenStyle = useAnimatedStyle(() => ({
@@ -129,6 +133,12 @@ export default function StreakCommitmentScreen() {
 
   useLayoutEffect(() => {
     if (animationsInitialized.current) return;
+
+    // Skip animations if reduced motion is enabled
+    if (reducedMotion) {
+      animationsInitialized.current = true;
+      return;
+    }
 
     const immediate = toBool(params?.immediate);
     screenOpacity.value = immediate ? 1 : 0;
@@ -155,7 +165,7 @@ export default function StreakCommitmentScreen() {
     }, 50);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [reducedMotion]);
 
   useEffect(() => {
     appLog('Rive assets loaded:', riveAssets);
@@ -184,7 +194,7 @@ export default function StreakCommitmentScreen() {
     // Animate chest scale smoothly
     Animated.timing(chestScale, {
       toValue: scaleValue,
-      duration: 600,
+      duration: reducedMotion ? 0 : 600,
       useNativeDriver: true,
     }).start();
   };
@@ -252,14 +262,14 @@ export default function StreakCommitmentScreen() {
       const abTestValue = storedAbTest !== null ? parseInt(storedAbTest, 10) : 0;
       appLog('[StreakCommitmentScreen] Retrieved A/B test value:', abTestValue);
 
-      screenOpacity.value = withTiming(0, { duration: 300 });
+      screenOpacity.value = withTiming(0, { duration: reducedMotion ? 0 : 300 });
 
       setTimeout(() => {
         router.push({
           pathname: '/onboarding/LoadingScreen',
           params: { animated: true, animation: 'fade', immediate: false },
         } as any);
-      }, 300);
+      }, reducedMotion ? 0 : 300);
     } catch (error) {
       console.error('[StreakCommitmentScreen] Error retrieving A/B test value:', error);
     }
