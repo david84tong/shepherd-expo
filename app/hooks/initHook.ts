@@ -9,7 +9,6 @@ import { useHomeStore } from '../stores/homeStore';
 import analytics from '../../utils/analytics';
 import { appLog } from '../helper/helper';
 import { initializeAnalyticsConfig, configureAnalyticsFromUserData } from '../../utils/analyticsConfig';
-import { initializePostHogConfig, handlePostHogUserSignIn } from '../../utils/posthogConfig';
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'app_initialized';
 // Generate a unique UUID for anonymous users
@@ -35,8 +34,6 @@ export const onAppForegroundOrInit = async () => {
   // Initialize analytics configuration if not already initialized
   await initializeAnalyticsConfig();
   
-  // Initialize PostHog configuration
-  await initializePostHogConfig();
   
   // Initialize analytics if not already initialized
   if (!analytics.isInitialized) {
@@ -61,28 +58,6 @@ export const onAppForegroundOrInit = async () => {
       
       // Configure analytics based on user's age range
       await configureAnalyticsFromUserData(firestoreData.ageRange);
-      
-      // Configure PostHog based on user's age range
-      await handlePostHogUserSignIn(firestoreData.ageRange);
-      
-      // Set user properties for analytics (including PostHog)
-      if (analytics.isInitialized) {
-        analytics.setUserProperties({
-          $name: firestoreData.displayName,
-          age_range: firestoreData.ageRange,
-          denomination: firestoreData.denomination,
-          spiritual_goal: firestoreData.spiritualGoal,
-          experience_level: firestoreData.experienceLevel,
-          selected_path: firestoreData.selectedPathId,
-          notification_enabled: firestoreData.notificationEnabled,
-          notification_time: firestoreData.notificationTime,
-          lamb_level: firestoreData.lamb?.level,
-          lamb_xp: firestoreData.lamb?.xp,
-          lamb_name: firestoreData.lamb?.name,
-          isPro: firestoreData.isPro,
-          proStatus: firestoreData.proStatus,
-        });
-      }
       
       // Debug: Log current user age range from store
       const { getCurrentUserAgeRange } = require('../../utils/analyticsConfig');
@@ -139,28 +114,6 @@ const restoreUserState = async () => {
     
     // Configure analytics based on user's age range
     await configureAnalyticsFromUserData(firestoreData.ageRange);
-    
-    // Configure PostHog based on user's age range
-    await handlePostHogUserSignIn(firestoreData.ageRange);
-    
-    // Set user properties for analytics (including PostHog)
-    if (analytics.isInitialized) {
-      analytics.setUserProperties({
-        $name: firestoreData.displayName,
-        age_range: firestoreData.ageRange,
-        denomination: firestoreData.denomination,
-        spiritual_goal: firestoreData.spiritualGoal,
-        experience_level: firestoreData.experienceLevel,
-        selected_path: firestoreData.selectedPathId,
-        notification_enabled: firestoreData.notificationEnabled,
-        notification_time: firestoreData.notificationTime,
-        lamb_level: firestoreData.lamb?.level,
-        lamb_xp: firestoreData.lamb?.xp,
-        lamb_name: firestoreData.lamb?.name,
-        isPro: firestoreData.isPro,
-        proStatus: firestoreData.proStatus,
-      });
-    }
     
     // Debug: Log current user age range from store
     const { getCurrentUserAgeRange } = require('../../utils/analyticsConfig');
@@ -249,11 +202,6 @@ export const useAppInitialization = () => {
         appLog('🔧 Initializing analytics configuration...');
         await initializeAnalyticsConfig();
         appLog('✅ Analytics configuration initialized');
-        
-        // Initialize PostHog configuration
-        appLog('🔧 Initializing PostHog configuration...');
-        await initializePostHogConfig();
-        appLog('✅ PostHog configuration initialized');
         
         // Initialize analytics
         appLog('🔧 Initializing analytics...');

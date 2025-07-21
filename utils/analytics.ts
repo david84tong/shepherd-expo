@@ -11,10 +11,8 @@ import {
   Identify,
   reset as amplitudeReset
 } from '@amplitude/analytics-react-native';
-import { PostHog } from 'posthog-react-native';
 import { appLog } from '~/app/helper/helper';
 import { getMixpanelInstance, isAnalyticsEnabled } from './analyticsConfig';
-import { getPostHogInstance, initializePostHog } from './posthogConfig';
 
 // schema for analytics
 // Screenname: Verb
@@ -101,7 +99,6 @@ class Analytics {
   private isEnabled: boolean = true;
   private mixpanel: Mixpanel | null = null;
   private amplitudeInitialized: boolean = false;
-  private posthog: PostHog | null = null;
   private initializationPromise: Promise<void> | null = null;
   private eventQueue: Array<{eventName: string, params: Record<string, any>}> = [];
 
@@ -183,9 +180,6 @@ class Analytics {
       await amplitudeInit(AMPLITUDE_API_KEY);
       this.amplitudeInitialized = true;
 
-      // Initialize PostHog
-      this.posthog = await initializePostHog();
-
       // Get or create session ID
       this.sessionId = await this.getOrCreateSessionId();
 
@@ -205,23 +199,21 @@ class Analytics {
       const user = useUserStore.getState().getUser?.();
       this.userId = user ? user.id || 'anonymous' : 'anonymous';
 
-      // Set user identity in all platforms
+      // Set user identity in both Mixpanel and Amplitude
       if (this.userId && this.userId !== 'anonymous') {
         // User is already authenticated
         this.mixpanel?.identify(this.userId);
         amplitudeSetUserId(this.userId);
-        this.posthog?.identify(this.userId);
-        appLog("✅ All platforms: Authenticated user ID set:", this.userId);
+        appLog("✅ Both platforms: Authenticated user ID set:", this.userId);
       } else {
         // Create placeholder ID for anonymous user
         const placeholderId = await this.getOrCreatePlaceholderId();
         this.userId = placeholderId;
         
-        // Set placeholder ID in all platforms
+        // Set placeholder ID in both platforms
         this.mixpanel?.identify(placeholderId);
         amplitudeSetUserId(placeholderId);
-        this.posthog?.identify(placeholderId);
-        appLog("✅ All platforms: Anonymous placeholder ID set:", placeholderId);
+        appLog("✅ Both platforms: Anonymous placeholder ID set:", placeholderId);
       }
 
       // Set super properties for all events in Mixpanel
@@ -255,7 +247,7 @@ class Analytics {
       this.logEvent(AnalyticsEvent.APP_OPEN);
       this.logEvent("app_opening");
 
-      appLog('✅ Analytics (Mixpanel + Amplitude + PostHog) initialized successfully');
+      appLog('✅ Analytics (Mixpanel + Amplitude) initialized successfully');
     } catch (error) {
       appLog('❌ Failed to initialize analytics:', error);
       this.isInitialized = false;
@@ -308,7 +300,7 @@ class Analytics {
         // Always include platform information in every event to prevent "Not Set" issues
         platform: Platform.OS,
         $os: Platform.OS === 'ios' ? 'iOS' : 'Android',
-        $device: Platform.OS === 'ios' ? 'iPhone' : 'Android Phone'
+        $device: Platform.OS === 'ios' ? 'iPhone' : 'Android Phone',
       };
 
       // Log to console in development
@@ -322,11 +314,6 @@ class Analytics {
       // Track event in Amplitude
       if (this.amplitudeInitialized) {
         amplitudeTrack(eventName?.toString(), eventParams);
-      }
-
-      // Track event in PostHog
-      if (this.posthog) {
-        this.posthog.capture(eventName?.toString(), eventParams);
       }
     } catch (error) {
       appLog('Failed to log analytics event:', error);
@@ -417,25 +404,6 @@ class Analytics {
       appLog("✅ Amplitude: User ID updated:", userId);
     }
 
-    // Update identity in PostHog
-    if (this.posthog && userId !== 'anonymous') {
-      // For PostHog, we handle the transition by logging events
-      if (wasAnonymous && isNewUser) {
-        appLog(`🔗 PostHog: Transitioning from anonymous user ${previousUserId} to authenticated user ${userId}`);
-        
-        // Log a transition event for better tracking
-        this.posthog.capture('user_identity_linked', {
-          previous_user_id: previousUserId,
-          new_user_id: userId,
-          transition_type: 'anonymous_to_authenticated'
-        });
-      }
-      
-      // Set the new user ID
-      this.posthog.identify(userId);
-      appLog("✅ PostHog: User ID updated:", userId);
-    }
-
     // Clear the placeholder ID from storage since user is now authenticated
     if (userId !== 'anonymous' && !userId.startsWith('anon_')) {
       await AsyncStorage.removeItem('shepherd-analytics-placeholder-id');
@@ -476,15 +444,6 @@ class Analytics {
         amplitudeIdentify(identify);
         appLog("✅ Amplitude: User properties set");
       }
-
-      // Set properties in PostHog
-      if (this.posthog) {
-        // PostHog uses the register method to set user properties
-        console.log('📊 [POSTHOG] Sending user properties to PostHog:', properties);
-        this.posthog.register(properties);
-        console.log('📊 [POSTHOG] Sending user properties to PostHog 2:', properties);
-        appLog("✅ PostHog: User properties set");
-      }
     } catch (error) {
       appLog('❌ Failed to set user properties:', error);
     }
@@ -521,13 +480,6 @@ class Analytics {
       appLog("✅ Amplitude: User reset and new placeholder ID set:", this.userId);
     }
 
-    // Reset identity in PostHog
-    if (this.posthog) {
-      // PostHog doesn't have a direct reset method, so we'll identify with the new placeholder ID
-      this.posthog.identify(this.userId);
-      appLog("✅ PostHog: User reset and new placeholder ID set:", this.userId);
-    }
-
     appLog("🗑️ User reset complete, new placeholder ID:", this.userId);
   }
 
@@ -549,15 +501,6 @@ class Analytics {
 
     // Amplitude doesn't have a direct enable/disable method, but we control it at the event level
     // The isEnabled flag will prevent events from being sent
-
-    // Update PostHog tracking
-    if (this.posthog) {
-      if (enabled) {
-        this.posthog.optIn();
-      } else {
-        this.posthog.optOut();
-      }
-    }
   }
 
   /**
@@ -569,7 +512,7 @@ class Analytics {
 
   /**
    * Test method to verify analytics integration
-   * Call this method to send a test event to all analytics platforms
+   * Call this method to send a test event to both Mixpanel and Amplitude
    */
   public testAnalytics(): void {
     this.logEvent('test_analytics_integration', {
