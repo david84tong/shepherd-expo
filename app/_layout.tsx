@@ -960,7 +960,7 @@ export default Sentry.wrap(function RootLayout() {
             )}
 
             {/* Debug button (visible only when CREATE code has been entered) */}
-            {hasEnteredCreateCode && <DebugButton />}
+            {hasEnteredCreateCode || __DEV__ && <DebugButton />}
           </>
         )}
       </BottomSheetModalProvider>

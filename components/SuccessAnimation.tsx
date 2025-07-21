@@ -662,29 +662,18 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
     // For reading completion, never show streak screen - just go home
     if (effectiveType === SuccessAnimationType.READING || effectiveType === SuccessAnimationType.SECTION_COMPLETE) {
-      router.navigate({
-        pathname: '/(tabs)',
-        params: {
-          isPrayPresses: isPrayPresses ? 'true' : 'false'
-        },
-      });
+      router.back();
     } else {
       // For other success types, check if we should show streak
       if (!sawStreakToday) {
         // Set sawStreakToday to true before navigating to streak screen
         setSawStreakToday(true);
         appLog('Setting sawStreakToday to true before navigating to streak screen');
-        
-        router.push({
+        router.replace({
           pathname: '/streak',
         });
       } else {
-        router.navigate({
-          pathname: '/(tabs)',
-          params: {
-            isPrayPresses: isPrayPresses ? 'true' : 'false'
-          },
-        });
+        router.back();
       }
     }
   };

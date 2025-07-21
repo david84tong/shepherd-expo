@@ -55,7 +55,7 @@ const moodToStateInput: Record<string, number> = {
 export const useHomeScreen = () => {
   appLog('🎯 useHomeScreen hook called!');
   const router = useRouter();
-  const { isPrayPresses, isReflectPresses, showDevotional } = useLocalSearchParams();
+  const { showDevotional } = useLocalSearchParams();
   
   const currentUser = auth().currentUser;
 
@@ -367,10 +367,6 @@ export const useHomeScreen = () => {
     }
   }, [lambHearts, riveSkinInitialized]);
 
-  useEffect(() => {
-    if (isPrayPresses === 'true') handlePrayerPress();
-    if (isReflectPresses === 'true') handleReflectionPress();
-  }, [isPrayPresses, isReflectPresses]);
 
   useEffect(() => {
     const setLambMood = useUserStore.getState().setLambMood;

@@ -432,14 +432,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
     if(devotionalReaderVisible){
       useUIStore.getState().setDevotionalReaderVisible(false);
     }
-    router.navigate({
-      pathname: '/(tabs)',
-      params: {
-        isPrayPresses: isPrayPresses,
-        isReflectPresses: isReflectPresses,
-        showDevotional: 'false'
-      }
-    });
+    router.back();
   };
 
   // Show loading indicator if assets aren't loaded yet
