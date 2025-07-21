@@ -217,7 +217,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
                   ) : (
                     <Rive
                       ref={riveRef1}
-                      url={riveAssets[0].uri!}
+                      resourceName='new_shepherd'
                       artboardName="[Main] Shpeherd"
                       stateMachineName="State Machine 1"
                       style={{ width: '100%', height: '100%' }}
@@ -254,7 +254,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
                   ) : (
                     <Rive
                       ref={riveRef10}
-                      url={riveAssets[0].uri!}
+                      resourceName='new_shepherd'
                       artboardName="[Main] Shpeherd"
                       stateMachineName="State Machine 1"
                       style={{ width: '100%', height: '100%' }}
@@ -297,7 +297,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
                     ) : (
                       <Rive
                         ref={riveRef20}
-                        url={riveAssets[0].uri!}
+                        resourceName='new_shepherd'
                         artboardName="[Main] Shpeherd"
                         stateMachineName="State Machine 1"
                         style={{ width: '100%', height: '100%' }}
@@ -331,7 +331,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
                   ) : (
                     <Rive
                       ref={riveRef33}
-                      url={riveAssets[0].uri!}
+                      resourceName='new_shepherd'
                       artboardName="[Main] Shpeherd"
                       stateMachineName="State Machine 1"
                       style={{ width: '100%', height: '100%' }}

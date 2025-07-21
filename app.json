@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shepherd",
     "slug": "shepherd",
-    "version": "1.6.9",
+    "version": "1.7.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "io.bytehouse",
@@ -12,7 +12,7 @@
       "silentLaunch": true
     },
     "assetBundlePatterns": [
-      "**/*"
+      "**/*.riv"
     ],
     "splash": {
       "image": "./assets/custom_splash_icon.png",
@@ -138,7 +138,16 @@
         }
       ],
       "expo-audio",
-      "expo-localization"
+      "expo-localization",
+      "expo-quick-actions",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "second-round-inc"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

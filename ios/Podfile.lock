@@ -1491,6 +1491,8 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - ExpoQuickActions (5.0.0):
+    - ExpoModulesCore
   - ExpoSecureStore (14.0.1):
     - ExpoModulesCore
   - ExpoSharing (13.0.1):
@@ -1793,7 +1795,7 @@ PODS:
   - Mixpanel-swift (5.1.0):
     - Mixpanel-swift/Complete (= 5.1.0)
   - Mixpanel-swift/Complete (5.1.0)
-  - MixpanelReactNative (3.1.1):
+  - MixpanelReactNative (3.1.2):
     - Mixpanel-swift (= 5.1.0)
     - React-Core
   - MMKV (1.3.14):
@@ -1805,11 +1807,11 @@ PODS:
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
   - PromisesObjC (2.4.0)
-  - PurchasesHybridCommon (13.32.0):
-    - RevenueCat (= 5.24.0)
-  - PurchasesHybridCommonUI (13.32.0):
-    - PurchasesHybridCommon (= 13.32.0)
-    - RevenueCatUI (= 5.24.0)
+  - PurchasesHybridCommon (14.0.2):
+    - RevenueCat (= 5.30.0)
+  - PurchasesHybridCommonUI (14.0.2):
+    - PurchasesHybridCommon (= 14.0.2)
+    - RevenueCatUI (= 5.30.0)
   - RCT-Folly (2024.10.14.00):
     - boost
     - DoubleConversion
@@ -3480,13 +3482,13 @@ PODS:
     - React-perflogger
     - React-utils (= 0.76.9)
   - RecaptchaInterop (101.0.0)
-  - RevenueCat (5.24.0)
-  - RevenueCatUI (5.24.0):
-    - RevenueCat (= 5.24.0)
-  - rive-react-native (9.3.2):
+  - RevenueCat (5.30.0)
+  - RevenueCatUI (5.30.0):
+    - RevenueCat (= 5.30.0)
+  - rive-react-native (9.3.4):
     - React-Core
-    - RiveRuntime (= 6.9.1)
-  - RiveRuntime (6.9.1)
+    - RiveRuntime (= 6.9.4)
+  - RiveRuntime (6.9.4)
   - RNCAsyncStorage (1.23.1):
     - React-Core
   - RNCClipboard (1.16.2):
@@ -3561,11 +3563,11 @@ PODS:
   - RNGoogleSignin (14.0.1):
     - GoogleSignIn (~> 7.1)
     - React-Core
-  - RNPaywalls (8.11.0):
-    - PurchasesHybridCommonUI (= 13.32.0)
+  - RNPaywalls (8.11.8):
+    - PurchasesHybridCommonUI (= 14.0.2)
     - React-Core
-  - RNPurchases (8.11.0):
-    - PurchasesHybridCommon (= 13.32.0)
+  - RNPurchases (8.11.8):
+    - PurchasesHybridCommon (= 14.0.2)
     - React-Core
   - RNReanimated (3.16.7):
     - DoubleConversion
@@ -3676,7 +3678,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNSentry (6.10.0):
+  - RNSentry (6.17.0):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -3697,7 +3699,7 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - Sentry/HybridSDK (= 8.48.0)
+    - Sentry/HybridSDK (= 8.53.1)
     - Yoga
   - RNShare (12.1.0):
     - DoubleConversion
@@ -3730,7 +3732,7 @@ PODS:
     - SDWebImage (~> 5.10)
   - SDWebImageSVGCoder (1.7.0):
     - SDWebImage/Core (~> 5.6)
-  - Sentry/HybridSDK (8.48.0)
+  - Sentry/HybridSDK (8.53.1)
   - SocketRocket (0.7.1)
   - Yoga (0.0.0)
 
@@ -3766,6 +3768,7 @@ DEPENDENCIES:
   - ExpoLinking (from `../node_modules/expo-linking/ios`)
   - ExpoLocalization (from `../node_modules/expo-localization/ios`)
   - ExpoModulesCore (from `../node_modules/expo-modules-core`)
+  - ExpoQuickActions (from `../node_modules/expo-quick-actions/ios`)
   - ExpoSecureStore (from `../node_modules/expo-secure-store/ios`)
   - ExpoSharing (from `../node_modules/expo-sharing/ios`)
   - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
@@ -3983,6 +3986,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-localization/ios"
   ExpoModulesCore:
     :path: "../node_modules/expo-modules-core"
+  ExpoQuickActions:
+    :path: "../node_modules/expo-quick-actions/ios"
   ExpoSecureStore:
     :path: "../node_modules/expo-secure-store/ios"
   ExpoSharing:
@@ -4220,6 +4225,7 @@ SPEC CHECKSUMS:
   ExpoLinking: 0381341519ca7180a3a057d20edb1cf6a908aaf4
   ExpoLocalization: e36b911e04d371c6c6624ef818e56229bf51c498
   ExpoModulesCore: aa143ddae7b87541bf00f82614bc2369ab88fded
+  ExpoQuickActions: 5f8b794e9c69b19bd85dd51d78a9cfb9f32d61b8
   ExpoSecureStore: d006eea5e316283099d46f80a6b10055b89a6008
   ExpoSharing: c4540ef2e6615a92e05d2bddf019e1f58f27119e
   ExpoSplashScreen: 1832984021b0795fda9302cf84ac62f0490eeadd
@@ -4262,13 +4268,13 @@ SPEC CHECKSUMS:
   lottie-ios: a881093fab623c467d3bce374367755c272bdd59
   lottie-react-native: d99d99c0363a27052827d5e2ad9b7b9cfeb801ba
   Mixpanel-swift: 7b26468fc0e2e521104e51d65c4bbf7cab8162f8
-  MixpanelReactNative: bae08065e631c187555837840927b4211fcac959
+  MixpanelReactNative: b523d54778e31e396c55df6f732173f3819e58ee
   MMKV: 7b5df6a8bf785c6705cc490c541b9d8a957c4a64
   MMKVCore: 3f40b896e9ab522452df9df3ce983471aa2449ba
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
-  PurchasesHybridCommon: 662aa1f4769ff4ef594e35adf1a5d0ad7b3d08b7
-  PurchasesHybridCommonUI: ce17a7fcc23bc9e47b6ed117fb87b4fc99539e15
+  PurchasesHybridCommon: e1dbc7e7105c0845444cf82cf9d7c85eb9dbf918
+  PurchasesHybridCommonUI: e53fcdae687abb7ea9814bd2dac6aa85c19af54a
   RCT-Folly: 7b4f73a92ad9571b9dbdb05bb30fad927fa971e1
   RCTDeprecation: ebe712bb05077934b16c6bf25228bdec34b64f83
   RCTRequired: ca91e5dd26b64f577b528044c962baf171c6b716
@@ -4334,10 +4340,10 @@ SPEC CHECKSUMS:
   ReactCodegen: 31fcff227d0035956575be0c013a2edcc687a53c
   ReactCommon: 78c49c7cf7df16983ebc3c646b4f47398437f2ec
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  RevenueCat: 2d3639d30b8a71cbfe3d99cef8243c602793e0ec
-  RevenueCatUI: 80bec9099c200c254c0ec0025b4fb83a85fbacce
-  rive-react-native: 5095aaeb55e81b7fe7f961cb80bd0dc6059559dd
-  RiveRuntime: 19f1a8b8d8e3f503f57252b89405ac9d367b8967
+  RevenueCat: 16058ecaa0b868e04cc7cf53a5de3fe0b96ca7d1
+  RevenueCatUI: 4fc22b69bc9fcec8bf37fb71396e7b31e819921b
+  rive-react-native: 07d6904602f141ebf21b432c2d0d5fa1dab3768f
+  RiveRuntime: 56c2133fa5c5c570dd93818d8c2772ae6f126806
   RNCAsyncStorage: 826b603ae9c0f88b5ac4e956801f755109fa4d5c
   RNCClipboard: 4411a880506f11fbcbdc03b5093eb8ffb246d900
   RNCMaskedView: affff96123106435ddc9799a57a8ba8edf17fe27
@@ -4350,17 +4356,17 @@ SPEC CHECKSUMS:
   RNFBRemoteConfig: d3b7942bc4a2e16e162b841c0df2a869015d98c9
   RNGestureHandler: 82c5ab302616348584b7563e06753b288a03fa7e
   RNGoogleSignin: 5a4ed264f83efcc727cc0d4f3e977dbb037de4cc
-  RNPaywalls: cc44427b4bf4299940858d2ed7e2dfe7fb3354d0
-  RNPurchases: fe247717fa1b4a4d1f9722959bc9c86629f76a2e
+  RNPaywalls: 1b29a5e69407cfabdaa6657dcb167361506c99fc
+  RNPurchases: e5d6987aa4fc8cd36ec223b4347b813ba3fe3440
   RNReanimated: 0ef4195cae61084be15ba5f3f888962311bc115f
   RNScreens: 39d31613db654b41925342a10f50252780b839be
-  RNSentry: 78245fa95fccec42f795241d8089065ad10abb71
+  RNSentry: f1db04d42a30b1ef530a6ce4158f585895e5f1f8
   RNShare: f287076302ed51334786af7a64d136ce526d522f
   RNSVG: 8b1a777d54096b8c2a0fd38fc9d5a454332bbb4d
   SDWebImage: 8a6b7b160b4d710e2a22b6900e25301075c34cb3
   SDWebImageAVIFCoder: 00310d246aab3232ce77f1d8f0076f8c4b021d90
   SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c
-  Sentry: 1ca8405451040482877dcd344dfa3ef80b646631
+  Sentry: 1e4e974d45f09d153af4b30b42acfb1c79e957d3
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 1259c7a8cbaccf7b4c3ddf8ee36ca11be9dee407
 

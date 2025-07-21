@@ -104,7 +104,7 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
   const riveRef = useRef<RiveRef>(null);
   const riveRefPhoenix = useRef<RiveRef>(null);
   const [riveAssets] = useAssets([
-    require('../assets/riveAnimations/successLamb.riv'),
+    require('../assets/riveAnimations/success_lamb.riv'),
     require('../assets/riveAnimations/new_shepherd.riv'),
   ]);
   
@@ -332,7 +332,7 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
         ) : (
           <Rive
             ref={riveRefPhoenix}
-            url={riveAssets[1].uri!}
+            resourceName='new_shepherd'
             artboardName="[Main] Shpeherd"
             stateMachineName="State Machine 1"
             style={{ width: "100%", height: "100%" }}
@@ -362,7 +362,7 @@ const CovenantSuccessSheet: React.FC<CovenantSuccessSheetProps> = ({
         ) : (
           <Rive
             ref={riveRef}
-            url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
+            resourceName='success_lamb'
             artboardName="chest"
             autoplay={true}
             style={{ width: '120%', height: '130%', position: 'absolute', top: -10 }}

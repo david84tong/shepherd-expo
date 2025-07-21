@@ -117,7 +117,7 @@ export default function SaveProgressScreen() {
   const buttonsTranslateY = useSharedValue(40);
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/home_lamb.riv')]);
 
   // Add new state for email auth
   const [email, setEmail] = useState('');
@@ -919,7 +919,7 @@ export default function SaveProgressScreen() {
                     />
                   ) : (
                     <Rive
-                      url={riveAssets[0].uri!}
+                     resourceName='home_lamb'
                       artboardName={'lamb-workout'}
                       autoplay={true}
                       fit={Fit.Contain}
@@ -976,7 +976,7 @@ export default function SaveProgressScreen() {
           )}
 
           {/* Email/Password Form - Always Visible */}
-          {showEmailPassword && IS_ANDROID && (
+          {showEmailPassword  && (
             <Animated.View style={buttonsStyle} className="mb-6">
               <View className="w-full mb-4">
                 <TextInput
@@ -1047,7 +1047,7 @@ export default function SaveProgressScreen() {
               <Animated.View style={buttonsStyle}>
                 {isSmaleAge && Platform.OS === 'android' ? null : (
                   <View className="items-center mb-4">
-                    {Platform.OS === 'ios' ? (
+                    {Platform.OS === 'ios' ? showEmailPassword?null: (
                       <TouchableOpacity
                         style={{ height: RPH(6) }}
                         className="flex-row items-center justify-center bg-black w-full  px-6 rounded-[16px] mb-4 shadow-appleShadow"

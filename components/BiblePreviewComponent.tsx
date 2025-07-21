@@ -129,7 +129,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const scrollViewRef = useRef(null);
 
   // Prepare for future Rive usage
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/home_lamb.riv')]);
 
   // Add state to track if component has been focused after navigation
   const [hasReturnedFromNavigation, setHasReturnedFromNavigation] = useState(false);

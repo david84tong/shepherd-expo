@@ -386,7 +386,7 @@ export default function OnboardingWelcomeScreen() {
   };
 
   // Load the Rive asset - Moved after all other hooks
-  const [assets] = useAssets([require('../../assets/riveAnimations/babyLambWaking.riv')]);
+  const [assets] = useAssets([require('../../assets/riveAnimations/baby_lamb_waking.riv')]);
 
   // Show loading indicator while assets are loading
   if (!assets) {
@@ -513,11 +513,10 @@ export default function OnboardingWelcomeScreen() {
                   ) : (
                     <Rive
                       ref={riveRef}
-                      // resourceName={assets[0].uri}
                       onError={(error) => {
                         appLog('------>', error);
                       }}
-                      url={assets[0].uri!} // Use url prop with localUri
+                     resourceName='baby_lamb_waking'
                       // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
                       stateMachineName="Baby"
                       artboardName={'Baby-Spepherd 2'}

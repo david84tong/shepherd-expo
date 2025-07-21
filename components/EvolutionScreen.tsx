@@ -29,8 +29,8 @@ export const EvolutionScreen: React.FC<EvolutionScreenProps> = ({
 }) => {
   const riveRef = useRef<RiveRef>(null);
   
-  // Load Rive assets - assuming evolution animation is in the makeLamb.riv file
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/makeLamb.riv')]);
+  // Load Rive assets - assuming evolution animation is in the make_lamb.riv file
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/make_lamb.riv')]);
   
   // Animations
   const titleOpacity = useRef(new Animated.Value(0)).current;
@@ -192,7 +192,7 @@ export const EvolutionScreen: React.FC<EvolutionScreenProps> = ({
               }}>
               <Rive
                 ref={riveRef}
-                url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
+                resourceName='new_shepherd'
                 autoplay={true}
                 artboardName="Main"
                 stateMachineName="State Machine 1"

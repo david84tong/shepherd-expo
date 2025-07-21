@@ -208,7 +208,7 @@ export default function OnboardingExplainerHeartsScreen({
                     ) : (
                       <Rive
                         ref={(ref) => (riveRefs.current[index] = ref)}
-                        url={riveAssets[0].uri!}
+                        resourceName='new_shepherd'
                         artboardName="[Main] Shpeherd"
                         stateMachineName="State Machine 1"
                         autoplay

@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   TextInput,
   Platform,
+  Linking,
 } from 'react-native';
 import BottomSheet, {
   BottomSheetBackdrop,
@@ -1169,6 +1170,27 @@ const styles = StyleSheet.create({
   },
   refreshButton: {
     padding: 5,
+  },
+  bugButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+    borderLeftColor: '#DC2626',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    padding: 16,
+  },
+  bugButtonContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  bugButtonText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    marginLeft: 10,
   },
   roadmapButton: {
     alignItems: 'center',

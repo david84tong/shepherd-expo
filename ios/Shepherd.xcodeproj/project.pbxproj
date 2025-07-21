@@ -7,6 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		04817E8F2E2DBD2700495B62 /* home_lamb.riv in Resources */ = {isa = PBXBuildFile; fileRef = 04817E882E2DBD2700495B62 /* home_lamb.riv */; };
+		04817E902E2DBD2700495B62 /* shepherd_splash_screen.riv in Resources */ = {isa = PBXBuildFile; fileRef = 04817E8C2E2DBD2700495B62 /* shepherd_splash_screen.riv */; };
+		04817E912E2DBD2700495B62 /* gold_lamb.riv in Resources */ = {isa = PBXBuildFile; fileRef = 04817E872E2DBD2700495B62 /* gold_lamb.riv */; };
+		04817E922E2DBD2700495B62 /* lamb_wings_idle.riv in Resources */ = {isa = PBXBuildFile; fileRef = 04817E892E2DBD2700495B62 /* lamb_wings_idle.riv */; };
+		04817E932E2DBD2700495B62 /* bg_green.riv in Resources */ = {isa = PBXBuildFile; fileRef = 04817E862E2DBD2700495B62 /* bg_green.riv */; };
+		04817E942E2DBD2700495B62 /* make_lamb.riv in Resources */ = {isa = PBXBuildFile; fileRef = 04817E8A2E2DBD2700495B62 /* make_lamb.riv */; };
+		04817E952E2DBD2700495B62 /* new_shepherd.riv in Resources */ = {isa = PBXBuildFile; fileRef = 04817E8B2E2DBD2700495B62 /* new_shepherd.riv */; };
+		04817E962E2DBD2700495B62 /* stars.json in Resources */ = {isa = PBXBuildFile; fileRef = 04817E8D2E2DBD2700495B62 /* stars.json */; };
+		04817E972E2DBD2700495B62 /* baby_lamb_waking.riv in Resources */ = {isa = PBXBuildFile; fileRef = 04817E852E2DBD2700495B62 /* baby_lamb_waking.riv */; };
+		04817E982E2DBD2700495B62 /* success_lamb.riv in Resources */ = {isa = PBXBuildFile; fileRef = 04817E8E2E2DBD2700495B62 /* success_lamb.riv */; };
 		0D40F8B0850A4AA2144CE60F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EAEDFBA39C7EF1B9EA065ADD /* PrivacyInfo.xcprivacy */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
@@ -62,6 +72,16 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		04817E852E2DBD2700495B62 /* baby_lamb_waking.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = baby_lamb_waking.riv; sourceTree = "<group>"; };
+		04817E862E2DBD2700495B62 /* bg_green.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = bg_green.riv; sourceTree = "<group>"; };
+		04817E872E2DBD2700495B62 /* gold_lamb.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = gold_lamb.riv; sourceTree = "<group>"; };
+		04817E882E2DBD2700495B62 /* home_lamb.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = home_lamb.riv; sourceTree = "<group>"; };
+		04817E892E2DBD2700495B62 /* lamb_wings_idle.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = lamb_wings_idle.riv; sourceTree = "<group>"; };
+		04817E8A2E2DBD2700495B62 /* make_lamb.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = make_lamb.riv; sourceTree = "<group>"; };
+		04817E8B2E2DBD2700495B62 /* new_shepherd.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = new_shepherd.riv; sourceTree = "<group>"; };
+		04817E8C2E2DBD2700495B62 /* shepherd_splash_screen.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = shepherd_splash_screen.riv; sourceTree = "<group>"; };
+		04817E8D2E2DBD2700495B62 /* stars.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = stars.json; sourceTree = "<group>"; };
+		04817E8E2E2DBD2700495B62 /* success_lamb.riv */ = {isa = PBXFileReference; lastKnownFileType = file; path = success_lamb.riv; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* Shepherd.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Shepherd.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = Shepherd/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = Shepherd/AppDelegate.mm; sourceTree = "<group>"; };
@@ -210,6 +230,16 @@
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				D65327D7A22EEC0BE12398D9 /* Pods */,
 				D7E4C46ADA2E9064B798F356 /* ExpoModulesProviders */,
+				04817E852E2DBD2700495B62 /* baby_lamb_waking.riv */,
+				04817E862E2DBD2700495B62 /* bg_green.riv */,
+				04817E872E2DBD2700495B62 /* gold_lamb.riv */,
+				04817E882E2DBD2700495B62 /* home_lamb.riv */,
+				04817E892E2DBD2700495B62 /* lamb_wings_idle.riv */,
+				04817E8A2E2DBD2700495B62 /* make_lamb.riv */,
+				04817E8B2E2DBD2700495B62 /* new_shepherd.riv */,
+				04817E8C2E2DBD2700495B62 /* shepherd_splash_screen.riv */,
+				04817E8D2E2DBD2700495B62 /* stars.json */,
+				04817E8E2E2DBD2700495B62 /* success_lamb.riv */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -277,6 +307,7 @@
 				9E44374CF8C963F095FB84FE /* [CP] Embed Pods Frameworks */,
 				79BBFB9EFF9815F90B18FA0F /* [CP] Copy Pods Resources */,
 				D43D1D895C7E9E306D27D0B6 /* [CP-User] [RNFB] Core Configuration */,
+				3A874E0B489841ECA6C682B0 /* Upload Debug Symbols to Sentry */,
 			);
 			buildRules = (
 			);
@@ -379,6 +410,16 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
 				87E0E3079CAB4BA3A2440AF5 /* GoogleService-Info.plist in Resources */,
+				04817E8F2E2DBD2700495B62 /* home_lamb.riv in Resources */,
+				04817E902E2DBD2700495B62 /* shepherd_splash_screen.riv in Resources */,
+				04817E912E2DBD2700495B62 /* gold_lamb.riv in Resources */,
+				04817E922E2DBD2700495B62 /* lamb_wings_idle.riv in Resources */,
+				04817E932E2DBD2700495B62 /* bg_green.riv in Resources */,
+				04817E942E2DBD2700495B62 /* make_lamb.riv in Resources */,
+				04817E952E2DBD2700495B62 /* new_shepherd.riv in Resources */,
+				04817E962E2DBD2700495B62 /* stars.json in Resources */,
+				04817E972E2DBD2700495B62 /* baby_lamb_waking.riv in Resources */,
+				04817E982E2DBD2700495B62 /* success_lamb.riv in Resources */,
 				0D40F8B0850A4AA2144CE60F /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -413,7 +454,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
+			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n/bin/sh `\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'\"` `\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
+		};
+		3A874E0B489841ECA6C682B0 /* Upload Debug Symbols to Sentry */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Upload Debug Symbols to Sentry";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh ../node_modules/@sentry/react-native/scripts/sentry-xcode-debug-files.sh";
 		};
 		76A8C8E4CF0FE7B569B6D53D /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -559,7 +614,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = Shepherd/Shepherd.entitlements;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 12;
 				DEVELOPMENT_TEAM = MXF26T4NAZ;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -572,7 +627,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.9;
+				MARKETING_VERSION = 1.7.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -599,7 +654,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = Shepherd/Shepherd.entitlements;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 12;
 				DEVELOPMENT_TEAM = MXF26T4NAZ;
 				INFOPLIST_FILE = Shepherd/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -607,7 +662,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.9;
+				MARKETING_VERSION = 1.7.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -692,7 +747,10 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -759,7 +817,10 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;

@@ -9,6 +9,7 @@ import Animated, {
   withSpring,
   useSharedValue,
   withDelay,
+  useReducedMotion,
 } from 'react-native-reanimated';
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
@@ -100,18 +101,21 @@ const calculateStreakLogic = (
 
 export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresses?: string, isReflectPresses?: string }) => {
 
+  // Check if reduced motion is enabled
+  const reducedMotion = useReducedMotion();
+
   // Animation states
   const animationsInitialized = useRef(false);
-  const screenOpacity = useSharedValue(0);
-  const flameOpacity = useSharedValue(0);
-  const flameScale = useSharedValue(0.5);
-  const streakNumberOpacity = useSharedValue(0);
-  const streakTextOpacity = useSharedValue(0);
-  const cardOpacity = useSharedValue(0);
-  const cardTranslateY = useSharedValue(30);
-  const subtextOpacity = useSharedValue(0);
-  const buttonOpacity = useSharedValue(0);
-  const buttonTranslateY = useSharedValue(20);
+  const screenOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const flameOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const flameScale = useSharedValue(reducedMotion ? 1 : 0.5);
+  const streakNumberOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const streakTextOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const cardOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const cardTranslateY = useSharedValue(reducedMotion ? 0 : 30);
+  const subtextOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const buttonOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const buttonTranslateY = useSharedValue(reducedMotion ? 0 : 20);
   const riveRef = useRef<RiveRef>(null);
   const isMounted = useRef(true);
   const insets = useSafeAreaInsets();
@@ -314,6 +318,12 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   useLayoutEffect(() => {
     if (animationsInitialized.current) return;
 
+    // Skip animations if reduced motion is enabled
+    if (reducedMotion) {
+      animationsInitialized.current = true;
+      return;
+    }
+
     // Start with screen fade in - set immediate value to avoid flicker
     screenOpacity.value = 0;
     screenOpacity.value = withTiming(1, { duration: 300 });
@@ -367,7 +377,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
         console.error('Error playing Rive animation:', e);
       }
     }
-  }, []);
+  }, [reducedMotion]);
 
   // Define animated styles
   const containerStyle = useAnimatedStyle(() => ({
@@ -403,7 +413,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   }));
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/successLamb.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/success_lamb.riv')]);
 
   const subText = getStreakSubtext(streak);
 
@@ -475,7 +485,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
               ) : (
                 <Rive
                   key={`rive-streak-${streak}`}
-                  url={riveAssets[0].uri!}
+                  resourceName='success_lamb'
                   artboardName="streak"
                   autoplay
                   style={{

@@ -157,7 +157,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const riveRef = useRef<RiveRef>(null);
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/successLamb.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/success_lamb.riv')]);
 
   // Dynamic snap points based on current screen
   const snapPoints = currentScreen === 'success' ? ['65%'] : ['65%'];
@@ -1028,7 +1028,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           ) : (
             <Rive
               ref={riveRef}
-              url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
+              resourceName='success_lamb'
               artboardName="chest"
               autoplay={true}
               style={{ width: '160%', height: '160%' }}

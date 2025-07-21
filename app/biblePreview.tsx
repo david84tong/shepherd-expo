@@ -135,7 +135,7 @@ export default function BiblePreviewScreen() {
   const scrollViewRef = useRef(null);
 
   // Prepare for future Rive usage
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/home_lamb.riv')]);
 
   useEffect(() => {
     // Animate the container opacity and card entry

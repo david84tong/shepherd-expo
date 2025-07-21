@@ -146,7 +146,7 @@ const PricingScreen = () => {
   });
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/goldLamb.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/gold_lamb.riv')]);
 
   const handleSubscribe = async () => {
     hapticMedium();
@@ -306,7 +306,7 @@ const PricingScreen = () => {
     return (
       <>
         {/* Header */}
-        {IS_ANDROID && (
+        {IS_ANDROID || IS_IOS && (
           <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
             <View className="flex-row items-center justify-between px-5 py-3 mb-3">
                 <Animated.View entering={FadeIn.duration(600)}>
@@ -420,7 +420,7 @@ const PricingScreen = () => {
                           />
                         ) : (
                           <Rive
-                            url={riveAssets[0].localUri!}
+                          resourceName={'gold_lamb'}
                             style={{ width: 192, height: 192, position: 'absolute', bottom: -20 }}
                             artboardName="lamb-idle"
                             autoplay={true}

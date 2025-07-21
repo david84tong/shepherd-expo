@@ -25,7 +25,7 @@ import PrimaryButton from './PrimaryButton';
 import gemIcon from '~/assets/icons/greenGemIcon.png';
 
 // Import lamb static images
-import goldLamb from '~/assets/lambStatic/goldSkin.png';
+import gold_lamb from '~/assets/lambStatic/goldSkin.png';
 import babyGoldenSheep from '~/assets/lambStatic/babyGoldenSheep.png';
 import normalLamb from '~/assets/lambStatic/normalSkin.png';
 import babyLamb from '~/assets/lambStatic/babySkin.png';
@@ -104,7 +104,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       description: 'For a limited time, all super users unlock this golden skin',
       price: 109,
       currency: 'gems',
-      image: userLevel < 10 ? babyGoldenSheep : goldLamb,
+      image: userLevel < 10 ? babyGoldenSheep : gold_lamb,
       skinNumber: 99,
       isPro: true,
       isOwned: isProMember, // Pro users automatically own this skin

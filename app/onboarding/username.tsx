@@ -51,7 +51,7 @@ export default function OnboardingUsernameScreen() {
   const loadingText = i18n.t('loading_just_a_moment');
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/home_lamb.riv')]);
 
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
