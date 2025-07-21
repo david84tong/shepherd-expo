@@ -62,6 +62,23 @@ import { appLog } from './helper/helper';
 import { COVENANT_STATES } from './hooks/streakHook';
 import { useUserStore } from './stores/userStore';
 import CovenantSuccessSheet, { CovenantSuccessSheetRef } from '../components/CovenantSuccessSheet';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://c9b3a3c9ed0846a755ee7175b07982f8@o4509279727321088.ingest.us.sentry.io/4509279728828416',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -129,7 +146,7 @@ export const unstable_settings = {
 //   'LoadingScreen'
 // ];
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
   const { visibleForceUpdate } = useForceUpdateCheck();
@@ -952,7 +969,7 @@ export default function RootLayout() {
       ) : null}
     </GestureHandlerRootView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

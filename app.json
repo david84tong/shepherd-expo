@@ -11,7 +11,9 @@
     "developmentClient": {
       "silentLaunch": true
     },
-   "assetBundlePatterns": ["**/*.riv"],
+    "assetBundlePatterns": [
+      "**/*.riv"
+    ],
     "splash": {
       "image": "./assets/custom_splash_icon.png",
       "resizeMode": "cover"
@@ -137,7 +139,15 @@
       ],
       "expo-audio",
       "expo-localization",
-      "expo-quick-actions"
+      "expo-quick-actions",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "second-round-inc"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
