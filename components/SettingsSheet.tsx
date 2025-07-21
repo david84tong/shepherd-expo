@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   TextInput,
   Platform,
+  Linking,
 } from 'react-native';
 import BottomSheet, {
   BottomSheetBackdrop,
@@ -87,6 +88,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     handleCancelTranslation,
     handleOpenDiscord,
     handleOpenRoadmap,
+    handleOpenReportBug,
     handleDeleteAccount,
     handleSubscriptionPress,
     toggleDevPanel,
@@ -416,6 +418,18 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   <View style={styles.discordButtonContent}>
                     <FontAwesome6 name="discord" size={20} color="#5865F2" />
                     <Text style={styles.discordButtonText}>{i18n.t('join_discord')}</Text>
+                  </View>
+                  <Feather name="external-link" size={18} color="#3C584A" />
+                </TouchableOpacity>
+
+                {/* Bug Report Button */}
+                <TouchableOpacity
+                  style={styles.bugReportButton}
+                  onPress={handleOpenReportBug}
+                >
+                  <View style={styles.bugReportButtonContent}>
+                    <Feather name="alert-circle" size={20} color="#DF4533" />
+                    <Text style={styles.bugReportButtonText}>{i18n.t('report_bug_title')}</Text>
                   </View>
                   <Feather name="external-link" size={18} color="#3C584A" />
                 </TouchableOpacity>
@@ -1157,6 +1171,27 @@ const styles = StyleSheet.create({
   refreshButton: {
     padding: 5,
   },
+  bugButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+    borderLeftColor: '#DC2626',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    padding: 16,
+  },
+  bugButtonContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  bugButtonText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    marginLeft: 10,
+  },
   roadmapButton: {
     alignItems: 'center',
     backgroundColor: 'rgba(34, 197, 94, 0.1)',
@@ -1351,6 +1386,27 @@ const styles = StyleSheet.create({
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
     marginRight: 10,
+  },
+  bugReportButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(223, 69, 51, 0.1)',
+    borderLeftColor: '#DF4533',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    padding: 16,
+  },
+  bugReportButtonContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  bugReportButtonText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    marginLeft: 10,
   },
 });
 

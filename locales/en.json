@@ -573,5 +573,6 @@
     "no_struggles_data": "No struggles data yet",
     "next_reward": "NEXT REWARD",
     "unlock_phoenix_lamb": "Unlock Phoenix Lamb",
-    "covenant_success_gems_earned": "You earned {{gems}} gems"
+    "covenant_success_gems_earned": "You earned {{gems}} gems",
+    "report_bug_title": "Report a Bug"
 }

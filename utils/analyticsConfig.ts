@@ -71,19 +71,21 @@ export async function configureAnalyticsFromUserData(userAgeRange?: string): Pro
     }
     
     const userIsUnder13 = ageRange ? isUserUnder13(ageRange) : false;
+    // Access showEmailPassword from global object
+    const showEmailPassword = (global as any).showEmailPassword;
 
-    console.log('📊 Configuring analytics for age range:', ageRange, 'Under 13:', userIsUnder13);
+    console.log('📊 Configuring analytics for age range:', ageRange, 'Under 13:', userIsUnder13, 'showEmailPassword:', showEmailPassword);
 
-    if (userIsUnder13) {
-      // Disable all analytics for users under 13
+    if (userIsUnder13 && showEmailPassword) {
+      // Disable all analytics for users under 13 AND showEmailPassword is true
       await disableAllAnalytics();
       await AsyncStorage.setItem(ANALYTICS_ENABLED_KEY, 'false');
-      console.log('🚫 Analytics disabled for user under 13');
+      console.log('🚫 Analytics disabled for user under 13 and showEmailPassword is true');
     } else {
-      // Enable analytics for users 13 and older
+      // Enable analytics for users 13 and older, or if showEmailPassword is false
       await enableAllAnalytics();
       await AsyncStorage.setItem(ANALYTICS_ENABLED_KEY, 'true');
-      console.log('✅ Analytics enabled for user 13+');
+      console.log('✅ Analytics enabled for user 13+ or showEmailPassword is false');
     }
 
     isAnalyticsConfigured = true;

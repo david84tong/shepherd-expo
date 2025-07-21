@@ -7,6 +7,7 @@ import i18n from '../utils/i18n';
 import { Feather } from '@expo/vector-icons';
 import { appLog } from '../helper/helper';
 import analytics from '~/utils/analytics';
+import { useUserStore } from '../stores/userStore';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -19,7 +20,7 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
   containerWidth = screenWidth - 48, 
   containerHeight = 300 
 }) => {
-  const { checkInHistory } = useCheckInStore();
+  const {checkIns: checkInHistory} = useUserStore();
   const [selectedGraph, setSelectedGraph] = useState<'mood' | 'struggles'>('mood');
   const [animationProgress, setAnimationProgress] = useState(0);
   const animationRef = useRef<NodeJS.Timeout | null>(null);
@@ -27,7 +28,6 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
   const [tooltipData, setTooltipData] = useState<{
     x: number;
     y: number;
-
     content: string;
     date?: string;
   } | null>(null);
@@ -44,43 +44,43 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
     'Great': 5,
     'good': 4,
     'meh': 3,
+    'meb': 3, // Handle typo in your data
     'bad': 2,
     'veryBad': 1,
     'angry': 1.5
   };
   
   const moodColors = {
-    'Great': '#24CA17', // darkGreen
-    'good': '#A8F093', // forestGreen50
-    'meh': '#FCD34D', // accentGold
-    'bad': '#FF8C1A', // darkOrange
-    'veryBad': '#E64132', // darkRed
-    'angry': '#E6319E' // darkPink
+    'Great': '#24CA17', 
+    'good': '#A8F093', 
+    'meh': '#FCD34D',
+    'meb': '#FCD34D',
+    'bad': '#FF8C1A', 
+    'veryBad': '#E64132', 
+    'angry': '#E6319E'
   };
 
-  // Mood images from GlobalCheckIn.tsx
   const moodImages = {
     'Great': require('../../assets/icons/moods/greatLamb.png'),
     'good': require('../../assets/icons/moods/goodLamb.png'),
     'meh': require('../../assets/icons/moods/sheepIcon.png'),
+    'meb': require('../../assets/icons/moods/sheepIcon.png'),
     'bad': require('../../assets/icons/moods/sadLamb.png'),
     'veryBad': require('../../assets/icons/moods/reallyBadLamb.png'),
     'angry': require('../../assets/icons/moods/angryLamb.png')
   };
 
   const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  
-  // Struggle mappings with proper color tokens
   const struggleColors = {
-    'lust': '#E64132', // darkRed
-    'envy': '#E64132', // darkRed
-    'anger': '#C81E28', // darkCrimson
-    'greed': '#24CA17', // darkGreen
-    'laziness': '#7B2BFF', // darkPurple
-    'pride': '#FF8C1A', // darkOrange
-    'vanity': '#E6319E', // darkPink
-    'impatience': '#18B2B6', // darkCyan
-    'gluttony': '#2196F3' // darkBlue
+    'lust': '#E64132',
+    'envy': '#E64132',
+    'anger': '#C81E28',
+    'greed': '#24CA17',
+    'laziness': '#7B2BFF',
+    'pride': '#FF8C1A',
+    'vanity': '#E6319E',
+    'impatience': '#18B2B6',
+    'gluttony': '#2196F3'
   };
   
   const struggleLabels = {
@@ -95,28 +95,47 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
     'gluttony': i18n.t('checkin_struggle_gluttony')
   };
 
-  // Get last 7 days of check-in data grouped by day of week
+  interface DayMood {
+    mood: string;
+    time: string;
+    focus?: string;
+  }
+
+  const timestampToDate = (timestamp: any) => {
+    if (timestamp && timestamp._seconds) {
+      return new Date(timestamp._seconds * 1000 + timestamp._nanoseconds / 1000000);
+    }
+    return new Date(timestamp);
+  };
+
   const getWeeklyData = () => {
     const today = new Date();
-    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    
+    const currentDay = today.getDay();
+  
+    // Calculate Monday of the current week
+    const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+    const monday = new Date(today);
+    monday.setHours(0, 0, 0, 0);
+    monday.setDate(today.getDate() + diffToMonday);
+  
     const weekData = checkInHistory
       .filter(checkIn => {
-        const checkInDate = new Date(checkIn.completedAt);
-        return checkInDate >= sevenDaysAgo && checkInDate <= today;
+        const checkInDate = timestampToDate(checkIn.timeStamp);
+        checkInDate.setHours(0, 0, 0, 0);
+        return checkInDate >= monday && checkInDate <= today;
       })
-      .sort((a, b) => new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime());
-
+      .sort((a, b) => timestampToDate(a.timeStamp).getTime() - timestampToDate(b.timeStamp).getTime());
+  
     // Group by day of week (0 = Sunday, 1 = Monday, etc.)
     const groupedByDay: { [key: number]: any[] } = {};
     weekData.forEach(checkIn => {
-      const dayOfWeek = new Date(checkIn.completedAt).getDay();
+      const dayOfWeek = timestampToDate(checkIn.timeStamp).getDay();
       if (!groupedByDay[dayOfWeek]) {
         groupedByDay[dayOfWeek] = [];
       }
       groupedByDay[dayOfWeek].push(checkIn);
     });
-
+  
     return groupedByDay;
   };
 
@@ -160,17 +179,35 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
       const dayData = groupedData[dayOfWeek];
       
       if (dayData && dayData.length > 0) {
-        // Get the most recent mood for this day
-        const latestCheckIn = dayData[dayData.length - 1];
-        const moodValue = moodValues[latestCheckIn.mood as keyof typeof moodValues] || 3;
+        // Calculate average mood value for the day
+        const dayMoodValues: number[] = dayData.map(checkIn => 
+          moodValues[checkIn.mood as keyof typeof moodValues] || 3
+        );
+        const averageMoodValue = dayMoodValues.reduce((a, b) => a + b, 0) / dayMoodValues.length;
+        
+        // Get all moods for this day for tooltip
+        const dayMoods: DayMood[] = dayData.map(checkIn => ({
+          mood: checkIn.mood,
+          focus: checkIn.focus,
+          time: timestampToDate(checkIn.timeStamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }));
+
+        // Get the dominant mood (most frequent)
+        const moodFrequency: { [key: string]: number } = {};
+        dayData.forEach(checkIn => {
+          moodFrequency[checkIn.mood] = (moodFrequency[checkIn.mood] || 0) + 1;
+        });
+        const dominantMood = Object.entries(moodFrequency)
+          .sort(([,a], [,b]) => b - a)[0][0];
         
         weeklyMoodData.push({
           x: ((dayIndex - 1) / 6) * innerWidth,
-          y: innerHeight - ((moodValue - 1) / 4) * innerHeight,
-          value: moodValue,
-          color: moodColors[latestCheckIn.mood as keyof typeof moodColors] || '#FCD34D',
-          date: new Date(latestCheckIn.completedAt),
-          mood: latestCheckIn.mood,
+          y: innerHeight - ((averageMoodValue - 1) / 4) * innerHeight,
+          value: averageMoodValue,
+          color: moodColors[dominantMood as keyof typeof moodColors] || '#FCD34D',
+          date: timestampToDate(dayData[0].timeStamp),
+          mood: dominantMood,
+          allMoods: dayMoods,
           dayOfWeek: dayIndex - 1,
           dayLabel: weekDays[dayIndex - 1]
         });
@@ -183,6 +220,7 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
           color: '#E9E2C7',
           date: null,
           mood: 'no_data',
+          allMoods: [],
           dayOfWeek: dayIndex - 1,
           dayLabel: weekDays[dayIndex - 1]
         });
@@ -203,12 +241,12 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
       const dayData = groupedData[dayOfWeek];
       
       if (dayData && dayData.length > 0) {
-        // Count struggles for this day
-        const strugglesCount = dayData.filter(checkIn => checkIn.struggle && checkIn.struggle !== '').length;
+        // Count struggles for this day (filter out empty strings)
+        const strugglesCount = dayData.filter(checkIn => checkIn.struggles && checkIn.struggles.trim() !== '').length;
         const mostCommonStruggle = dayData
-          .filter(checkIn => checkIn.struggle && checkIn.struggle !== '')
+          .filter(checkIn => checkIn.struggles && checkIn.struggles.trim() !== '')
           .reduce((acc: { [key: string]: number }, checkIn) => {
-            acc[checkIn.struggle] = (acc[checkIn.struggle] || 0) + 1;
+            acc[checkIn.struggles] = (acc[checkIn.struggles] || 0) + 1;
             return acc;
           }, {});
         
@@ -217,7 +255,7 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
         
         weeklyStruggleData.push({
           x: ((dayIndex - 1) / 6) * innerWidth,
-          height: (strugglesCount / 3) * innerHeight, // Max 3 struggles per day
+          height: (strugglesCount / 6) * innerHeight, // Max 6 struggles per day
           count: strugglesCount,
           struggle: topStruggle ? topStruggle[0] : 'none',
           color: topStruggle ? (struggleColors[topStruggle[0] as keyof typeof struggleColors] || '#666') : '#E9E2C7',
@@ -283,9 +321,48 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
     return `${linePath} L ${lastPoint.x + padding} ${innerHeight + padding} L ${firstPoint.x + padding} ${innerHeight + padding} Z`;
   };
 
+  // Helper function to handle mood image press
+  const handleMoodImagePress = (point: any) => {
+    hapticLight();
+    
+    analytics.logEvent('mood_image_pressed', {
+      mood: point.mood,
+      date: point.date,
+      graph: selectedGraph,
+    });
+
+    let tooltipContent = '';
+    if (point.allMoods && point.allMoods.length > 0) {
+      tooltipContent = point.allMoods
+        .map((m: DayMood) => `${m.time}: ${m.mood}${m.focus ? ` (${m.focus})` : ''}`)
+        .join('\n');
+    } else {
+      tooltipContent = `Mood: ${point.mood}`;
+    }
+
+    const date = point.date ? new Date(point.date).toLocaleDateString() : '';
+    
+    // Calculate tooltip position based on the mood image position
+    const tooltipX = point.x + padding;
+    const tooltipY = point.y + padding - 40;
+    
+    setTooltipData({
+      x: tooltipX,
+      y: tooltipY,
+      content: tooltipContent,
+      date: date,
+    });
+    
+    setShowTooltip(true);
+    
+    // Auto-hide tooltip after 3 seconds
+    setTimeout(() => {
+      setShowTooltip(false);
+    }, 3000);
+  };
+
   const renderMoodGraph = () => {
     const moodData = getMoodChartData();
-    appLog('moodData', moodData);
     
     if (moodData.length === 0) {
       return (
@@ -396,32 +473,34 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
           ))}
         </Svg>
         
-        {/* Mood images positioned above data points */}
+        {/* Mood images positioned above data points - Now clickable! */}
         {visiblePoints.map((point, index) => {
           if (point.mood === 'no_data') return null;
           
           return (
-            <View
+            <TouchableOpacity
               key={`mood-image-${index}`}
               style={{
                 position: 'absolute',
-                left: point.x + padding - 16, 
-                top: point.y + padding - 40,
-                width: 32,
-                height: 32,
+                left: point.x + padding - 25, // Adjusted for better touch target
+                top: point.y + padding - 45, // Adjusted for better touch target
+                width: 45, // Increased for better touch target
+                height: 45, // Increased for better touch target
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
+              onPress={() => handleMoodImagePress(point)}
+              activeOpacity={0.7}
             >
               <Image
                 source={moodImages[point.mood as keyof typeof moodImages]}
                 style={{
-                  width: 50,
-                  height: 50,
+                  width: 45,
+                  height: 45,
                 }}
                 resizeMode="contain"
               />
-            </View>
+            </TouchableOpacity>
           );
         })}
       </View>
@@ -547,11 +626,21 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
         date: point.date,
         graph: selectedGraph,
       });
-      const date = new Date(point.date).toLocaleDateString();
+
+      let tooltipContent = '';
+      if (point.allMoods && point.allMoods.length > 0) {
+        tooltipContent = point.allMoods
+          .map((m: DayMood) => `${m.time}: ${m.mood}${m.focus ? ` (${m.focus})` : ''}`)
+          .join('\n');
+      } else {
+        tooltipContent = `Mood: ${point.mood}`;
+      }
+
+      const date = point.date ? new Date(point.date).toLocaleDateString() : '';
       setTooltipData({
         x: event.nativeEvent.locationX,
         y: event.nativeEvent.locationY,
-        content: `Mood: ${point.mood}`,
+        content: tooltipContent,
         date: date,
       });
     } else {
@@ -567,7 +656,7 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
     // Auto-hide tooltip after 3 seconds
     setTimeout(() => {
       setShowTooltip(false);
-    }, 1000);
+    }, 3000);
   };
 
   return (
@@ -579,61 +668,24 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
         {/* Header with graph selector */}
         <View className="flex-row justify-between items-center mb-6 p-4">
           <Text className="font-feather text-lg text-textPrimary">
-            {selectedGraph === 'mood' ? 'Mood Trends' : 'Struggle Patterns'}
+            Mood and struggles
           </Text>
           
-          <View className="flex-row bg-surfaceCream rounded-full p-1">
-            <TouchableOpacity
-              onPress={() => handleGraphSwitch('mood')}
-              className={`px-4 py-2 rounded-full ${
-                selectedGraph === 'mood' 
-                  ? 'bg-accentGold' 
-                  : 'bg-transparent'
-              }`}
-              activeOpacity={0.7}
-            >
-              <Text className={`font-din text-sm ${
-                selectedGraph === 'mood' 
-                  ? 'text-white' 
-                  : 'text-textPrimary'
-              }`}>
-                Mood
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              onPress={() => handleGraphSwitch('struggles')}
-              className={`px-4 py-2 rounded-full ${
-                selectedGraph === 'struggles' 
-                  ? 'bg-accentGold' 
-                  : 'bg-transparent'
-              }`}
-              activeOpacity={0.7}
-            >
-              <Text className={`font-din text-sm ${
-                selectedGraph === 'struggles' 
-                  ? 'text-white' 
-                  : 'text-textPrimary'
-              }`}>
-                Struggles
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Graph content */}
         <View style={{ height: containerHeight , width: containerWidth}}>
-          {selectedGraph === 'mood' ? renderMoodGraph() : renderStrugglesGraph()}
+          {renderMoodGraph()}
         </View>
         
         {/* Legend */}
         <View className="mt-4 p-2 border-t border-brownBorder">
-                  <Text className="font-din text-sm text-description text-center">
-          {selectedGraph === 'mood' 
-            ? 'Track your emotional journey over the week' 
-            : 'See which areas you\'re working on this week'
-          }
-        </Text>
+          <Text className="font-din text-sm text-description text-center">
+            {selectedGraph === 'mood' 
+              ? 'Track your emotional journey over the week' 
+              : 'See which areas you\'re working on this week'
+            }
+          </Text>
         </View>
       </Animated.View>
 
@@ -689,4 +741,4 @@ const MoodStrugglesGraphs: React.FC<MoodStrugglesGraphsProps> = ({
   );
 };
 
-export default MoodStrugglesGraphs; 
+export default MoodStrugglesGraphs;

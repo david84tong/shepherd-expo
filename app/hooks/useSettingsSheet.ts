@@ -592,7 +592,15 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
       Alert.alert('Could not open link', 'Please check your internet connection and try again.');
     });
   }, []);
-
+  
+  // Open Report Bug link
+  const handleOpenReportBug = useCallback(() => {
+    hapticLight();
+    Linking.openURL('https://tryshepherd.notion.site/22a6cf0c24228160961be095f59191b1').catch((err) => {
+      appLog('Error opening Report Bug link:', err);
+      Alert.alert('Could not open link', 'Please check your internet connection and try again.');
+    });
+  }, []);
   // Open roadmap link
   const handleOpenRoadmap = useCallback(() => {
     hapticLight();
@@ -1228,6 +1236,7 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
     handleCancelTranslation,
     handleOpenDiscord,
     handleOpenRoadmap,
+    handleOpenReportBug,
     handleDeleteAccount,
     handleSubscriptionPress,
     handlePromoCodePress,

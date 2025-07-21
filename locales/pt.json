@@ -569,5 +569,6 @@
     "no_struggles_data": "Ainda não há dados de lutas",
     "next_reward": "PRÓXIMA RECOMPENSA",
     "unlock_phoenix_lamb": "Desbloquear Cordeiro Phoenix",
-    "covenant_success_gems_earned": "Você ganhou {{gems}} gemas"
+    "covenant_success_gems_earned": "Você ganhou {{gems}} gemas",
+    "report_bug_title": "Relatar um Bug"
 }
