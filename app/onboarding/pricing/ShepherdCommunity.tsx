@@ -234,7 +234,7 @@ export default function ShepherdCommunityScreen() {
           {/* Done Button */}
           <Animated.View style={buttonStyle} className="w-full">
             <PrimaryButton
-              title="Contine Home"
+              title="Continue Home"
               onPress={handleDone}
               buttonType="blue"
               buttonHeight={56}

@@ -1,7 +1,7 @@
 import { useAssets } from 'expo-asset';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, TextInput, Keyboard, ActivityIndicator, StatusBar } from 'react-native';
+import { View, Text, TextInput, Keyboard, ActivityIndicator, StatusBar, AccessibilityInfo } from 'react-native';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
@@ -30,6 +30,7 @@ export default function OnboardingLambNameScreen() {
   const [error, setError] = useState<string | undefined>();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [hasRiveError, setRiveError] = useState(false);
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   // Load Rive assets
@@ -62,11 +63,25 @@ export default function OnboardingLambNameScreen() {
   useLayoutEffect(() => {
     if (animationsInitialized.current) return;
 
-    const immediate = toBool(params?.immediate);
+    const immediate = toBool(params?.immediate) || reduceMotionEnabled;
     screenOpacity.value = immediate ? 1 : 0;
 
     if (!immediate) {
       screenOpacity.value = withTiming(1, { duration: 250 });
+    }
+
+    // If reduce motion is enabled, set all values immediately
+    if (reduceMotionEnabled) {
+      titleOpacity.value = 1;
+      titleTranslateY.value = 0;
+      lambOpacity.value = 1;
+      lambTranslateY.value = 0;
+      inputOpacity.value = 1;
+      inputTranslateY.value = 0;
+      buttonOpacity.value = 1;
+      buttonTranslateY.value = 0;
+      animationsInitialized.current = true;
+      return;
     }
 
     // Reset animation values with minimal delay
@@ -104,10 +119,13 @@ export default function OnboardingLambNameScreen() {
     }, 50); // Much shorter initial delay
 
     return () => clearTimeout(timer);
-  }, []); // Empty dependency array so it only runs once
+  }, [reduceMotionEnabled]); // Add reduceMotionEnabled as dependency
 
-  // Keyboard listeners (separated from animation logic)
+  // Keyboard listeners and accessibility check (separated from animation logic)
   useEffect(() => {
+    // Check reduce motion setting
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotionEnabled);
+    
     const keyboardWillShow = Keyboard.addListener('keyboardWillShow', () =>
       setKeyboardVisible(true)
     );
