@@ -18,6 +18,7 @@ import { useOnboardingStore } from '../stores/onboardingStore';
 import { useAnalytics } from '../hooks/useAnalytics';
 import PrimaryButton from '../../components/PrimaryButton';
 import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
+import { AccessibilityInfo } from 'react-native';
 
 import analytics from '../../utils/analytics';
 import { IS_ANDROID } from '../utils/utils';
@@ -48,6 +49,7 @@ export default function OnboardingWelcomeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
   const insets = useSafeAreaInsets();
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
 
   // Initialize analytics
   const { logScreenView, logButtonPress, logEvent, AnalyticsEvent, EventCategory } = useAnalytics();
@@ -82,6 +84,9 @@ export default function OnboardingWelcomeScreen() {
 
   // Log screen view when component mounts
   useEffect(() => {
+    // Check reduce motion setting
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotionEnabled);
+    
     // Assign A/B test first
     assignABTest();
 
@@ -329,6 +334,19 @@ export default function OnboardingWelcomeScreen() {
   // Handle the transition to the next screen with animation
   const handleTransitionToNextScreen = () => {
     setIsTransitioning(true);
+
+    // If reduce motion is enabled, navigate immediately
+    if (reduceMotionEnabled) {
+      router.push({
+        pathname: '/onboarding/2',
+        params: {
+          animated: true,
+          animation: 'fade',
+          immediate: true, // Set immediate to true for reduce motion
+        },
+      } as any);
+      return;
+    }
 
     // Create a smoother and faster fade out effect with scale
     Animated.parallel([
