@@ -38,6 +38,7 @@ import { UserDoc } from '../models/User';
 import firestore from '@react-native-firebase/firestore';
 import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import PrimaryButton from '../../components/PrimaryButton';
+import BluePrimaryButton from '../../components/Shared/BluePrimaryButton';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
 import i18n from '../utils/i18n';
@@ -105,7 +106,7 @@ export default function SaveProgressScreen() {
   const { createUser } = useUserStore();
   const [showNoAccountToast, setShowNoAccountToast] = useState(false);
   const ageRange = useOnboardingStore.getState().getAllResponses().ageRange;
-  const isSmaleAge = ageRange === 'under-18';
+  const isSmallAge = ageRange === 'under-18';
   // Animation shared values
   const headerOpacity = useSharedValue(0);
   const headerTranslateY = useSharedValue(40);
@@ -975,8 +976,8 @@ export default function SaveProgressScreen() {
             </Animated.View>
           )}
 
-          {/* Email/Password Form - Always Visible */}
-          {showEmailPassword  && (
+          {/* Email/Password Form - Only show after clicking email button */}
+          {showEmailForm && showEmailPassword && (
             <Animated.View style={buttonsStyle} className="mb-6">
               <View className="w-full mb-4">
                 <TextInput
@@ -1006,48 +1007,18 @@ export default function SaveProgressScreen() {
                   />
                 </View>
               </View>
-              {isLoginMode && IS_ANDROID && hideGoogleLogin && (
-                <TouchableOpacity
-                  onPress={() => {
-                    if (showNoAccountToast) {
-                      Toast.show({
-                        type: 'error',
-                        text1: i18n.t('please_go_through_onboarding'),
-                        position: 'top',
-                        visibilityTime: 3000,
-                      });
-                      setShowNoAccountToast(false);
-                    }
-                    router.replace('/(auth)');
-                  }}
-                  className="items-center mt-3"
-                  disabled={loading}>
-                  <Text className="font-din text-description underline text-[16px]">
-                    {loading ? i18n.t('onboarding_please_wait') : i18n.t('onboarding_back_to_home')}
-                  </Text>
-                </TouchableOpacity>
-              )}
             </Animated.View>
           )}
 
+
           {!hideGoogleLogin || IS_IOS ? (
             <>
-              {/* OR Separator */}
-              {showEmailPassword && IS_ANDROID ? (
-                <Animated.View
-                  style={buttonsStyle}
-                  className="flex-row items-center justify-center mb-6">
-                  <View className="flex-1 h-[1px] bg-gray-300" />
-                  <Text className="font-din text-description mx-4">{i18n.t('or')}</Text>
-                  <View className="flex-1 h-[1px] bg-gray-300" />
-                </Animated.View>
-              ) : null}
-
               {/* Social Sign In Buttons */}
               <Animated.View style={buttonsStyle}>
-                {isSmaleAge && Platform.OS === 'android' ? null : (
+                {isSmallAge && Platform.OS === 'android' ? null : (
                   <View className="items-center mb-4">
-                    {Platform.OS === 'ios' ? showEmailPassword?null: (
+                    {/* Platform-specific primary button */}
+                    {Platform.OS === 'ios' ? (
                       <TouchableOpacity
                         style={{ height: RPH(6) }}
                         className="flex-row items-center justify-center bg-black w-full  px-6 rounded-[16px] mb-4 shadow-appleShadow"
@@ -1095,8 +1066,24 @@ export default function SaveProgressScreen() {
                         </Text>
                       </TouchableOpacity>
                     )}
+                    
+                    {/* Email/Password button - show for both modes if enabled and form not shown */}
+                    {showEmailPassword && !showEmailForm && (
+                      <View className="w-full mt-4">
+                        <BluePrimaryButton
+                          title={'Sign in with Email'}
+                          onPress={() => {
+                            setShowEmailForm(true);
+                            analytics.logEvent(isLoginMode ? 'Login_Tapped_EmailOption' : 'OnboardingSignUp_Tapped_EmailOption');
+                          }}
+                          disabled={loading}
+                          style="mx-0"
+                        />
+                      </View>
+                    )}
                   </View>
                 )}
+
 
                 {/* Skip/Back button */}
                 {!isLoginMode && (
@@ -1105,7 +1092,7 @@ export default function SaveProgressScreen() {
                     className="items-center"
                     style={{
                       marginTop:
-                        isSmaleAge && Platform.OS === 'android'
+                        isSmallAge && Platform.OS === 'android'
                           ? Dimensions.get('window').height * 0.05
                           : 0,
                     }}
@@ -1133,7 +1120,7 @@ export default function SaveProgressScreen() {
                     }}
                     className="items-center"
                     disabled={loading}>
-                    <Text className="font-din text-description underline text-[16px]">
+                    <Text className="font-din text-description underline text-[16px] mt-4">
                       {loading ? i18n.t('onboarding_please_wait') : i18n.t('onboarding_back_to_home')}
                     </Text>
                   </TouchableOpacity>

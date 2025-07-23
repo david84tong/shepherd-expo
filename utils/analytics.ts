@@ -140,7 +140,7 @@ class Analytics {
     try {
       console.log("Initializing analytics ******************");
       // Initialize Mixpanel with trackAutomaticEvents explicitly set to false
-      this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
+      this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false, true);
       await this.mixpanel.init();
       
       // Always set platform as a super property (not just once)
