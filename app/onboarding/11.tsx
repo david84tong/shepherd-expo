@@ -1067,14 +1067,14 @@ export default function SaveProgressScreen() {
                       </TouchableOpacity>
                     )}
                     
-                    {/* Email/Password button - show for both modes if enabled and form not shown */}
-                    {showEmailPassword && !showEmailForm && (
+                    {/* Email/Password button - only show in login mode */}
+                    {isLoginMode && showEmailPassword && !showEmailForm && (
                       <View className="w-full mt-4">
                         <BluePrimaryButton
                           title={'Sign in with Email'}
                           onPress={() => {
                             setShowEmailForm(true);
-                            analytics.logEvent(isLoginMode ? 'Login_Tapped_EmailOption' : 'OnboardingSignUp_Tapped_EmailOption');
+                            analytics.logEvent('Login_Tapped_EmailOption');
                           }}
                           disabled={loading}
                           style="mx-0"
