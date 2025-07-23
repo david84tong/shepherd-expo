@@ -402,7 +402,6 @@ export const useUserStore = create<UserStore>()(
       getDenomination: () => get().denomination || initialState.denomination,
       getDisplayName: () => get().displayName || initialState.displayName,
       getSelectedPathId: () => get().selectedPathId || initialState.selectedPathId,
-      getAgeRange: () => get().ageRange || initialState.ageRange,
       getLamb: () => get().lamb || initialState.lamb,
       getStreakCount: () => get().streakCount || initialState.streakCount,
       getLastActivityDate: () => get().lastActivityDate || initialState.lastActivityDate,

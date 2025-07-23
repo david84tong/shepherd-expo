@@ -11,8 +11,6 @@ import {
   Identify,
   reset as amplitudeReset
 } from '@amplitude/analytics-react-native';
-import { appLog } from '~/app/helper/helper';
-import { getMixpanelInstance, isAnalyticsEnabled } from './analyticsConfig';
 
 // schema for analytics
 // Screenname: Verb
@@ -140,41 +138,16 @@ class Analytics {
    */
   private async performInitialization(): Promise<void> {
     try {
-      appLog("Initializing analytics ******************");
+      console.log("Initializing analytics ******************");
+      // Initialize Mixpanel with trackAutomaticEvents explicitly set to false
+      this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
+      await this.mixpanel.init();
       
-      // Check if analytics are enabled based on user age
-      const ageBasedAnalyticsEnabled = await isAnalyticsEnabled();
-      if (!ageBasedAnalyticsEnabled) {
-        appLog("🚫 Analytics disabled for user under 13, skipping initialization");
-        this.isInitialized = true;
-        return;
-      }
-
-      // Get existing Mixpanel instance or create new one
-      this.mixpanel = getMixpanelInstance();
-      console.log("Mixpanel instance:", this.mixpanel);
-      if (!this.mixpanel) {
-        this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false, true); // trackAutomaticEvents=false, useNative=true
-        await this.mixpanel.init();
-        
-        // Set platform super properties immediately after init
-        // Note: Mixpanel native SDK should automatically detect $os, but we'll set it explicitly
-        this.mixpanel.registerSuperProperties({ 
-          platform: Platform.OS,
-          $os: Platform.OS === 'ios' ? 'iOS' : 'Android',
-          // Add device type for better segmentation
-          $device: Platform.OS === 'ios' ? 'iPhone' : 'Android Phone'
-        });
-        appLog("Platform super properties set immediately after Mixpanel init");
-      } else {
-        // Even if instance exists, ensure platform properties are set
-        this.mixpanel.registerSuperProperties({ 
-          platform: Platform.OS,
-          $os: Platform.OS === 'ios' ? 'iOS' : 'Android',
-          $device: Platform.OS === 'ios' ? 'iPhone' : 'Android Phone'
-        });
-        appLog("Platform super properties updated on existing Mixpanel instance");
-      }
+      // Always set platform as a super property (not just once)
+      this.mixpanel.registerSuperProperties({ 
+        platform: Platform.OS,
+        $os: Platform.OS === 'ios' ? 'iOS' : 'Android'
+      });
 
       // Initialize Amplitude
       await amplitudeInit(AMPLITUDE_API_KEY);
@@ -204,7 +177,7 @@ class Analytics {
         // User is already authenticated
         this.mixpanel?.identify(this.userId);
         amplitudeSetUserId(this.userId);
-        appLog("✅ Both platforms: Authenticated user ID set:", this.userId);
+        console.log("✅ Both platforms: Authenticated user ID set:", this.userId);
       } else {
         // Create placeholder ID for anonymous user
         const placeholderId = await this.getOrCreatePlaceholderId();
@@ -213,7 +186,7 @@ class Analytics {
         // Set placeholder ID in both platforms
         this.mixpanel?.identify(placeholderId);
         amplitudeSetUserId(placeholderId);
-        appLog("✅ Both platforms: Anonymous placeholder ID set:", placeholderId);
+        console.log("✅ Both platforms: Anonymous placeholder ID set:", placeholderId);
       }
 
       // Set super properties for all events in Mixpanel
@@ -247,9 +220,9 @@ class Analytics {
       this.logEvent(AnalyticsEvent.APP_OPEN);
       this.logEvent("app_opening");
 
-      appLog('✅ Analytics (Mixpanel + Amplitude) initialized successfully');
+      console.log('✅ Analytics (Mixpanel + Amplitude) initialized successfully');
     } catch (error) {
-      appLog('❌ Failed to initialize analytics:', error);
+      console.log('❌ Failed to initialize analytics:', error);
       this.isInitialized = false;
       this.initializationPromise = null; // Reset to allow retry
     }
@@ -297,15 +270,11 @@ class Analytics {
         ...params,
         timestamp: now.toISOString(),
         userId: this.userId || 'anonymous',
-        // Always include platform information in every event to prevent "Not Set" issues
-        platform: Platform.OS,
-        $os: Platform.OS === 'ios' ? 'iOS' : 'Android',
-        $device: Platform.OS === 'ios' ? 'iPhone' : 'Android Phone',
       };
 
       // Log to console in development
       if (__DEV__) {
-        appLog(`📊 ANALYTICS ${eventName}`, eventParams);
+        console.log(`📊 ANALYTICS ${eventName}`, eventParams);
       }
 
       // Track event in Mixpanel
@@ -316,7 +285,7 @@ class Analytics {
         amplitudeTrack(eventName?.toString(), eventParams);
       }
     } catch (error) {
-      appLog('Failed to log analytics event:', error);
+      console.log('Failed to log analytics event:', error);
     }
   }
 
@@ -325,7 +294,7 @@ class Analytics {
    */
   private processQueuedEvents(): void {
     if (this.eventQueue.length > 0) {
-      appLog(`📊 Processing ${this.eventQueue.length} queued analytics events`);
+      console.log(`📊 Processing ${this.eventQueue.length} queued analytics events`);
       
       const queueCopy = [...this.eventQueue];
       this.eventQueue = []; // Clear the queue
@@ -358,7 +327,7 @@ class Analytics {
     const previousUserId = this.userId;
     const wasAnonymous = previousUserId?.startsWith('anon_');
     
-    appLog(`🔄 Setting user ID: ${userId} (isNewUser: ${isNewUser}, wasAnonymous: ${wasAnonymous})`);
+    console.log(`🔄 Setting user ID: ${userId} (isNewUser: ${isNewUser}, wasAnonymous: ${wasAnonymous})`);
     
     this.userId = userId;
 
@@ -367,20 +336,20 @@ class Analytics {
       // If transitioning from anonymous to authenticated and it's a new user signup
       if (wasAnonymous && isNewUser) {
         // Use alias to link the anonymous user to the new authenticated user
-        appLog(`🔗 Mixpanel: Aliasing anonymous user ${previousUserId} to authenticated user ${userId}`);
+        console.log(`🔗 Mixpanel: Aliasing anonymous user ${previousUserId} to authenticated user ${userId}`);
         this.mixpanel.alias(userId, previousUserId!);
       }
       
       // Always identify with the new user ID
       this.mixpanel.identify(userId);
-      appLog("✅ Mixpanel: User ID updated:", userId);
+      console.log("✅ Mixpanel: User ID updated:", userId);
     }
 
     // Update identity in Amplitude
     if (this.amplitudeInitialized && userId !== 'anonymous') {
       // For Amplitude, we handle the transition by setting user properties to link the anonymous session
       if (wasAnonymous && isNewUser) {
-        appLog(`🔗 Amplitude: Transitioning from anonymous user ${previousUserId} to authenticated user ${userId}`);
+        console.log(`🔗 Amplitude: Transitioning from anonymous user ${previousUserId} to authenticated user ${userId}`);
         
         // Set a user property to track the transition
         const identify = new Identify();
@@ -401,13 +370,13 @@ class Analytics {
       
       // Set the new user ID
       amplitudeSetUserId(userId);
-      appLog("✅ Amplitude: User ID updated:", userId);
+      console.log("✅ Amplitude: User ID updated:", userId);
     }
 
     // Clear the placeholder ID from storage since user is now authenticated
     if (userId !== 'anonymous' && !userId.startsWith('anon_')) {
       await AsyncStorage.removeItem('shepherd-analytics-placeholder-id');
-      appLog("🗑️ Cleared placeholder ID from storage");
+      console.log("🗑️ Cleared placeholder ID from storage");
     }
   }
 
@@ -418,7 +387,7 @@ class Analytics {
     if (!this.isInitialized || !this.isEnabled) return;
 
     try {
-      appLog("🔧 Setting user properties for both platforms:", properties);
+      console.log("🔧 Setting user properties for both platforms:", properties);
       
       // Set properties in Mixpanel
       if (this.mixpanel && this.userId) {
@@ -429,7 +398,7 @@ class Analytics {
           $os: Platform.OS === 'ios' ? 'iOS' : 'Android'
         };
         this.mixpanel.getPeople().set(propertiesWithPlatform);
-        appLog("✅ Mixpanel: User properties set");
+        console.log("✅ Mixpanel: User properties set");
       }
 
       // Set properties in Amplitude
@@ -442,10 +411,10 @@ class Analytics {
         identify.set('platform', Platform.OS);
         identify.set('os', Platform.OS === 'ios' ? 'iOS' : 'Android');
         amplitudeIdentify(identify);
-        appLog("✅ Amplitude: User properties set");
+        console.log("✅ Amplitude: User properties set");
       }
     } catch (error) {
-      appLog('❌ Failed to set user properties:', error);
+      console.log('❌ Failed to set user properties:', error);
     }
   }
 
@@ -456,7 +425,7 @@ class Analytics {
     if (!this.isInitialized) return;
 
     const previousUserId = this.userId;
-    appLog(`🔄 Resetting user analytics (previous ID: ${previousUserId})`);
+    console.log(`🔄 Resetting user analytics (previous ID: ${previousUserId})`);
 
     // Clear the stored placeholder ID to force creation of a new one
     await AsyncStorage.removeItem('shepherd-analytics-placeholder-id');
@@ -469,7 +438,7 @@ class Analytics {
       this.mixpanel.reset();
       // Identify with the new placeholder ID
       this.mixpanel.identify(this.userId);
-      appLog("✅ Mixpanel: User reset and new placeholder ID set:", this.userId);
+      console.log("✅ Mixpanel: User reset and new placeholder ID set:", this.userId);
     }
 
     // Reset identity in Amplitude
@@ -477,10 +446,10 @@ class Analytics {
       amplitudeReset();
       // Set the new placeholder ID in Amplitude
       amplitudeSetUserId(this.userId);
-      appLog("✅ Amplitude: User reset and new placeholder ID set:", this.userId);
+      console.log("✅ Amplitude: User reset and new placeholder ID set:", this.userId);
     }
 
-    appLog("🗑️ User reset complete, new placeholder ID:", this.userId);
+    console.log("🗑️ User reset complete, new placeholder ID:", this.userId);
   }
 
   /**
@@ -519,18 +488,8 @@ class Analytics {
       testParam: 'test_value',
       timestamp: new Date().toISOString(),
       source: 'manual_test',
-      explicit_platform: Platform.OS,
-      explicit_os: Platform.OS === 'ios' ? 'iOS' : 'Android',
     });
-    appLog('🧪 Test analytics event sent to both Mixpanel and Amplitude');
-    
-    // Debug log current Mixpanel configuration
-    if (this.mixpanel) {
-      appLog('🔍 Mixpanel Debug Info:');
-      appLog('  - Instance exists:', !!this.mixpanel);
-      appLog('  - Platform.OS:', Platform.OS);
-      appLog('  - Expected $os:', Platform.OS === 'ios' ? 'iOS' : 'Android');
-    }
+    console.log('🧪 Test analytics event sent to both Mixpanel and Amplitude');
   }
 
   /**
