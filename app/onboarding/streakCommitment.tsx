@@ -250,7 +250,7 @@ export default function StreakCommitmentScreen() {
     analytics.logEvent('StreakCommitmentScreen_Continued', { selectedStreak });
 
     // add analytics for covenant progress
-    analytics.logEvent('covenantProgress', {
+    analytics.logEvent('covenantProgress_tapped', {
       currentStreak: 0,
       targetDays: selectedStreak,
       progress: 0,

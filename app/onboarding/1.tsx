@@ -86,14 +86,26 @@ export default function OnboardingWelcomeScreen() {
   useEffect(() => {
     // Check reduce motion setting
     AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotionEnabled);
-    
-    // Assign A/B test first
-    assignABTest();
 
-    analytics.logEvent('LambLostScreenViewed', {
-      screenName: 'OnboardingWelcomeScreen',
-      step: 1,
-    });
+    // Initialize analytics first before logging any events
+    const initializeAnalytics = async () => {
+      if (!analytics.isInitialized) {
+        appLog('🔧 Initializing analytics in onboarding...');
+        await analytics.init();
+        appLog('✅ Analytics initialized in onboarding');
+      }
+
+      // Assign A/B test after analytics is ready
+      await assignABTest();
+
+      // Now log the screen view event
+      analytics.logEvent('LambLostScreenViewed', {
+        screenName: 'OnboardingWelcomeScreen',
+        step: 1,
+      });
+    };
+
+    initializeAnalytics();
 
     // Start entrance animation
     const startEntranceAnimation = () => {
@@ -534,7 +546,7 @@ export default function OnboardingWelcomeScreen() {
                       onError={(error) => {
                         appLog('------>', error);
                       }}
-                     resourceName='baby_lamb_waking'
+                      resourceName="baby_lamb_waking"
                       // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
                       stateMachineName="Baby"
                       artboardName={'Baby-Spepherd 2'}

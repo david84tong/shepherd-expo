@@ -208,7 +208,7 @@ export default function SaveProgressScreen() {
     });
     if (success && firestoreData) {
       await useUserStore.getState().syncFirestoreData(firestoreData);
-      
+
       // Force refresh pro status to ensure it's properly synced after referral code application
       try {
         const { forceRefreshProStatus } = useSubscriptionStore.getState();
@@ -217,7 +217,7 @@ export default function SaveProgressScreen() {
       } catch (error) {
         appLog('[syncUser] Error refreshing pro status:', error);
       }
-      
+
       const prayerCompleted = useHomeStore.getState().prayerCompleted;
       const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
       const readingCompleted = useHomeStore.getState().readingCompleted;
@@ -375,7 +375,7 @@ export default function SaveProgressScreen() {
         userData.proExpiryDate = undefined;
         useUserStore.getState().setProStatus('pro');
       }
-      
+
       // Check if user already has pro status from referral code in Firestore
       // This handles the case where a referral code was applied before user creation
       try {
@@ -383,7 +383,9 @@ export default function SaveProgressScreen() {
         if (existingUserDoc.exists) {
           const existingUserData = existingUserDoc.data();
           if (existingUserData && (existingUserData.isPro || existingUserData.isProWithReferral)) {
-            appLog('[createUserFromResponses] User already has pro status from referral, updating user data');
+            appLog(
+              '[createUserFromResponses] User already has pro status from referral, updating user data'
+            );
             userData.isPro = true;
             userData.isProWithReferral = existingUserData.isProWithReferral || false;
             userData.proExpiryDate = existingUserData.userProExpiryDate;
@@ -394,8 +396,18 @@ export default function SaveProgressScreen() {
         appLog('[createUserFromResponses] Error checking existing pro status:', error);
       }
       // Identify user in Mixpanel
-      // Pass isNewUser=true since this is called during user creation
-      await analytics.setUserId(uid, true);
+      // Only call setUserId if we haven't already done so (for anonymous signup flow)
+      const currentUserId = analytics.getCurrentUserId();
+      if (currentUserId !== uid) {
+        // Pass isNewUser=true since this is called during user creation
+        await analytics.setUserId(uid, true);
+        
+        // Add a small delay to ensure Mixpanel processes the alias/identify
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      } else {
+        appLog('[createUserFromResponses] User already identified as:', uid, '- skipping setUserId');
+      }
+
       analytics.setUserProperties({
         ...userData,
         $name: displayName,
@@ -736,9 +748,9 @@ export default function SaveProgressScreen() {
           const allResponses = getAllResponses();
           const displayName = allResponses.username || 'Anonymous User';
 
-          appLog("CALLED API");
+          appLog('CALLED API');
           user = await signUpWithEmailPassword(email, password, displayName);
-          appLog("user ====>", user);
+          appLog('user ====>', user);
 
           analytics.logEvent('OnboardingSignUp_Success_Email');
 
@@ -829,34 +841,57 @@ export default function SaveProgressScreen() {
   const createAnonymousAccount = async () => {
     try {
       setLoading(true);
+      
+      // Get the current analytics user ID before creating Firebase anonymous user
+      const currentAnalyticsUserId = analytics.getCurrentUserId();
+      appLog('[createAnonymousAccount] Current analytics user ID:', currentAnalyticsUserId);
+      
       const user = await signInAnonymously();
       if (user) {
-        await createUserFromResponses(user.uid, 'Anonymous User');
+        // IMPORTANT: We need to properly transition from the onboarding anonymous user
+        // to the Firebase anonymous user
+        appLog('[createAnonymousAccount] Firebase anonymous UID:', user.uid);
+        appLog('[createAnonymousAccount] Transitioning from:', currentAnalyticsUserId, 'to:', user.uid);
         
+        // Ensure analytics is fully initialized before attempting to alias IDs.
+        // If init was still in-flight while the user tapped "Skip", awaiting it here guarantees
+        // that the underlying Mixpanel instance is ready to handle alias/identify calls.
+        await analytics.init();
+
+        // CRITICAL: We need to alias the analytics anonymous ID to the Firebase UID
+        // This ensures all events tracked during onboarding are linked to the new Firebase user
+        if (currentAnalyticsUserId && currentAnalyticsUserId.startsWith('anon_')) {
+          // First, alias the anonymous user to the Firebase UID
+          await analytics.setUserId(user.uid, true); // isNewUser = true for alias operation
+          appLog('[createAnonymousAccount] Analytics user aliased from', currentAnalyticsUserId, 'to', user.uid);
+        }
+        
+        await createUserFromResponses(user.uid, 'Anonymous User');
+
         // After creating the user, check and sync pro status from Firestore
         // This ensures that if a referral code was applied before skipping, the pro status is properly reflected
         try {
           const userDoc = await firestore().collection('users').doc(user.uid).get();
           const userData = userDoc.data();
-          
+
           if (userData) {
             appLog('[createAnonymousAccount] Checking pro status from Firestore:', {
               isPro: userData.isPro,
               isProWithReferral: userData.isProWithReferral,
-              userProExpiryDate: userData.userProExpiryDate
+              userProExpiryDate: userData.userProExpiryDate,
             });
-            
+
             // Check if user has pro status from referral code
             if (userData.isPro || userData.isProWithReferral) {
               appLog('[createAnonymousAccount] User has pro status from referral, updating stores');
-              
+
               // Update user store
               useUserStore.getState().setProStatus('pro');
-              
+
               // Update subscription store
               const { forceRefreshProStatus } = useSubscriptionStore.getState();
               await forceRefreshProStatus();
-              
+
               // Update analytics
               analytics.setUserProperties({
                 isPro: true,
@@ -868,7 +903,7 @@ export default function SaveProgressScreen() {
         } catch (syncError) {
           appLog('[createAnonymousAccount] Error syncing pro status:', syncError);
         }
-        
+
         await completeOnboarding();
       }
     } catch (error) {
@@ -906,7 +941,9 @@ export default function SaveProgressScreen() {
             </Text>
 
             {/* Icon */}
-            <View style={{ width: RPH(27), height: RPH(25) }} className="mb-8 overflow-hidden  items-center justify-center">
+            <View
+              style={{ width: RPH(27), height: RPH(25) }}
+              className="mb-8 overflow-hidden  items-center justify-center">
               {riveAssets && riveAssets[0]?.uri && (
                 <>
                   {IS_ANDROID ? (
@@ -920,7 +957,7 @@ export default function SaveProgressScreen() {
                     />
                   ) : (
                     <Rive
-                     resourceName='home_lamb'
+                      resourceName="home_lamb"
                       artboardName={'lamb-workout'}
                       autoplay={true}
                       fit={Fit.Contain}
@@ -969,9 +1006,7 @@ export default function SaveProgressScreen() {
           {isLoginMode && (
             <Animated.View style={benefitsStyle} className="mb-8">
               <Text className="font-din text-body text-center text-description mb-2">
-                {IS_IOS
-                  ? i18n.t('onboarding_sign_in_apple')
-                  : i18n.t('onboarding_sign_in_google')}
+                {IS_IOS ? i18n.t('onboarding_sign_in_apple') : i18n.t('onboarding_sign_in_google')}
               </Text>
             </Animated.View>
           )}
@@ -999,7 +1034,13 @@ export default function SaveProgressScreen() {
                 />
                 <View className="mt-4">
                   <PrimaryButton
-                    title={loading ? i18n.t('onboarding_please_wait') : isLoginMode ? i18n.t('onboarding_sign_in') : i18n.t('onboarding_sign_up')}
+                    title={
+                      loading
+                        ? i18n.t('onboarding_please_wait')
+                        : isLoginMode
+                          ? i18n.t('onboarding_sign_in')
+                          : i18n.t('onboarding_sign_up')
+                    }
                     onPress={handleEmailAuth}
                     disabled={loading}
                     buttonType="default"
@@ -1009,7 +1050,6 @@ export default function SaveProgressScreen() {
               </View>
             </Animated.View>
           )}
-
 
           {!hideGoogleLogin || IS_IOS ? (
             <>
@@ -1038,8 +1078,12 @@ export default function SaveProgressScreen() {
                             style={{ marginRight: 10 }}
                           />
                         )}
-                        <Text style={{ fontSize: AppFonts[14] }} className="font-din text-white  font-bold">
-                          {loading ? i18n.t('onboarding_signing_in') : i18n.t('onboarding_continue_with_apple')}
+                        <Text
+                          style={{ fontSize: AppFonts[14] }}
+                          className="font-din text-white  font-bold">
+                          {loading
+                            ? i18n.t('onboarding_signing_in')
+                            : i18n.t('onboarding_continue_with_apple')}
                         </Text>
                       </TouchableOpacity>
                     ) : (
@@ -1061,12 +1105,16 @@ export default function SaveProgressScreen() {
                             style={{ marginRight: 10 }}
                           />
                         )}
-                        <Text style={{ fontSize: AppFonts[14] }} className="font-din text-[#4285F4]  font-bold">
-                          {loading ? i18n.t('onboarding_signing_in') : i18n.t('onboarding_continue_with_google')}
+                        <Text
+                          style={{ fontSize: AppFonts[14] }}
+                          className="font-din text-[#4285F4]  font-bold">
+                          {loading
+                            ? i18n.t('onboarding_signing_in')
+                            : i18n.t('onboarding_continue_with_google')}
                         </Text>
                       </TouchableOpacity>
                     )}
-                    
+
                     {/* Email/Password button - only show in login mode */}
                     {isLoginMode && showEmailPassword && !showEmailForm && (
                       <View className="w-full mt-4">
@@ -1084,7 +1132,6 @@ export default function SaveProgressScreen() {
                   </View>
                 )}
 
-
                 {/* Skip/Back button */}
                 {!isLoginMode && (
                   <TouchableOpacity
@@ -1098,7 +1145,9 @@ export default function SaveProgressScreen() {
                     }}
                     disabled={loading}>
                     <Text className="font-din text-description underline text-[16px]">
-                      {loading ? i18n.t('onboarding_please_wait') : i18n.t('onboarding_skip_for_now')}
+                      {loading
+                        ? i18n.t('onboarding_please_wait')
+                        : i18n.t('onboarding_skip_for_now')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -1121,7 +1170,9 @@ export default function SaveProgressScreen() {
                     className="items-center"
                     disabled={loading}>
                     <Text className="font-din text-description underline text-[16px] mt-4">
-                      {loading ? i18n.t('onboarding_please_wait') : i18n.t('onboarding_back_to_home')}
+                      {loading
+                        ? i18n.t('onboarding_please_wait')
+                        : i18n.t('onboarding_back_to_home')}
                     </Text>
                   </TouchableOpacity>
                 )}
