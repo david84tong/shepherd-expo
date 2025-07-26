@@ -1,23 +1,163 @@
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useUserStore } from '../app/stores/userStore';
 import { Mixpanel } from 'mixpanel-react-native';
-import { 
-  init as amplitudeInit, 
-  track as amplitudeTrack, 
-  setUserId as amplitudeSetUserId, 
+import Constants from 'expo-constants';
+import {
+  init as amplitudeInit,
+  track as amplitudeTrack,
+  setUserId as amplitudeSetUserId,
   identify as amplitudeIdentify,
   Identify,
-  reset as amplitudeReset
+  reset as amplitudeReset,
 } from '@amplitude/analytics-react-native';
 
-// schema for analytics
-// Screenname: Verb
-// eg: WelcomeScreen: Tapped Continue
-// AgeScreen: Tapped Continue, params: { age: 25-35 }
+// NOTE: keep the same tokens currently used in the project
+const MIXPANEL_TOKEN = '7178bfcd1e0972001d3e6c066e8fb18b';
+const AMPLITUDE_API_KEY = 'd8184bec8ecc538cb1575e61b8ad2171';
 
-// Event categories for better organization
+/**
+ * Unified analytics wrapper around Mixpanel & Amplitude.
+ * This mirrors the lightweight service used in the reference code while
+ * preserving the old public API (logEvent / setUserId / setUserProperties)
+ * so existing screens do not break.
+ */
+class Analytics {
+  private static _instance: Analytics | null = null;
+
+  private mixpanel: Mixpanel | null = null;
+  private amplitudeReady = false;
+  private ready = false;
+
+  private constructor() {}
+
+  static get instance(): Analytics {
+    if (!Analytics._instance) {
+      Analytics._instance = new Analytics();
+    }
+    return Analytics._instance;
+  }
+
+  /** Initialise both SDKs. Safe to call multiple times. */
+  async init(): Promise<void> {
+    if (this.ready) return;
+
+    try {
+      // Mixpanel
+      this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
+      await this.mixpanel.init();
+      this.mixpanel.registerSuperPropertiesOnce({ platform: Platform.OS });
+
+      // Amplitude
+      await amplitudeInit(AMPLITUDE_API_KEY);
+      this.amplitudeReady = true;
+
+      this.ready = true;
+      console.log('✅ Analytics (Mixpanel + Amplitude) initialised');
+    } catch (err) {
+      console.error('❌ Failed to initialise analytics:', err);
+    }
+  }
+
+  /** Track an event with optional properties */
+  trackEvent(eventName: string, properties: Record<string, any> = {}): void {
+    if (!this.ready) {
+      console.warn('[Analytics] trackEvent called before init');
+      return;
+    }
+
+    try {
+      this.mixpanel?.track(eventName, properties);
+      if (this.amplitudeReady) {
+        amplitudeTrack(eventName, properties);
+      }
+    } catch (err) {
+      console.error('❌ Failed to track event:', eventName, err);
+    }
+  }
+
+  /** Identify the current user */
+  identifyUser(userId: string, userProperties: Record<string, any> = {}): void {
+    if (!this.ready) {
+      console.warn('[Analytics] identifyUser called before init');
+      return;
+    }
+
+    try {
+      // Mixpanel
+      this.mixpanel?.identify(userId);
+      if (Object.keys(userProperties).length) {
+        this.mixpanel?.getPeople().set(userProperties);
+      }
+
+      // Amplitude
+      amplitudeSetUserId(userId);
+      if (this.amplitudeReady && Object.keys(userProperties).length) {
+        const identify = new Identify();
+        Object.entries(userProperties).forEach(([k, v]) => identify.set(k, v));
+        amplitudeIdentify(identify);
+      }
+    } catch (err) {
+      console.error('❌ Failed to identify user:', err);
+    }
+  }
+
+  /** Update user properties **after** the user has been identified */
+  setUserProperties(userProperties: Record<string, any>): void {
+    if (!this.ready) return;
+    this.identifyUser('', userProperties); // Will just set properties on the existing identity
+  }
+
+  /** Reset the current user (e.g., on logout) */
+  reset(): void {
+    if (!this.ready) return;
+    this.mixpanel?.reset();
+    amplitudeReset();
+  }
+
+  /** Utility to expose readiness */
+  get isReady() {
+    return this.ready;
+  }
+
+  /** LEGACY API BRIDGE – maintain compatibility with existing calls */
+  logEvent(eventName: string, properties: Record<string, any> = {}) {
+    this.trackEvent(eventName, properties);
+  }
+
+  /** LEGACY: maintain existing logError helper */
+  logError(
+    errorMessage: string,
+    errorCode?: string | number,
+    additionalInfo: Record<string, any> = {}
+  ) {
+    this.trackEvent(AnalyticsEvent.APP_ERROR, {
+      errorMessage,
+      errorCode,
+      ...additionalInfo,
+    });
+  }
+
+  setUserId(userId: string) {
+    this.identifyUser(userId);
+  }
+}
+
+// Create the singleton immediately so other modules can import it directly.
+export const analytics = Analytics.instance;
+
+// Convenience named exports mirroring reference-style helpers
+export const initAnalytics = () => analytics.init();
+export const trackEvent = (
+  eventName: string,
+  properties?: Record<string, any>
+) => analytics.trackEvent(eventName, properties);
+export const identifyUser = (
+  userId: string,
+  userProperties?: Record<string, any>
+) => analytics.identifyUser(userId, userProperties);
+export const setUserProperties = (props: Record<string, any>) =>
+  analytics.setUserProperties(props);
+
+// --- Legacy enum exports (retained for backwards-compatibility) ---------------
 export enum EventCategory {
   NAVIGATION = 'navigation',
   USER_ACTION = 'user_action',
@@ -28,7 +168,6 @@ export enum EventCategory {
   IN_APP_PURCHASE = 'in_app_purchase',
 }
 
-// Common events for consistency
 export enum AnalyticsEvent {
   // Navigation events
   SCREEN_VIEW = 'screen_view',
@@ -69,320 +208,11 @@ export enum AnalyticsEvent {
   PURCHASE_COMPLETED = 'purchase_completed',
   PURCHASE_CANCELLED = 'purchase_cancelled',
   PURCHASE_FAILED = 'purchase_failed',
-  
+
   // Cancellation flow events
   CANCELLATION_FLOW_OPENED = 'cancellation_flow_opened',
   CANCELLATION_FEEDBACK_SUBMITTED = 'cancellation_feedback_submitted',
 }
+// -----------------------------------------------------------------------------
 
-// Mixpanel token - replace with your project token
-const MIXPANEL_TOKEN = '7178bfcd1e0972001d3e6c066e8fb18b'; // Replace with your actual Mixpanel token
-
-// Amplitude API key - replace with your actual Amplitude API key
-// Get this from: https://app.amplitude.com/login/norastudios?next=%2Fdata%2Fnorastudios%2FONG%2Fhome%2Fmain%2Flatest
-// Go to Settings > Projects > [Your Project] > API Keys
-const AMPLITUDE_API_KEY = 'd8184bec8ecc538cb1575e61b8ad2171'; // Replace with your actual Amplitude API key
-
-/**
- * Analytics wrapper class for tracking user events
- * This provides a consistent interface for tracking events across the app
- * and abstracts the underlying analytics implementation
- */
-class Analytics {
-  private static instance: Analytics;
-  public isInitialized: boolean = false;
-  private sessionId: string = '';
-  private defaultParams: Record<string, any> = {};
-  private userId: string | null = null;
-  private isEnabled: boolean = true;
-  private mixpanel: Mixpanel | null = null;
-  private amplitudeInitialized: boolean = false;
-
-  /**
-   * Private constructor to enforce singleton pattern
-   */
-  private constructor() {
-    // Initialization will be deferred to init() method
-  }
-
-  /**
-   * Get the singleton instance
-   */
-  public static getInstance(): Analytics {
-    if (!Analytics.instance) {
-      Analytics.instance = new Analytics();
-    }
-    return Analytics.instance;
-  }
-
-  /**
-   * Initialize the analytics system
-   * Sets up device info and session tracking
-   */
-  public async init(): Promise<void> {
-    if (this.isInitialized) return;
-
-    try {
-      console.log("Initializing analytics ******************");
-      // Initialize Mixpanel with trackAutomaticEvents explicitly set to false
-      this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
-      await this.mixpanel.init();
-      this.mixpanel.registerSuperPropertiesOnce({ platform: Platform.OS });
-
-      // Initialize Amplitude
-      await amplitudeInit(AMPLITUDE_API_KEY);
-      this.amplitudeInitialized = true;
-
-      // Get or create session ID
-      this.sessionId = await this.getOrCreateSessionId();
-
-      // Set up default parameters that will be included with all events
-      this.defaultParams = {
-        platformVersion: Platform.Version,
-        appVersion: Constants.expoConfig?.version ?? 'unknown',
-        buildNumber:
-          Constants.expoConfig?.ios?.buildNumber ??
-          Constants.expoConfig?.android?.versionCode ??
-          'unknown',
-        sessionId: this.sessionId,
-        deviceName: Constants.deviceName,
-      };
-
-      // Get user ID if available
-      const user = useUserStore.getState().getUser?.();
-      this.userId = user ? user.id || 'anonymous' : 'anonymous';
-
-      // Set user identity in Mixpanel
-      if (this.userId && this.userId !== 'anonymous') {
-        this.mixpanel?.identify(this.userId);
-      }
-
-      // Set user identity in Amplitude
-      if (this.userId && this.userId !== 'anonymous') {
-        amplitudeSetUserId(this.userId);
-      }
-      this.mixpanel?.registerSuperPropertiesOnce({ platform: Platform.OS });
-
-      // Set super properties for all events in Mixpanel
-      this.mixpanel?.registerSuperProperties(this.defaultParams);
-
-      // Set user properties in Amplitude using Identify
-      if (this.amplitudeInitialized) {
-        const identify = new Identify();
-        Object.entries(this.defaultParams).forEach(([key, value]) => {
-          identify.set(key, value);
-        });
-        amplitudeIdentify(identify);
-      }
-
-      // Check if analytics is enabled
-      const analyticsEnabled = await AsyncStorage.getItem('shepherd-analytics-enabled');
-      this.isEnabled = analyticsEnabled !== 'false';
-
-      // Opt out of tracking if disabled
-      if (!this.isEnabled) {
-        this.mixpanel?.optOutTracking();
-        // Amplitude doesn't have a direct opt-out method, but we can control tracking at the event level
-      }
-
-      this.isInitialized = true;
-
-      // Log app open event
-      this.logEvent(AnalyticsEvent.APP_OPEN);
-      this.logEvent("app_opening");
-
-      console.log('✅ Analytics (Mixpanel + Amplitude) initialized successfully');
-    } catch (error) {
-      console.log('❌ Failed to initialize analytics:', error);
-    }
-  }
-
-  /**
-   * Log an event with optional parameters
-   */
-  public logEvent(eventName: string | AnalyticsEvent, params: Record<string, any> = {}): void {
-    if (!this.isInitialized) {
-      console.warn('Analytics not initialized. Call init() first.');
-      return;
-    }
-
-    if (!this.isEnabled) {
-      return; // Silently ignore if analytics is disabled
-    }
-
-    try {
-      // Get current timestamp
-      const now = new Date();
-
-      // Combine default params with provided params
-      const eventParams = {
-        ...params,
-        timestamp: now.toISOString(),
-        userId: this.userId || 'anonymous',
-      };
-
-      // Log to console in development
-      if (__DEV__) {
-        console.log(`📊 ANALYTICS ${eventName}`, eventParams);
-      }
-
-      // Track event in Mixpanel
-      this.mixpanel?.track(eventName?.toString(), eventParams);
-
-      // Track event in Amplitude
-      if (this.amplitudeInitialized) {
-        
-        amplitudeTrack(eventName?.toString(), eventParams);
-        console.log("EVENT TRACK WITH AMPLITUDE");
-      }
-    } catch (error) {
-      console.log('Failed to log analytics event:', error);
-    }
-  }
-
-  /**
-   * Log an error event
-   */
-  public logError(
-    errorMessage: string,
-    errorCode?: string | number,
-    additionalInfo: Record<string, any> = {}
-  ): void {
-    this.logEvent(AnalyticsEvent.APP_ERROR, {
-      errorMessage,
-      errorCode,
-      ...additionalInfo,
-    });
-  }
-
-  /**
-   * Set user ID for analytics
-   */
-  public setUserId(userId: string): void {
-    this.userId = userId;
-
-    // Update identity in Mixpanel
-    if (this.mixpanel && userId !== 'anonymous') {
-      this.mixpanel.identify(userId);
-    }
-
-    // Update identity in Amplitude
-    if (this.amplitudeInitialized && userId !== 'anonymous') {
-      amplitudeSetUserId(userId);
-    }
-  }
-
-  /**
-   * Set user properties for segmentation
-   */
-  public setUserProperties(properties: Record<string, any>): void {
-    if (!this.isInitialized || !this.isEnabled) return;
-
-    try {
-      if (this.mixpanel && this.userId) {
-        this.mixpanel.getPeople().set(properties);
-      }
-
-      if (this.amplitudeInitialized) {
-        const identify = new Identify();
-        Object.entries(properties).forEach(([key, value]) => {
-          identify.set(key, value);
-        });
-        amplitudeIdentify(identify);
-      }
-    } catch (error) {
-      console.log('Failed to set user properties:', error);
-    }
-  }
-
-  /**
-   * Reset the user (for logout)
-   */
-  public resetUser(): void {
-    if (!this.isInitialized) return;
-
-    this.userId = 'anonymous';
-
-    // Reset identity in Mixpanel
-    if (this.mixpanel) {
-      this.mixpanel.reset();
-    }
-
-    // Reset identity in Amplitude
-    if (this.amplitudeInitialized) {
-      amplitudeReset();
-    }
-  }
-
-  /**
-   * Enable or disable analytics
-   */
-  public async setEnabled(enabled: boolean): Promise<void> {
-    this.isEnabled = enabled;
-    await AsyncStorage.setItem('shepherd-analytics-enabled', enabled ? 'true' : 'false');
-
-    // Update Mixpanel tracking
-    if (this.mixpanel) {
-      if (enabled) {
-        this.mixpanel.optInTracking();
-      } else {
-        this.mixpanel.optOutTracking();
-      }
-    }
-
-    // Amplitude doesn't have a direct enable/disable method, but we control it at the event level
-    // The isEnabled flag will prevent events from being sent
-  }
-
-  /**
-   * Check if analytics is enabled
-   */
-  public isAnalyticsEnabled(): boolean {
-    return this.isEnabled;
-  }
-
-  /**
-   * Test method to verify analytics integration
-   * Call this method to send a test event to both Mixpanel and Amplitude
-   */
-  public testAnalytics(): void {
-    this.logEvent('test_analytics_integration', {
-      testParam: 'test_value',
-      timestamp: new Date().toISOString(),
-      source: 'manual_test',
-    });
-    console.log('🧪 Test analytics event sent to both Mixpanel and Amplitude');
-  }
-
-  /**
-   * Get or create a unique session ID
-   */
-  private async getOrCreateSessionId(): Promise<string> {
-    const storedSessionId = await AsyncStorage.getItem('shepherd-analytics-session-id');
-    if (storedSessionId) {
-      return storedSessionId;
-    }
-
-    // Create a new session ID
-    const newSessionId = this.generateUUID();
-    await AsyncStorage.setItem('shepherd-analytics-session-id', newSessionId);
-    return newSessionId;
-  }
-
-  /**
-   * Generate a UUID v4
-   */
-  private generateUUID(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v?.toString(16);
-    });
-  }
-}
-
-// Export a singleton instance
-export const analytics = Analytics.getInstance();
-
-// Export default for consistency
 export default analytics;

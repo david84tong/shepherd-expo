@@ -26,7 +26,7 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import analytics from '../../utils/analytics';
+import { trackEvent, identifyUser, setUserProperties } from '../../utils/analytics';
 import Rive, { Fit, Alignment } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
 import Toast from 'react-native-toast-message';
@@ -315,8 +315,8 @@ export default function SaveProgressScreen() {
         useUserStore.getState().setProStatus('pro');
       }
       // Identify user in Mixpanel
-      analytics.setUserId(uid);
-      analytics.setUserProperties({
+      identifyUser(uid);
+      setUserProperties({
         ...userData,
         $name: displayName,
         spiritual_goal: spiritualGoal,
@@ -348,7 +348,7 @@ export default function SaveProgressScreen() {
         console.error('Error identifying user in Adapty:', adaptyError);
       }
 
-      analytics.logEvent('OnboardingSignUp_Completed');
+      trackEvent('OnboardingSignUp_Completed');
 
       // Create user in Firestore
       const success = await createUser(uid, userData);
@@ -366,7 +366,7 @@ export default function SaveProgressScreen() {
   // Handle sign in with Apple
   const handleAppleSignIn = async () => {
     const eventName = isLoginMode ? 'Login_Tapped_Apple' : 'OnboardingSignUp_Tapped_Apple';
-    analytics.logEvent(eventName);
+    trackEvent(eventName);
 
     try {
       hapticLight();
@@ -462,7 +462,7 @@ export default function SaveProgressScreen() {
       const analyticsEventName = isLoginMode
         ? 'Login_Failed_Apple'
         : 'OnboardingSignUp_Failed_Apple';
-      analytics.logEvent(analyticsEventName, {
+      trackEvent(analyticsEventName, {
         error: error.message,
       });
 
@@ -481,7 +481,7 @@ export default function SaveProgressScreen() {
   // Handle sign in with Google
   const handleGoogleSignIn = async () => {
     const eventName = isLoginMode ? 'Login_Tapped_Google' : 'OnboardingSignUp_Tapped_Google';
-    analytics.logEvent(eventName);
+    trackEvent(eventName);
 
     try {
       hapticLight();
@@ -564,7 +564,7 @@ export default function SaveProgressScreen() {
       const analyticsEventName = isLoginMode
         ? 'Login_Failed_Google'
         : 'OnboardingSignUp_Failed_Google';
-      analytics.logEvent(analyticsEventName, {
+      trackEvent(analyticsEventName, {
         error: error.message,
       });
 
@@ -612,7 +612,7 @@ export default function SaveProgressScreen() {
       if (isLoginMode) {
         try {
           user = await signInWithEmailPassword(email, password, true);
-          analytics.logEvent('Login_Success_Email');
+          trackEvent('Login_Success_Email');
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
           await syncUser(user);
 
@@ -644,7 +644,7 @@ export default function SaveProgressScreen() {
             },
           ]);
 
-          analytics.logEvent('Login_Failed_Email', {
+          trackEvent('Login_Failed_Email', {
             error: loginError.code || loginError.message,
           });
           return;
@@ -659,7 +659,7 @@ export default function SaveProgressScreen() {
           user = await signUpWithEmailPassword(email, password, displayName);
           console.log("user ====>", user);
 
-          analytics.logEvent('OnboardingSignUp_Success_Email');
+          trackEvent('OnboardingSignUp_Success_Email');
 
           await createUserFromResponses(user.uid, displayName);
           await completeOnboarding();
@@ -698,7 +698,7 @@ export default function SaveProgressScreen() {
             },
           ]);
 
-          analytics.logEvent('OnboardingSignUp_Failed_Email', {
+          trackEvent('OnboardingSignUp_Failed_Email', {
             error: signupError.code || signupError.message,
           });
           return;
@@ -712,7 +712,7 @@ export default function SaveProgressScreen() {
         [{ text: 'OK' }]
       );
 
-      analytics.logEvent(isLoginMode ? 'Login_Failed_Email' : 'OnboardingSignUp_Failed_Email', {
+      trackEvent(isLoginMode ? 'Login_Failed_Email' : 'OnboardingSignUp_Failed_Email', {
         error: error.message,
       });
     } finally {
@@ -725,7 +725,7 @@ export default function SaveProgressScreen() {
     if (isLoginMode) return; // Don't allow anonymous login in login mode
 
     hapticLight();
-    analytics.logEvent('OnboardingSignUp_Tapped_Skip');
+    trackEvent('OnboardingSignUp_Tapped_Skip');
     if (showConfirmation) {
       Alert.alert(
         'Skip Sign In?',
