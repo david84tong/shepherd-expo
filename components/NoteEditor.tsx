@@ -121,12 +121,17 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   };
 
   return (
-    <EmptyModal visible={localVisible} onClose={closeWithAnimation}>
+    <EmptyModal visible={localVisible} onClose={closeWithAnimation} height="80%">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
         keyboardVerticalOffset={80}
       >
+          <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom:100 }}
+        >
         <View style={styles.dragHandle} />
 
         {/* Header */}
@@ -181,6 +186,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
             <Text style={styles.saveButtonText}>Save</Text>
           </TouchableOpacity>
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </EmptyModal>
   );
@@ -218,7 +224,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     height: 6,
     marginBottom: 20,
-    marginTop: -10,
     width: 40,
   },
   header: {
