@@ -137,7 +137,8 @@ export default function TabsLayout() {
       
       if (hasCompletedTodaysCheckIn) {
         const reason = isFirstAppLaunch ? "First app launch" : "Daily first load";
-        appLog(`[TabsLayout] ${reason}, user is signed in but not pro. Showing free trial paywall.`);
+        appLog(`[TabsLayout] ${reason}, user is signed in but not pro. Platform: ${Platform.OS}. Showing free trial paywall.`);
+        // Free trial paywall is supported on both iOS and Android
         presentFreeTrialPaywall();
       } else {
         appLog(`[TabsLayout] User has not completed today's check-in. Skipping free trial paywall.`);

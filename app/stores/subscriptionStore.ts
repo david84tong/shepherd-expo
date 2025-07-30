@@ -195,6 +195,10 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
   presentFreeTrialPaywall: async () => {
     appLog('[SubscriptionStore] presentFreeTrialPaywall called');
+    
+    // Ensure free trial paywall works for both iOS and Android
+    appLog(`[SubscriptionStore] Platform: ${Platform.OS} - Free trial paywall supported`);
+    
     // Make sure we have the latest pro status before showing any paywall
     await get().forceRefreshProStatus();
     // First check if user is already pro
@@ -211,10 +215,6 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       return PAYWALL_RESULT.CANCELLED;
     }
 
-    if(Platform.OS =="android"){
-      return get().presentPaywall();
-    }
-    
     // Check if a paywall is already presenting
     if (get().isPaywallPresenting) {
       appLog('[SubscriptionStore] Paywall already presenting, skipping free trial paywall');
@@ -225,6 +225,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       set({ isPaywallPresenting: true });
       analytics.logEvent('presentFreeTrialPaywall', {
         fromScreen: get().fromScreen,
+        platform: Platform.OS, // Track platform for analytics
       });
       appLog('[SubscriptionStore] About to fetch paywall from Adapty');
       const paywall = await adapty.getPaywall('freeTrial-simple');
@@ -1066,6 +1067,8 @@ function handlePostPurchaseNavigation() {
 export const safelyPresentPaywall = async (paywallType: 'free' | 'halfoff' | 'normal' = 'free') => {
   const store = useSubscriptionStore.getState();
   
+  appLog(`[safelyPresentPaywall] Called with paywallType: ${paywallType}, Platform: ${Platform.OS}`);
+  
   // Force refresh to get latest status
   await store.forceRefreshProStatus();
   
@@ -1075,7 +1078,7 @@ export const safelyPresentPaywall = async (paywallType: 'free' | 'halfoff' | 'no
     return PAYWALL_RESULT.CANCELLED;
   }
   
-  // Present the appropriate paywall
+  // Present the appropriate paywall - works on both iOS and Android
   switch (paywallType) {
     case 'free':
       return store.presentFreeTrialPaywall();
