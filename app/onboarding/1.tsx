@@ -15,12 +15,11 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOnboardingStore } from '../stores/onboardingStore';
-import { useAnalytics } from '../hooks/useAnalytics';
 import PrimaryButton from '../../components/PrimaryButton';
 import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 import { AccessibilityInfo } from 'react-native';
 
-import analytics from '../../utils/analytics';
+import { trackEvent } from '../../utils/analytics';
 import { IS_ANDROID } from '../utils/utils';
 import { appLog, RPH } from '../helper/helper';
 import { hapticHeavy, hapticLight, hapticRigid } from '~/utils/haptics';
@@ -51,8 +50,7 @@ export default function OnboardingWelcomeScreen() {
   const insets = useSafeAreaInsets();
   const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
 
-  // Initialize analytics
-  const { logScreenView, logButtonPress, logEvent, AnalyticsEvent, EventCategory } = useAnalytics();
+  // Initialize analytics - removed useAnalytics hook
 
   // A/B Test assignment function
   const assignABTest = async () => {
@@ -70,7 +68,7 @@ export default function OnboardingWelcomeScreen() {
         appLog('[OnboardingScreen1] Assigned new A/B test value:', abTestValue);
 
         // Log analytics event for A/B test assignment
-        analytics.logEvent('ABTest_Assigned', {
+        trackEvent('ABTest_Assigned', {
           abTestGroup: abTestValue,
           screenName: 'OnboardingWelcomeScreen',
         });
@@ -89,17 +87,13 @@ export default function OnboardingWelcomeScreen() {
 
     // Initialize analytics first before logging any events
     const initializeAnalytics = async () => {
-      if (!analytics.isInitialized) {
-        appLog('🔧 Initializing analytics in onboarding...');
-        await analytics.init();
-        appLog('✅ Analytics initialized in onboarding');
-      }
+      // Analytics initialization is handled automatically in the new implementation
 
       // Assign A/B test after analytics is ready
       await assignABTest();
 
       // Now log the screen view event
-      analytics.logEvent('LambLostScreenViewed', {
+      trackEvent('LambLostScreenViewed', {
         screenName: 'OnboardingWelcomeScreen',
         step: 1,
       });
@@ -328,7 +322,7 @@ export default function OnboardingWelcomeScreen() {
     if (!secondStageActive || isLambTapped) return;
 
     // Log the lamb tap interaction
-    logEvent('lamb_tap', EventCategory.USER_ACTION, {
+    trackEvent('lamb_tap', {
       step: 1,
       screenName: 'Welcome',
       stage: 'second_stage',
@@ -393,7 +387,7 @@ export default function OnboardingWelcomeScreen() {
 
     if (textPhase === 2) {
       // Log button press for starting journey
-      analytics.logEvent('Onboarding_Tapped_StartJourney', {
+      trackEvent('Onboarding_Tapped_StartJourney', {
         step: 1,
         screenName: 'Welcome',
         textPhase: textPhase,
@@ -404,7 +398,7 @@ export default function OnboardingWelcomeScreen() {
       startZoomAndTransition();
     } else if (isLambTapped) {
       // Log button press for claiming lamb
-      analytics.logEvent('Onboarding_Tapped_ClaimLostLamb', {
+      trackEvent('Onboarding_Tapped_ClaimLostLamb', {
         step: 1,
         screenName: 'Welcome',
         textPhase: textPhase,
@@ -467,7 +461,7 @@ export default function OnboardingWelcomeScreen() {
           <Pressable
             onPress={() => {
               hapticLight();
-              analytics.logEvent('Onboarding_Tapped_Back', {
+              trackEvent('Onboarding_Tapped_Back', {
                 step: 1,
                 screenName: 'Welcome',
                 action: 'Back to Auth',

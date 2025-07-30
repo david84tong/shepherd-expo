@@ -6,37 +6,16 @@ import { PATH_OPTIONS, PathOption } from '../models/Path';
 import { checkStreakAndApplyPenalties } from './streakHook';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
-import analytics from '../../utils/analytics';
+import { initializeAnalytics, trackEvent } from '../../utils/analytics';
 import { appLog } from '../helper/helper';
-// Key to check if app has been initialized
-const APP_INITIALIZED_KEY = 'app_initialized';
-// Generate a unique UUID for anonymous users
-const generateUUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = (Math.random() * 16) | 0,
-      v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v?.toString(16);
-  });
-};
-// Helper function to safely format timestamp
-const formatTimestamp = (timestamp: any) => {
-  if (!timestamp) return 'Not set';
-  if (timestamp.toDate && typeof timestamp.toDate === 'function') {
-    return timestamp.toDate().toLocaleString();
-  }
-  return 'Invalid timestamp';
-};
 // This function can be called after init or when app comes to foreground
 export const onAppForegroundOrInit = async () => {
   appLog('onAppForegroundOrInit=====>', onAppForegroundOrInit);
-  
-  
+
   // Initialize analytics if not already initialized
-  if (!analytics.isInitialized) {
-    appLog('🔧 Initializing analytics on app foreground...');
-    await analytics.init();
-  }
-  
+  appLog('🔧 Initializing analytics on app foreground...');
+  await initializeAnalytics();
+
   const getUser = useUserStore.getState().getUser;
   const setSelectedPath = usePathStore.getState().setSelectedPath;
   const currentUser = auth().currentUser;
@@ -51,7 +30,7 @@ export const onAppForegroundOrInit = async () => {
     if (success && firestoreData) {
       // Update the Zustand store with Firestore data
       await useUserStore.getState().syncFirestoreData(firestoreData);
-      
+
       // Update selected path if needed
       const updatedUserData = getUser();
       if (updatedUserData.selectedPathId) {
@@ -98,7 +77,7 @@ const restoreUserState = async () => {
     const completedMapPaths = useUserStore.getState().completedMapPaths;
     // Update the Zustand store with Firestore data
     await useUserStore.getState().syncFirestoreData(firestoreData);
-    
+
     if (firestoreData?.completedPrayers && !prayerCompleted) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -172,23 +151,22 @@ const restoreUserState = async () => {
 export const useAppInitialization = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isAnalyticsReady, setIsAnalyticsReady] = useState(false);
-  
+
   useEffect(() => {
     const initializeApp = async () => {
-      try {  
+      try {
         // Initialize analytics first and wait for completion
         appLog('🔧 Initializing analytics...');
-        if (!analytics.isInitialized) {
-          await analytics.init();
-          appLog('✅ Analytics initialized successfully');
-        } else {
-          appLog('✅ Analytics already initialized');
-        }
+        await initializeAnalytics();
+        appLog('✅ Analytics initialized successfully');
         setIsAnalyticsReady(true);
-        
+
         // Test analytics integration
-        analytics.testAnalytics();
-        
+        trackEvent('test_analytics_integration', {
+          source: 'init_hook',
+          timestamp: new Date().toISOString(),
+        });
+
         // Restore user state
         await restoreUserState();
         setIsInitialized(true);
@@ -204,5 +182,4 @@ export const useAppInitialization = () => {
 };
 
 // Default export for Expo Router compatibility
-export default {}
-
+export default {};
