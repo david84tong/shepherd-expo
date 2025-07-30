@@ -10,10 +10,12 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
 import { useUserStore } from '../stores/userStore';
 import { useSoundStore } from '../stores/soundStore';
-import analytics from '../../utils/analytics';
+import { identifyUser, trackEvent, reset as resetAnalytics } from '../../utils/analytics';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { syncStreakDataToWidget } from '~/utils/widgetSync';
 import { appLog } from '../helper/helper';
+import { useOnboardingStore } from '../stores/onboardingStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Safely get WidgetDataSharer with error handling
 const getWidgetDataSharer = () => {
@@ -37,7 +39,7 @@ const safeWidgetCall = (method: string, ...args: any[]) => {
     console.warn(`📱 Cannot call ${method} - WidgetDataSharer not available`);
     return;
   }
-  
+
   try {
     if (method === 'updateVerseData' && widgetModule.updateVerseData) {
       widgetModule.updateVerseData(...args);
@@ -75,7 +77,8 @@ export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Get user from the store
-  const { getUser, setUser: updateUser, setCreatedAt, setUpdatedAt } = useUserStore();
+  const { getUser, setUser: updateUser } = useUserStore();
+  const { responses } = useOnboardingStore();
   const user = getUser?.();
 
   // Listen to auth state changes
@@ -90,11 +93,73 @@ export const useAuth = () => {
     return () => unsubscribe();
   }, []);
 
+  // Centralized post sign-in logic
+  const postSignIn = async (user: auth.FirebaseAuthTypes.User, fullNameFromParam?: string) => {
+    try {
+      const uid = user.uid;
+      const emailFromAuth = user.email || '';
+      const finalFullName = fullNameFromParam || user.displayName || '';
+
+      // Identify the user in analytics
+      await identifyUser(uid, {
+        email: emailFromAuth,
+        fullName: finalFullName,
+      });
+
+      // Check if user exists in Firestore
+      const userDoc = await firestore().collection('users').doc(uid).get();
+      
+      if (!userDoc.exists) {
+        // First-time user: create profile
+        console.log(`✨ New user sign-in: ${uid}. Creating Firestore document.`);
+        
+        const newUserData = {
+          email: emailFromAuth,
+          fullName: finalFullName,
+          data: responses,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+        };
+        
+        await firestore().collection('users').doc(uid).set(newUserData);
+      } else {
+        // Existing user: update if needed
+        console.log(`👤 Existing user sign-in: ${uid}.`);
+        
+        const existingData = userDoc.data();
+        const updatePayload: any = {};
+        
+        if (emailFromAuth && emailFromAuth !== existingData?.email) {
+          updatePayload.email = emailFromAuth;
+        }
+        if (finalFullName && finalFullName !== existingData?.fullName) {
+          updatePayload.fullName = finalFullName;
+        }
+
+        if (Object.keys(updatePayload).length > 0) {
+          updatePayload.updatedAt = firestore.FieldValue.serverTimestamp();
+          await firestore().collection('users').doc(uid).update(updatePayload);
+        }
+      }
+
+      // Handle profile avatar upload if needed
+      const avatarUri = await AsyncStorage.getItem('onboarding-profile-avatar-uri');
+      if (avatarUri) {
+        // Avatar upload would be handled here if needed
+        await AsyncStorage.removeItem('onboarding-profile-avatar-uri');
+      }
+    } catch (error) {
+      console.error('❌ Error during post sign-in:', error);
+      throw error;
+    }
+  };
+
   const signInWithApple = async (isLoginMode = false) => {
     appLog('[Auth] signInWithApple() called');
     try {
       setLoading(true);
       setError(null);
+      
       // Check if Apple Sign In is available on the device
       const isAvailable = await AppleAuthentication.isAvailableAsync();
       if (!isAvailable) {
@@ -128,6 +193,7 @@ export const useAuth = () => {
         appLog('[Auth] No identityToken returned from Apple');
         throw new Error('Authentication incomplete: No identity token provided from Apple');
       }
+      
       // Create a Firebase credential
       const firebaseCredential = auth.AppleAuthProvider.credential(
         identityToken,
@@ -157,21 +223,22 @@ export const useAuth = () => {
       if (isLoginMode) {
         // In login mode, fetch the user's data from Firestore
         appLog('[Auth] Login mode: fetching existing user data from Firestore');
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         const success = await fetchFromFirestore?.({ currentLoggedUser: userCredential?.user });
         if (!success) {
           appLog('[Auth] Failed to fetch user data from Firestore');
           throw new Error('Failed to fetch your account data. Please try again.');
         }
+        
+        // Identify user in analytics for login
+        await identifyUser(userCredential.user.uid);
+        
         return userCredential.user;
       }
 
-      // If not in login mode (new user registration), proceed with user creation
       // Get user info from Firebase user and Apple credential
-      const { uid, email: firebaseEmail } = userCredential.user;
-
-      // Combine info from Apple credential and Firebase
-      const email = firebaseEmail || credential.email || '';
+      const { uid } = userCredential.user;
+      const email = userCredential.user.email || credential.email || '';
       const displayName = credential.fullName?.givenName
         ? `${credential.fullName.givenName} ${credential.fullName.familyName || ''}`
         : userCredential.user.displayName || 'Anonymous User';
@@ -182,17 +249,8 @@ export const useAuth = () => {
         email: email ? 'exists' : 'none',
       });
 
-      // Create or update user document in Firestore
-      const userDoc = {
-        id: uid,
-        email,
-        displayName,
-        createdAt: firestore.Timestamp.now(),
-        updatedAt: firestore.Timestamp.now(),
-      };
-
-      await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
-      appLog('[Auth] User document updated in Firestore');
+      // Use postSignIn for common logic
+      await postSignIn(userCredential.user, displayName);
 
       // Update local store
       updateUser({
@@ -202,15 +260,13 @@ export const useAuth = () => {
       });
 
       // Wait for auth state to be ready before fetching data
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Fetch the complete user data to ensure all fields are synced
       await fetchFromFirestore({ currentLoggedUser: userCredential.user });
 
       // Log successful sign in
-      if (analytics.isInitialized) {
-        analytics.logEvent('auth_success');
-      }
+      trackEvent('auth_success');
 
       return userCredential.user;
     } catch (err) {
@@ -234,12 +290,11 @@ export const useAuth = () => {
       }
 
       // Log authentication error
-      if (analytics.isInitialized) {
-        analytics.logError('Authentication error', 'apple_auth_failed', {
-          error_message: error.message,
-          error_name: error.name,
-        });
-      }
+      trackEvent('auth_error', {
+        method: 'apple',
+        error_message: error.message,
+        error_name: error.name,
+      });
 
       setError(error);
       throw error;
@@ -259,33 +314,19 @@ export const useAuth = () => {
       const userCredential = await auth().signInAnonymously();
       appLog('[Auth] Anonymous sign-in successful, uid:', userCredential.user.uid);
 
-      // Create anonymous user document
-      const { uid } = userCredential.user;
-      const userDoc = {
-        id: uid,
-        displayName: 'Anonymous User',
-        createdAt: firestore.Timestamp.now(),
-        updatedAt: firestore.Timestamp.now(),
-      };
-
-      await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
+      // Use postSignIn for common logic
+      await postSignIn(userCredential.user, 'Anonymous User');
 
       // Update local store
       updateUser({
-        id: uid,
+        id: userCredential.user.uid,
         displayName: 'Anonymous User',
       });
 
       syncStreakDataToWidget(0, firestore.Timestamp.now()?.toDate());
+      
       // Log successful anonymous sign in
-      if (analytics.isInitialized) {
-        analytics.logEvent('auth_success_anonymously_by_clicking_skip_button');
-      }
-
-      // Adapty: login user after successful anonymous sign in
-      // if (userCredential?.user?.uid) {
-      //   await useSubscriptionStore.getState().loginAdaptyUser(userCredential.user.uid);
-      // }
+      trackEvent('auth_success_anonymously_by_clicking_skip_button');
 
       return userCredential.user;
     } catch (err) {
@@ -293,11 +334,10 @@ export const useAuth = () => {
       appLog('[Auth] Anonymous sign in error:', error.message, error.stack);
 
       // Log authentication error
-      if (analytics.isInitialized) {
-        analytics.logError('Authentication error', 'anonymous_auth_failed', {
-          error_message: error.message,
-        });
-      }
+      trackEvent('auth_error', {
+        method: 'anonymous',
+        error_message: error.message,
+      });
 
       setError(error);
       throw error;
@@ -373,47 +413,44 @@ export const useAuth = () => {
 
       if (isLoginMode) {
         // Wait for auth state to be ready before fetching data
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         appLog('userCredential?.user ===>', userCredential?.user);
 
         const success = await fetchFromFirestore({ currentLoggedUser: userCredential?.user });
         if (!success) {
           throw new Error('Failed to fetch your account data. Please try again.');
         }
+        
+        // Identify user in analytics for login
+        await identifyUser(userCredential.user.uid);
+        
         return userCredential.user;
       }
 
       // Save user info
       const { uid, email, displayName } = userCredential.user;
-      const userDoc = {
-        id: uid,
-        email: email || '',
-        displayName: displayName || 'Google User',
-        createdAt: firestore.Timestamp.now(),
-        updatedAt: firestore.Timestamp.now(),
-      };
-
-      await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
-
-      // Wait for auth state to be ready before fetching data
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      // Use postSignIn for common logic
+      await postSignIn(userCredential.user, displayName || 'Google User');
 
       // Update local store with basic info first
       updateUser({
         id: uid,
-        displayName: userDoc.displayName,
-        email: userDoc.email,
+        displayName: displayName || 'Google User',
+        email: email || '',
       });
+
+      // Wait for auth state to be ready before fetching data
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Fetch the complete user data to ensure all fields are synced
       await fetchFromFirestore({ currentLoggedUser: userCredential?.user });
 
-      if (analytics.isInitialized) {
-        analytics.logEvent('auth_success', {
-          method: 'google',
-          uid: uid.substring(0, 8),
-        });
-      }
+      trackEvent('auth_success', {
+        method: 'google',
+        uid: uid.substring(0, 8),
+      });
+      
       return userCredential.user;
     } catch (err) {
       const error = err as Error;
@@ -421,11 +458,12 @@ export const useAuth = () => {
         error.message =
           'An account with this Google account already exists. Would you like to login instead?';
       }
-      if (analytics.isInitialized) {
-        analytics.logError('Authentication error', 'google_auth_failed', {
-          error_message: error.message,
-        });
-      }
+      
+      trackEvent('auth_error', {
+        method: 'google',
+        error_message: error.message,
+      });
+      
       setError(error);
       throw error;
     } finally {
@@ -451,7 +489,8 @@ export const useAuth = () => {
       // Clear widget data when signing out
       safeWidgetCall('updateWidgetStatus', 'loggedOut');
 
-      // await subscriptionStore.logoutAdaptyUser();
+      // Reset analytics
+      await resetAnalytics();
     } catch (error) {
       appLog('[Auth] Error during sign out:', error);
       
@@ -475,21 +514,12 @@ export const useAuth = () => {
       // Update display name
       await userCredential.user.updateProfile({ displayName });
 
-      // Create user document
-      const { uid } = userCredential.user;
-      const userDoc = {
-        id: uid,
-        email,
-        displayName,
-        createdAt: firestore.Timestamp.now(),
-        updatedAt: firestore.Timestamp.now(),
-      };
-
-      await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
+      // Use postSignIn for common logic
+      await postSignIn(userCredential.user, displayName);
 
       // Update local store
       updateUser({
-        id: uid,
+        id: userCredential.user.uid,
         displayName,
         email,
       });
@@ -500,12 +530,10 @@ export const useAuth = () => {
       // Fetch the complete user data
       await fetchFromFirestore({ currentLoggedUser: userCredential.user });
 
-      if (analytics.isInitialized) {
-        analytics.logEvent('auth_success', {
-          method: 'email',
-          uid: uid.substring(0, 8),
-        });
-      }
+      trackEvent('auth_success', {
+        method: 'email',
+        uid: userCredential.user.uid.substring(0, 8),
+      });
 
       return userCredential.user;
     } catch (err: any) {
@@ -513,7 +541,8 @@ export const useAuth = () => {
       
       // Handle specific Firebase auth errors
       if (err.code === 'auth/email-already-in-use') {
-        error.message = 'An account with this email already exists. Would you like to login instead?';
+        error.message =
+          'An account with this email already exists. Would you like to login instead?';
       } else if (err.code === 'auth/invalid-email') {
         error.message = 'Please enter a valid email address.';
       } else if (err.code === 'auth/weak-password') {
@@ -525,12 +554,12 @@ export const useAuth = () => {
         error.message = 'Unable to create account. Please try again.';
       }
       
-      if (analytics.isInitialized) {
-        analytics.logError('Authentication error', 'email_signup_failed', {
-          error_message: error.message,
-          error_code: err.code,
-        });
-      }
+      trackEvent('auth_error', {
+        method: 'email_signup',
+        error_message: error.message,
+        error_code: err.code,
+      });
+      
       setError(error);
       throw error;
     } finally {
@@ -563,6 +592,10 @@ export const useAuth = () => {
         if (!success) {
           throw new Error('Failed to fetch your account data. Please try again.');
         }
+        
+        // Identify user in analytics
+        await identifyUser(userCredential.user.uid);
+        
         return userCredential.user;
       }
 
@@ -574,21 +607,23 @@ export const useAuth = () => {
         email,
       });
 
-      if (analytics.isInitialized) {
-        analytics.logEvent('auth_success', {
-          method: 'email',
-          uid: uid.substring(0, 8),
-        });
-      }
+      // Identify user in analytics
+      await identifyUser(uid, { email, displayName });
+
+      trackEvent('auth_success', {
+        method: 'email',
+        uid: uid.substring(0, 8),
+      });
 
       return userCredential.user;
     } catch (err) {
       const error = err as Error;
-      if (analytics.isInitialized) {
-        analytics.logError('Authentication error', 'email_signin_failed', {
-          error_message: error.message,
-        });
-      }
+      
+      trackEvent('auth_error', {
+        method: 'email_signin',
+        error_message: error.message,
+      });
+      
       setError(error);
       throw error;
     } finally {
@@ -654,6 +689,9 @@ export const useAuth = () => {
         // Fetch and sync user data
         await fetchFromFirestore({ currentLoggedUser: result.user });
 
+        // Identify upgraded user in analytics
+        await identifyUser(result.user.uid, { email, displayName });
+
         appLog('[Auth] Successfully upgraded to Apple account');
         return result;
       } catch (error: any) {
@@ -663,6 +701,9 @@ export const useAuth = () => {
           appLog('[Auth] Apple ID already in use, signing in with existing account');
           const result = await auth().signInWithCredential(firebaseCredential);
           await fetchFromFirestore({ currentLoggedUser: result.user });
+          
+          // Identify user in analytics
+          await identifyUser(result.user.uid);
           
           return result;
         }
@@ -694,4 +735,4 @@ export const useAuth = () => {
 WebBrowser.maybeCompleteAuthSession();
 
 // Default export for Expo Router compatibility
-export default {}
+export default {};

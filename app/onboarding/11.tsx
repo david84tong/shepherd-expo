@@ -27,7 +27,7 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import analytics from '../../utils/analytics';
+import { trackEvent, identifyUser } from '../../utils/analytics';
 import Rive, { Fit, Alignment } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
 import Toast from 'react-native-toast-message';
@@ -82,7 +82,7 @@ export default function SaveProgressScreen() {
 
   // Log screen load analytics event
   useEffect(() => {
-    analytics.logEvent('onboarding_screen_11_loaded', {
+    trackEvent('onboarding_screen_11_loaded', {
       isLoginMode: params.isLogin === 'true',
       timestamp: new Date().toISOString(),
     });
@@ -102,7 +102,7 @@ export default function SaveProgressScreen() {
   appLog('hideGoogleLogin ==>', hideGoogleLogin);
   appLog('showEmailPassword ==>', showEmailPassword);
 
-  const { clearResponses, responses, getAllResponses } = useOnboardingStore();
+  const { clearResponses, getAllResponses } = useOnboardingStore();
   const { createUser } = useUserStore();
   const [showNoAccountToast, setShowNoAccountToast] = useState(false);
   const ageRange = useOnboardingStore.getState().getAllResponses().ageRange;
@@ -123,7 +123,6 @@ export default function SaveProgressScreen() {
   // Add new state for email auth
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [showEmailForm, setShowEmailForm] = useState(false);
 
   useEffect(() => {
@@ -209,6 +208,10 @@ export default function SaveProgressScreen() {
     if (success && firestoreData) {
       await useUserStore.getState().syncFirestoreData(firestoreData);
 
+      // Identify the user in analytics after successful login
+      await identifyUser(user.uid);
+      appLog('[syncUser] User identified in analytics:', user.uid);
+
       // Force refresh pro status to ensure it's properly synced after referral code application
       try {
         const { forceRefreshProStatus } = useSubscriptionStore.getState();
@@ -272,6 +275,22 @@ export default function SaveProgressScreen() {
           useHomeStore.getState().setReadingCompleted(true);
         }
       }
+
+      // Set user properties in analytics after successful login
+      await identifyUser(user.uid, {
+        name: firestoreData.displayName || 'Anonymous User',
+        spiritual_goal: firestoreData.spiritualGoal,
+        experience_level: firestoreData.experienceLevel,
+        denomination: firestoreData.denomination,
+        age_range: firestoreData.ageRange,
+        notification_enabled: firestoreData.notificationEnabled,
+        notification_time: firestoreData.notificationTime,
+        selected_path: firestoreData.selectedPathId,
+        lamb_level: firestoreData.lamb?.level,
+        lamb_xp: firestoreData.lamb?.xp,
+        lamb_name: firestoreData.lamb?.name,
+      });
+      appLog('[syncUser] User properties set in analytics');
     }
   }
 
@@ -395,24 +414,10 @@ export default function SaveProgressScreen() {
       } catch (error) {
         appLog('[createUserFromResponses] Error checking existing pro status:', error);
       }
-      // Identify user in Mixpanel
-      // Only call setUserId if we haven't already done so (for anonymous signup flow)
-      const currentUserId = analytics.getCurrentUserId();
-      if (currentUserId !== uid) {
-        // Pass isNewUser=true since this is called during user creation
-        await analytics.setUserId(uid, true);
-        
-        // Add a small delay to ensure Mixpanel processes the alias/identify
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      } else {
-        appLog('[createUserFromResponses] User already identified as:', uid, '- skipping setUserId');
-      }
-
-      analytics.setUserProperties({
-        ...userData,
-        $name: displayName,
+      // Identify user in analytics
+      await identifyUser(uid, {
+        name: displayName,
         spiritual_goal: spiritualGoal,
-        // streak_commit: userData.streakCommit,
         experience_level: userData.experienceLevel,
         denomination: userData.denomination,
         age_range: userData.ageRange,
@@ -441,7 +446,7 @@ export default function SaveProgressScreen() {
         console.error('Error identifying user in Adapty:', adaptyError);
       }
 
-      analytics.logEvent('OnboardingSignUp_Completed');
+      trackEvent('OnboardingSignUp_Completed');
 
       // Create user in Firestore
       const success = await createUser(uid, userData);
@@ -459,7 +464,7 @@ export default function SaveProgressScreen() {
   // Handle sign in with Apple
   const handleAppleSignIn = async () => {
     const eventName = isLoginMode ? 'Login_Tapped_Apple' : 'OnboardingSignUp_Tapped_Apple';
-    analytics.logEvent(eventName);
+    trackEvent(eventName);
 
     try {
       hapticLight();
@@ -555,7 +560,7 @@ export default function SaveProgressScreen() {
       const analyticsEventName = isLoginMode
         ? 'Login_Failed_Apple'
         : 'OnboardingSignUp_Failed_Apple';
-      analytics.logEvent(analyticsEventName, {
+      trackEvent(analyticsEventName, {
         error: error.message,
       });
 
@@ -574,7 +579,7 @@ export default function SaveProgressScreen() {
   // Handle sign in with Google
   const handleGoogleSignIn = async () => {
     const eventName = isLoginMode ? 'Login_Tapped_Google' : 'OnboardingSignUp_Tapped_Google';
-    analytics.logEvent(eventName);
+    trackEvent(eventName);
 
     try {
       hapticLight();
@@ -657,7 +662,7 @@ export default function SaveProgressScreen() {
       const analyticsEventName = isLoginMode
         ? 'Login_Failed_Google'
         : 'OnboardingSignUp_Failed_Google';
-      analytics.logEvent(analyticsEventName, {
+      trackEvent(analyticsEventName, {
         error: error.message,
       });
 
@@ -705,7 +710,7 @@ export default function SaveProgressScreen() {
       if (isLoginMode) {
         try {
           user = await signInWithEmailPassword(email, password, true);
-          analytics.logEvent('Login_Success_Email');
+          trackEvent('Login_Success_Email');
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
           await syncUser(user);
 
@@ -737,7 +742,7 @@ export default function SaveProgressScreen() {
             },
           ]);
 
-          analytics.logEvent('Login_Failed_Email', {
+          trackEvent('Login_Failed_Email', {
             error: loginError.code || loginError.message,
           });
           return;
@@ -752,7 +757,7 @@ export default function SaveProgressScreen() {
           user = await signUpWithEmailPassword(email, password, displayName);
           appLog('user ====>', user);
 
-          analytics.logEvent('OnboardingSignUp_Success_Email');
+          trackEvent('OnboardingSignUp_Success_Email');
 
           await createUserFromResponses(user.uid, displayName);
           await completeOnboarding();
@@ -791,7 +796,7 @@ export default function SaveProgressScreen() {
             },
           ]);
 
-          analytics.logEvent('OnboardingSignUp_Failed_Email', {
+          trackEvent('OnboardingSignUp_Failed_Email', {
             error: signupError.code || signupError.message,
           });
           return;
@@ -805,7 +810,7 @@ export default function SaveProgressScreen() {
         [{ text: 'OK' }]
       );
 
-      analytics.logEvent(isLoginMode ? 'Login_Failed_Email' : 'OnboardingSignUp_Failed_Email', {
+      trackEvent(isLoginMode ? 'Login_Failed_Email' : 'OnboardingSignUp_Failed_Email', {
         error: error.message,
       });
     } finally {
@@ -818,7 +823,7 @@ export default function SaveProgressScreen() {
     if (isLoginMode) return; // Don't allow anonymous login in login mode
 
     hapticLight();
-    analytics.logEvent('OnboardingSignUp_Tapped_Skip');
+    trackEvent('OnboardingSignUp_Tapped_Skip');
     if (showConfirmation) {
       Alert.alert(
         'Skip Sign In?',
@@ -841,31 +846,13 @@ export default function SaveProgressScreen() {
   const createAnonymousAccount = async () => {
     try {
       setLoading(true);
-      
-      // Get the current analytics user ID before creating Firebase anonymous user
-      const currentAnalyticsUserId = analytics.getCurrentUserId();
-      appLog('[createAnonymousAccount] Current analytics user ID:', currentAnalyticsUserId);
-      
+
       const user = await signInAnonymously();
       if (user) {
-        // IMPORTANT: We need to properly transition from the onboarding anonymous user
-        // to the Firebase anonymous user
+        // Identify the anonymous user in analytics
         appLog('[createAnonymousAccount] Firebase anonymous UID:', user.uid);
-        appLog('[createAnonymousAccount] Transitioning from:', currentAnalyticsUserId, 'to:', user.uid);
-        
-        // Ensure analytics is fully initialized before attempting to alias IDs.
-        // If init was still in-flight while the user tapped "Skip", awaiting it here guarantees
-        // that the underlying Mixpanel instance is ready to handle alias/identify calls.
-        await analytics.init();
+        await identifyUser(user.uid);
 
-        // CRITICAL: We need to alias the analytics anonymous ID to the Firebase UID
-        // This ensures all events tracked during onboarding are linked to the new Firebase user
-        if (currentAnalyticsUserId && currentAnalyticsUserId.startsWith('anon_')) {
-          // First, alias the anonymous user to the Firebase UID
-          await analytics.setUserId(user.uid, true); // isNewUser = true for alias operation
-          appLog('[createAnonymousAccount] Analytics user aliased from', currentAnalyticsUserId, 'to', user.uid);
-        }
-        
         await createUserFromResponses(user.uid, 'Anonymous User');
 
         // After creating the user, check and sync pro status from Firestore
@@ -893,7 +880,7 @@ export default function SaveProgressScreen() {
               await forceRefreshProStatus();
 
               // Update analytics
-              analytics.setUserProperties({
+              await identifyUser(user.uid, {
                 isPro: true,
                 proStatus: 'pro',
                 subscriptionType: 'referral_code',
@@ -1122,7 +1109,7 @@ export default function SaveProgressScreen() {
                           title={'Sign in with Email'}
                           onPress={() => {
                             setShowEmailForm(true);
-                            analytics.logEvent('Login_Tapped_EmailOption');
+                            trackEvent('Login_Tapped_EmailOption');
                           }}
                           disabled={loading}
                           style="mx-0"

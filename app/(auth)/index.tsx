@@ -17,7 +17,7 @@ import { useAssets } from 'expo-asset';
 import Rive, { RiveRef } from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import { LinearGradient } from 'expo-linear-gradient';
-import analytics from '~/utils/analytics';
+import { trackEvent } from '~/utils/analytics';
 import {
   useAnimatedStyle,
   withTiming,
@@ -60,7 +60,7 @@ export default function LoginScreen() {
 
   // Begin journey handler
   const handleBeginJourney = async () => {
-    analytics.logEvent('WelcomeScreen_Tapped_BeginJourney');
+    trackEvent('WelcomeScreen_Tapped_BeginJourney');
 
     try {
       // Trigger haptic feedback
@@ -112,7 +112,7 @@ export default function LoginScreen() {
 
   // Run animations
   useLayoutEffect(() => {
-    analytics.logEvent('WelcomeScreen_Screenload');
+    trackEvent('WelcomeScreen_Screenload');
     if (animationsInitialized.current) return;
 
     // Fade in the screen
@@ -246,7 +246,9 @@ export default function LoginScreen() {
 
                 {/* Made Joyful with Bible icons */}
                 <View className="flex-row items-center justify-center mt-1">
-                  <Text className="text-white font-nunito-bold text-title">{i18n.t('onboarding_made')}</Text>
+                  <Text className="text-white font-nunito-bold text-title">
+                    {i18n.t('onboarding_made')}
+                  </Text>
                   <Text
                     className="text-accentGold font-feather text-title"
                     style={{ borderBottomColor: '#F7B500' }}>
@@ -299,7 +301,7 @@ export default function LoginScreen() {
             <CustomAnimatedView style={linkStyle}>
               <TouchableOpacity
                 onPress={async () => {
-                  analytics.logEvent('WelcomeScreen_Tapped_Login');
+                  trackEvent('WelcomeScreen_Tapped_Login');
                   // Set login mode and clear navigation state
                   await AsyncStorage.setItem('isLoginMode', 'true');
                   await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
