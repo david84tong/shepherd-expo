@@ -660,21 +660,17 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     homeStore.setPrayerViewVisible(false);
     homeStore.setJournalViewVisible(false);
 
-    // For reading completion, never show streak screen - just go home
-    if (effectiveType === SuccessAnimationType.READING || effectiveType === SuccessAnimationType.SECTION_COMPLETE) {
-      router.back();
+    // Only show streak screen after BONUS completion (when all 3 tasks are done and bonus is collected)
+    if (effectiveType === SuccessAnimationType.BONUS && !sawStreakToday) {
+      // Set sawStreakToday to true before navigating to streak screen
+      setSawStreakToday(true);
+      appLog('All tasks completed and bonus collected - showing streak screen');
+      router.replace({
+        pathname: '/streak',
+      });
     } else {
-      // For other success types, check if we should show streak
-      if (!sawStreakToday) {
-        // Set sawStreakToday to true before navigating to streak screen
-        setSawStreakToday(true);
-        appLog('Setting sawStreakToday to true before navigating to streak screen');
-        router.replace({
-          pathname: '/streak',
-        });
-      } else {
-        router.back();
-      }
+      // For all other cases (reading, prayer, reflection, section complete), just go back
+      router.back();
     }
   };
 

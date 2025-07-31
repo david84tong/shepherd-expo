@@ -632,25 +632,13 @@ function resetOpenedDevotionalFromParam(){
           timestamp: new Date().toISOString()
         });
         
-        // Only trigger if reading is completed and streak hasn't been shown today
-        if (readingCompleted && !sawStreakToday) {
-          
-          appLog('🎯 Reading completed! Triggering streak screen from devotional close');
-          
-          // Mark that we've shown the streak screen today
-          homeStore.setSawStreakToday(true);
-          
-          // Navigate to streak screen
-          router.push('/streak');
-          
-          analytics.logEvent('HomeScreen_StreakTriggered', {
-            readingCompleted,
-            sawStreakToday: false,
-            timestamp: new Date().toISOString()
-          });
-          
-          return; // Exit early to prevent further processing
-        }
+        analytics.logEvent('HomeScreen_StreakTriggered_FromDevotional', {
+          readingCompleted,
+          sawStreakToday,
+          timestamp: new Date().toISOString()
+        });
+        // Streak screen will now only be triggered after bonus collection
+        // Individual task completions no longer trigger streak screen
         
         // Immediately hide the devotional content
         setDevotionalReaderVisible(false);
@@ -685,7 +673,7 @@ function resetOpenedDevotionalFromParam(){
         }, 250);
       }
     }
-  }, [router,  devotionalReaderVisible, setDevotionalReaderVisible, setFinishReading, setShowPrayerView, setPrayerViewVisible, devotionalCardOpacityAnim, riveArtboardOpacityAnim, setRiveIdle, setCurrentStateInput, riveRef, analytics]);
+  }, [router, devotionalReaderVisible, setDevotionalReaderVisible, setFinishReading, setShowPrayerView, setPrayerViewVisible, devotionalCardOpacityAnim, riveArtboardOpacityAnim, setRiveIdle, setCurrentStateInput, riveRef, analytics]);
 
   const handlePrayerPress = useCallback(() => {
     if (!isPro && prayerCompleted) {
@@ -1018,25 +1006,13 @@ function resetOpenedDevotionalFromParam(){
       timestamp: new Date().toISOString()
     });
     
-    // Only trigger if reading is completed and streak hasn't been shown today
-    if (readingCompleted && !sawStreakToday) {
-      
-      appLog('🎯 Reading completed! Triggering streak screen from journal close');
-      
-      // Mark that we've shown the streak screen today
-      homeStore.setSawStreakToday(true);
-      
-      // Navigate to streak screen
-      router.push('/streak');
-      
-      analytics.logEvent('HomeScreen_StreakTriggered_FromJournal', {
-        readingCompleted,
-        sawStreakToday: false,
-        timestamp: new Date().toISOString()
-      });
-      
-      return; // Exit early to prevent further processing
-    }
+    analytics.logEvent('HomeScreen_StreakTriggered_FromJournal', {
+      readingCompleted,
+      sawStreakToday,
+      timestamp: new Date().toISOString()
+    });
+    // Streak screen will now only be triggered after bonus collection
+    // Individual task completions no longer trigger streak screen
   }, [handlePrayerPress]);
 
   const onClosePrayer = useCallback(({ isReflectPresses }: { isReflectPresses?: boolean }) => {
@@ -1141,27 +1117,13 @@ function resetOpenedDevotionalFromParam(){
         timestamp: new Date().toISOString()
       });
       
-      // Only trigger if reading is completed and streak hasn't been shown today
-      if (readingCompleted && !sawStreakToday) {
-        
-        appLog('🎯 Reading completed! Triggering streak screen from prayer close');
-        
-        // Mark that we've shown the streak screen today
-        homeStore.setSawStreakToday(true);
-        
-        // Navigate to streak screen
-        router.push('/streak');
-        
-        analytics.logEvent('HomeScreen_StreakTriggered_FromPrayer', {
-          readingCompleted,
-          sawStreakToday: false,
-          timestamp: new Date().toISOString()
-        });
-        
-        return; // Exit early to prevent further processing
-      } else {
-        appLog('🚫 Streak conditions not met, not showing streak screen');
-      }
+      analytics.logEvent('HomeScreen_StreakTriggered_FromPrayer', {
+        readingCompleted,
+        sawStreakToday,
+        timestamp: new Date().toISOString()
+      });
+      // Streak screen will now only be triggered after bonus collection
+      // Individual task completions no longer trigger streak screen
 
     }
   }, [handleReflectionPress]);

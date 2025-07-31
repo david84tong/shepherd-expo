@@ -1112,28 +1112,8 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                 }
                 onClose({});
               }
-              // Check streak trigger conditions when user presses "Go Home" from prayer success
-              const homeStore = useHomeStore.getState();
-              const { readingCompleted, sawStreakToday } = homeStore;
-
-              // Only trigger if reading is completed and streak hasn't been shown today
-              if (readingCompleted && !sawStreakToday) {
-
-                // Mark that we've shown the streak screen today
-                homeStore.setSawStreakToday(true);
-
-                // Navigate to streak screen
-               
-                router.push('/streak');
-
-                analytics.logEvent('PrayerView_StreakTriggered_FromGoHome', {
-                  readingCompleted,
-                  sawStreakToday: false,
-                  timestamp: new Date().toISOString()
-                });
-
-                return; // Exit early to prevent further processing
-              }
+              // Streak screen will now only be triggered after bonus collection
+              // Individual task completions no longer trigger streak screen
 
             }}
             onPray={() => {
