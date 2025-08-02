@@ -30,7 +30,9 @@ class Analytics {
 
     try {
       // Initialize Mixpanel
-      this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
+      const trackAutomaticEvents = false;
+      const useNative = true;
+      this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, trackAutomaticEvents,useNative);
       await this.mixpanel.init();
       console.log('✅ Mixpanel initialized successfully');
 
