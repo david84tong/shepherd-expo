@@ -306,7 +306,7 @@ const PricingScreen = () => {
     return (
       <>
         {/* Header */}
-        {IS_ANDROID && (
+        {IS_ANDROID || IS_IOS && (
           <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
             <View className="flex-row items-center justify-between px-5 py-3 mb-3">
                 <Animated.View entering={FadeIn.duration(600)}>

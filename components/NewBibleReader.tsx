@@ -513,7 +513,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Track translation changes in analytics
   useEffect(() => {
-    analytics.setUserProperties({ translation: activeTranslation });
+    const userId = useUserStore.getState().id || 'anonymous';
+    analytics.identifyUser(userId, { translation: activeTranslation });
   }, [activeTranslation]);
 
   useEffect(() => {

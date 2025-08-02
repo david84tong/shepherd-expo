@@ -40,7 +40,7 @@ async function moveUserToProMode(
   useUserStore.getState().setProStatus('pro');
   
   // Update user properties in analytics platforms
-  analytics.setUserProperties({
+  analytics.identifyUser(useUserStore.getState().id || 'anonymous', {
     isPro: true,
     proStatus: 'pro',
     subscriptionType: fromPaywall || 'unknown',
@@ -635,7 +635,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         useUserStore.getState().setProStatus('pro');
         
         // Update user properties in analytics platforms
-        analytics.setUserProperties({
+        analytics.identifyUser(useUserStore.getState().id || 'anonymous', {
           isPro: true,
           proStatus: 'pro',
           subscriptionType: 'direct_purchase',
@@ -759,7 +759,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
               if (!isProAdapty) {
                 set({ isProMember: false });
                 // Update user properties in analytics platforms
-                analytics.setUserProperties({
+                analytics.identifyUser(useUserStore.getState().id || 'anonymous', {
                   isPro: false,
                   proStatus: 'free',
                   subscriptionType: 'expired',
@@ -788,9 +788,56 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       set({ customerInfo: profile, isProMember: finalProStatus });
       useUserStore.getState().setProStatus(finalProStatus ? 'pro' : 'free');
       
+      // Handle golden skin removal when user loses pro status
+      if (prevIsPro && !finalProStatus) {
+        appLog('[SubscriptionStore] User lost pro status, checking for golden skin removal');
+        
+        try {
+          // Import the stores dynamically to avoid circular dependency issues
+          const { useShopStore } = await import('./shopStore');
+          const { useHomeStore } = await import('./homeStore');
+          
+          const shopStore = useShopStore.getState();
+          const homeStore = useHomeStore.getState();
+          
+          // Check if user has golden skin equipped (skinNumber: 99)
+          if (shopStore.equippedSkin === '99' || homeStore.currentSkin === '99') {
+            appLog('[SubscriptionStore] Golden skin is equipped, removing and switching to normal skin');
+            
+            // Switch to normal skin (skinNumber: 0)
+            shopStore.equipSkin('0');
+            homeStore.setCurrentSkin('0');
+            
+            // Update Rive animation if available
+            const riveRef = homeStore.riveRef;
+            if (riveRef && riveRef.current && riveRef.current.setInputState) {
+              try {
+                riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
+                appLog('[SubscriptionStore] Updated Rive animation to normal skin');
+              } catch (riveError) {
+                appLog('[SubscriptionStore] Error updating Rive skin:', riveError);
+              }
+            }
+            
+            // Log analytics event for golden skin removal
+            analytics.logEvent('golden_skin_removed_pro_expired', {
+              previousSkin: '99',
+              newSkin: '0',
+              reason: 'pro_status_lost'
+            });
+            
+            appLog('[SubscriptionStore] Successfully removed golden skin due to pro status loss');
+          } else {
+            appLog('[SubscriptionStore] Golden skin not equipped, no action needed');
+          }
+        } catch (error) {
+          console.error('[SubscriptionStore] Error handling golden skin removal:', error);
+        }
+      }
+      
       // Update user properties in analytics if status changed
       if (prevIsPro !== finalProStatus) {
-        analytics.setUserProperties({
+        analytics.identifyUser(useUserStore.getState().id || 'anonymous', {
           isPro: finalProStatus,
           proStatus: finalProStatus ? 'pro' : 'free',
         });
@@ -927,7 +974,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     useUserStore.getState().setProStatus('pro');
     
     // Update user properties in analytics platforms
-    analytics.setUserProperties({
+    analytics.identifyUser(useUserStore.getState().id || 'anonymous', {
       isPro: true,
       proStatus: 'pro',
       subscriptionType: 'referral_code',
@@ -1038,7 +1085,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           useUserStore.getState().setProStatus('pro');
           
           // Update analytics
-          analytics.setUserProperties({
+          analytics.identifyUser(useUserStore.getState().id || 'anonymous', {
             isPro: true,
             proStatus: 'pro',
           });
