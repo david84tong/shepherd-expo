@@ -1510,7 +1510,29 @@ export function DebugButton() {
                       '• Streak: 5\n' +
                       '• Freezes: 2\n' +
                       '• Last activity: 3 days ago\n' +
-                      '• Next app open should use freeze!'
+                      '• Next app open should use freeze!\n\n' +
+                      'Now use "Force Check Penalties" to trigger the freeze.',
+                      [
+                        { text: 'OK' },
+                        { 
+                          text: 'Force Check Now', 
+                          onPress: async () => {
+                            try {
+                              // Import and trigger the penalty check
+                              const streakHook = require('../app/hooks/streakHook');
+                              await streakHook.checkStreakAndApplyPenalties();
+                              
+                              Alert.alert(
+                                'Freeze Applied!',
+                                'Check the StreakScreen to see the frozen day with light blue indicator! ❄️'
+                              );
+                            } catch (error) {
+                              appLog('Error triggering streak penalty check:', error);
+                              Alert.alert('Error', 'Failed to trigger penalty check');
+                            }
+                          }
+                        }
+                      ]
                     );
                   }}>
                   <Text className="font-feather text-base text-textPrimary">Test Streak Freeze</Text>
@@ -1544,6 +1566,85 @@ export function DebugButton() {
                   <Text className="font-feather text-base text-textPrimary">Show Freeze Sheet</Text>
                   <Text className="font-din text-sm text-[#6A8A94] mt-1">
                     Test the streak freeze bottom sheet
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Streak Freeze Visual Display */}
+                <TouchableOpacity
+                  className="bg-[#ADD8E6] p-4 rounded-xl my-2 border-l-4 border-l-white"
+                  onPress={() => {
+                    const userStore = useUserStore.getState();
+                    
+                    // Add some fake streak freeze used dates for testing
+                    const today = new Date();
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    const twoDaysAgo = new Date(today);
+                    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+                    const fiveDaysAgo = new Date(today);
+                    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+                    
+                    const testFreezeUsedDates = [
+                      yesterday.toISOString().split('T')[0],
+                      fiveDaysAgo.toISOString().split('T')[0]
+                    ];
+                    
+                    userStore.setStreakFreezeUsedDates(testFreezeUsedDates);
+                    
+                    // Also set a current streak and remaining freezes
+                    userStore.setStreakCount(7);
+                    userStore.setStreakFreezes(1);
+                    
+                    // Force sync to Firestore
+                    syncWithFirestore();
+                    
+                    appLog('Debug: Added test streak freeze dates:', testFreezeUsedDates);
+                    
+                    Alert.alert(
+                      'Streak Freeze Visual Test',
+                      `Added freeze usage for:\n• ${yesterday.toLocaleDateString()}\n• ${fiveDaysAgo.toLocaleDateString()}\n\nGo to StreakScreen to see the light blue frozen days! ❄️`,
+                      [
+                        { text: 'OK' },
+                        { 
+                          text: 'Go to StreakScreen', 
+                          onPress: () => {
+                            setModalVisible(false);
+                            // Navigate to StreakScreen (assuming it can be navigated to)
+                            router.push('/streak');
+                          }
+                        }
+                      ]
+                    );
+                  }}>
+                  <Text className="font-feather text-base text-white">Test Freeze Visuals ❄️</Text>
+                  <Text className="font-din text-sm text-white mt-1">
+                    Add fake freeze dates to see light blue indicators
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Clear Streak Freeze Test Data */}
+                <TouchableOpacity
+                  className="bg-[#FFF8DC] p-4 rounded-xl my-2 border-l-4 border-l-[#FFD700]"
+                  onPress={() => {
+                    const userStore = useUserStore.getState();
+                    userStore.setStreakFreezeUsedDates([]);
+                    
+                    // Force sync to Firestore
+                    syncWithFirestore();
+                    
+                    appLog('Debug: Cleared all streak freeze used dates');
+                    
+                    Toast.show({
+                      type: 'success',
+                      text1: 'Cleared Freeze Data',
+                      text2: 'All streak freeze visual indicators removed',
+                      position: 'top',
+                      visibilityTime: 3000,
+                    });
+                  }}>
+                  <Text className="font-feather text-base text-[#8B7D3A]">Clear Freeze Visuals</Text>
+                  <Text className="font-din text-sm text-[#8B7D3A] mt-1">
+                    Remove all freeze visual indicators
                   </Text>
                 </TouchableOpacity>
 

@@ -29,7 +29,7 @@ import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { useSoundStore } from '~/app/stores/soundStore';
 import { useUIStore } from '~/app/stores/uiStore';
 /* ─────────────── helper ─────────────── */
-type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
+type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE' | 'STREAK_FREEZE';
 
 interface WeekCell {
   dateKey: string; // 'YYYY-MM-DD'
@@ -45,7 +45,8 @@ interface WeekCell {
 const buildWeekCells = (
   today: dayjs.Dayjs,
   accountCreated: dayjs.Dayjs,
-  completed: Set<string>
+  completed: Set<string>,
+  streakFreezeUsedDates: Set<string>
 ): WeekCell[] => {
   return Array.from({ length: 7 }).map((_, i) => {
     // Start 3 days before today and go up to 3 days after today
@@ -58,6 +59,7 @@ const buildWeekCells = (
     else if (isToday) status = completed.has(key) ? 'COMPLETED' : 'TODAY_PENDING';
     else if (d.isAfter(today, 'day')) status = 'FUTURE';
     else if (completed.has(key)) status = 'COMPLETED';
+    else if (streakFreezeUsedDates.has(key)) status = 'STREAK_FREEZE';
     else status = 'MISSED';
 
     return {
@@ -126,6 +128,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   const completedReadings = useUserStore((s) => s.getCompletedReadings?.());
   const lastReadingDate = useUserStore((s) => s.lastReadingDate);
   const setStreakCount = useUserStore((state) => state.setStreakCount);
+  const streakFreezeUsedDates = useUserStore((s) => s.getStreakFreezeUsedDates?.()) || [];
   const [debugDisplayInfo, setDebugDisplayInfo] = useState<any>(null); // Renamed for clarity
 
   // Get notification store methods
@@ -254,9 +257,11 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   }, [completedSet, lastReadingDate]);
 
   // 3. build the centered grid (today in the middle)
+  const streakFreezeUsedSet = useMemo(() => new Set(streakFreezeUsedDates), [streakFreezeUsedDates]);
+  
   const weekCells = useMemo(
-    () => buildWeekCells(today, createdDate, augmentedCompletedSet),
-    [today, createdDate, augmentedCompletedSet]
+    () => buildWeekCells(today, createdDate, augmentedCompletedSet, streakFreezeUsedSet),
+    [today, createdDate, augmentedCompletedSet, streakFreezeUsedSet]
   );
 
   // 4. calculate streak (memoized to prevent recalculation)
@@ -507,7 +512,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
         {/* Day tracker card */}
         <Animated.View
           style={cardStyle}
-          className="mx-4 rounded-card border-4 border-border bg-white py-4 px-2 py-6">
+          className="mx-4 rounded-card border-4 border-border bg-white px-2 py-6">
           <View className="flex-row justify-between items-center mb-2 px-4">
             {weekCells.map((cell) => (
               <View key={cell.dateKey} className="items-center mx-1">
@@ -533,6 +538,11 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
                 {cell.status === 'MISSED' && (
                   <View className="w-10 h-10 rounded-full bg-[#EAEAEA] items-center justify-center">
                     <Text className="text-[#999] text-xl">✕</Text>
+                  </View>
+                )}
+                {cell.status === 'STREAK_FREEZE' && (
+                  <View className="w-10 h-10 rounded-full bg-[#ADD8E6] border-2 border-white items-center justify-center">
+                    <Text className="text-white text-lg">❄️</Text>
                   </View>
                 )}
               </View>

@@ -134,6 +134,7 @@ function calculateStreakAndPenalties({
   setLambHearts,
   setStreakCount,
   setStreakFreezes,
+  addStreakFreezeUsedDate,
   setLastActivityDate,
   setLastReadingPenaltyDate,
   setLastPrayerPenaltyDate,
@@ -156,6 +157,7 @@ function calculateStreakAndPenalties({
   setLambHearts: (hearts: number) => void;
   setStreakCount: (count: number) => void;
   setStreakFreezes: (count: number) => void;
+  addStreakFreezeUsedDate: (date: string) => void;
   setLastActivityDate: (date: any) => void;
   setLastReadingPenaltyDate: (date: any) => void;
   setLastPrayerPenaltyDate: (date: any) => void;
@@ -212,8 +214,15 @@ function calculateStreakAndPenalties({
       streakFreezeUsed = true;
       const newFreezeCount = streakFreezes - 1;
       setStreakFreezes(newFreezeCount);
+      
+      // Record the date when freeze was used (yesterday, the missed day)
+      const missedDay = new Date(now);
+      missedDay.setDate(missedDay.getDate() - 1);
+      const missedDayStr = missedDay.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+      addStreakFreezeUsedDate(missedDayStr);
+      
       if (debug)
-        appLog(`❄️ Using streak freeze! Freezes remaining: ${newFreezeCount}`);
+        appLog(`❄️ Using streak freeze! Freezes remaining: ${newFreezeCount}. Recorded freeze for ${missedDayStr}`);
     } else {
       // No freezes available, reset streak
       if (debug)
@@ -445,6 +454,7 @@ export const checkStreakAndApplyPenalties = async () => {
       setLambHearts: userStore.setLambHearts,
       setStreakCount: userStore.setStreakCount,
       setStreakFreezes: userStore.setStreakFreezes,
+      addStreakFreezeUsedDate: userStore.addStreakFreezeUsedDate,
       setLastActivityDate: userStore.setLastActivityDate,
       setLastReadingPenaltyDate: userStore.setLastReadingPenaltyDate,
       setLastPrayerPenaltyDate: userStore.setLastPrayerPenaltyDate,
@@ -544,6 +554,7 @@ export const useStreakManager = () => {
         setLambHearts: userStore.setLambHearts,
         setStreakCount: userStore.setStreakCount,
         setStreakFreezes: userStore.setStreakFreezes,
+        addStreakFreezeUsedDate: userStore.addStreakFreezeUsedDate,
         setLastActivityDate: userStore.setLastActivityDate,
         setLastReadingPenaltyDate: userStore.setLastReadingPenaltyDate,
         setLastPrayerPenaltyDate: userStore.setLastPrayerPenaltyDate,

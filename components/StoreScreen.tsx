@@ -115,7 +115,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         category: 'items',
         name: 'Custom Devotionals',
         description: 'Create your own personalized devotionals based off check-ins',
-        price: 75,
+        price: 100,
         currency: 'gems',
         image: customDevotionalIcon,
         isOwned: false,

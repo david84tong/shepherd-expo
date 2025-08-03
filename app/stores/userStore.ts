@@ -57,6 +57,7 @@ const STORE_METHOD_KEYS = [
   'getSpiritualGoal',
   'getStreakCount',
   'getStreakFreezes',
+  'getStreakFreezeUsedDates',
   'getUpdatedAt',
   'getUser',
   'getVersesReadTotal',
@@ -98,6 +99,8 @@ const STORE_METHOD_KEYS = [
   'setSpiritualGoal',
   'setStreakCount',
   'setStreakFreezes',
+  'setStreakFreezeUsedDates',
+  'addStreakFreezeUsedDate',
   'setUpdatedAt',
   'setUser',
   'setCovenantProgress',
@@ -205,6 +208,7 @@ const initialState: UserDoc = {
   xp: 0,
   streak: 0,
   streakFreezes: 2,
+  streakFreezeUsedDates: [],
   isPro: false,
   isProWithReferral: false,
   proExpiryDate: Timestamp.now(),
@@ -409,6 +413,7 @@ export const useUserStore = create<UserStore>()(
       getLamb: () => get().lamb || initialState.lamb,
       getStreakCount: () => get().streakCount || initialState.streakCount,
       getStreakFreezes: () => get().streakFreezes || initialState.streakFreezes,
+      getStreakFreezeUsedDates: () => get().streakFreezeUsedDates || initialState.streakFreezeUsedDates,
       getLastActivityDate: () => get().lastActivityDate || initialState.lastActivityDate,
       getVersesReadTotal: () => get().versesReadTotal || initialState.versesReadTotal,
       getChaptersReadTotal: () => get().chaptersReadTotal || initialState.chaptersReadTotal,
@@ -517,6 +522,24 @@ export const useUserStore = create<UserStore>()(
         set({ streakFreezes: count });
         if (isAuthenticated()) {
           updateField('streakFreezes', count);
+        }
+      },
+
+      setStreakFreezeUsedDates: (dates) => {
+        set({ streakFreezeUsedDates: dates });
+        if (isAuthenticated()) {
+          updateField('streakFreezeUsedDates', dates);
+        }
+      },
+
+      addStreakFreezeUsedDate: (date) => {
+        const currentDates = get().streakFreezeUsedDates || [];
+        if (!currentDates.includes(date)) {
+          const newDates = [...currentDates, date];
+          set({ streakFreezeUsedDates: newDates });
+          if (isAuthenticated()) {
+            updateField('streakFreezeUsedDates', newDates);
+          }
         }
       },
 

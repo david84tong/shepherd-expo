@@ -72,6 +72,7 @@ export interface UserDoc {
   xp: number;
   streak: number;
   streakFreezes: number;
+  streakFreezeUsedDates: string[]; // Array of 'YYYY-MM-DD' date strings when freezes were used
   // Pro status
   isPro: boolean;
   isProWithReferral: boolean;
@@ -100,6 +101,7 @@ export interface UserStore extends UserDoc {
   getLamb: () => Lamb;
   getStreakCount: () => number;
   getStreakFreezes: () => number;
+  getStreakFreezeUsedDates: () => string[];
   getLastActivityDate: () => UserDoc['lastActivityDate'];
   getVersesReadTotal: () => number;
   getChaptersReadTotal: () => number;
@@ -137,6 +139,8 @@ export interface UserStore extends UserDoc {
   setLamb: (lamb: Lamb) => void;
   setStreakCount: (count: number) => void;
   setStreakFreezes: (count: number) => void;
+  setStreakFreezeUsedDates: (dates: string[]) => void;
+  addStreakFreezeUsedDate: (date: string) => void;
   setLastActivityDate: (date: UserDoc['lastActivityDate']) => void;
   setLastReadingDate: (date: UserDoc['lastReadingDate']) => void;
   setLastPrayerDate: (date: UserDoc['lastPrayerDate']) => void;
