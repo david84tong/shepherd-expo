@@ -296,7 +296,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     // Show confirmation alert
     Alert.alert(
       'Purchase Custom Devotional',
-      `Are you sure you want to create a custom devotional for 100 💎?\n\nYou currently have ${currentGems} gems.`,
+      `Are you sure you want to create a custom devotional for 100 gems?\n\nYou currently have ${currentGems} gems.`,
       [
         {
           text: 'Cancel',
@@ -1206,7 +1206,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   }
                   
                   // If user is not pro and has no custom devotionals left, show with gem cost
-                  return `${i18n.t('checkin_generate_custom_devotional_for_gems')} (-100 💎)`;
+                  return `${i18n.t('checkin_generate_custom_devotional_for_gems')} (-100)`;
                 })()
               : i18n.t('checkin_start_todays_devotional')
           }
@@ -1287,6 +1287,29 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           style="w-full"
           buttonType="gold"
           disabled={isGenerating}
+          hasGemsInside={
+            currentFocus !== '' || currentStruggle !== ''
+              ? (() => {
+                  // Check if user is pro
+                  const { isProMember } = useSubscriptionStore.getState();
+                  const { getUser, customDevotionalsLeft } = useUserStore.getState();
+                  const user = getUser();
+                  
+                  // If user is pro, don't show gem icon
+                  if (isProMember || user?.isPro || user?.isProWithReferral) {
+                    return false;
+                  }
+                  
+                  // If user has custom devotionals left, don't show gem icon
+                  if (customDevotionalsLeft > 0) {
+                    return false;
+                  }
+                  
+                  // If user is not pro and has no custom devotionals left, show gem icon
+                  return true;
+                })()
+              : false
+          }
         />
 
         {isGenerating && (

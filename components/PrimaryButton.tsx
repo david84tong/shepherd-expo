@@ -8,6 +8,9 @@ import { appLog, RPH } from '~/app/helper/helper';
 import { IS_IOS } from '~/app/utils/utils';
 import { hapticMedium } from '~/utils/haptics';
 
+// Import gem icon
+import gemIcon from '../assets/icons/greenGemIcon.png';
+
 interface PrimaryButtonProps {
   title: string;
   onPress: () => void;
@@ -27,6 +30,7 @@ interface PrimaryButtonProps {
   opacity?: number;
   width?: DimensionValue;
   fullBorderRadius?: boolean;
+  hasGemsInside?: boolean; // boolean to display gem icon inline with text
 }
 
 const PrimaryButton: React.FC<PrimaryButtonProps> = ({
@@ -48,6 +52,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   opacity = 1,
   width,
   fullBorderRadius = false,
+  hasGemsInside = false,
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
@@ -194,10 +199,20 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
                 }`}
               style={{
                 flexShrink: 1,
-
               }}
             >
               {title}
+              
+              {hasGemsInside && (
+                <Image 
+                  source={gemIcon} 
+                  style={{ 
+                    width: buttonHeight && buttonHeight <= 40 ? 16 : 18, 
+                    height: buttonHeight && buttonHeight <= 40 ? 16 : 18,
+                  }} 
+                  resizeMode="contain" 
+                />
+              )}
             </Text>
             {icon && (
               <Image source={icon} className={`${buttonHeight && buttonHeight <= 40 ? 'w-4 h-4' : 'w-6 h-6'} -mt-[2px] ml-2 ${(disabled || !isActive) && IS_IOS ? 'opacity-50' : ''}`} resizeMode="contain" />
