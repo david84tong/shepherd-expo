@@ -56,6 +56,7 @@ const STORE_METHOD_KEYS = [
   'getSkins',
   'getSpiritualGoal',
   'getStreakCount',
+  'getStreakFreezes',
   'getUpdatedAt',
   'getUser',
   'getVersesReadTotal',
@@ -96,6 +97,7 @@ const STORE_METHOD_KEYS = [
   'setSkins',
   'setSpiritualGoal',
   'setStreakCount',
+  'setStreakFreezes',
   'setUpdatedAt',
   'setUser',
   'setCovenantProgress',
@@ -202,6 +204,7 @@ const initialState: UserDoc = {
   level: 1,
   xp: 0,
   streak: 0,
+  streakFreezes: 2,
   isPro: false,
   isProWithReferral: false,
   proExpiryDate: Timestamp.now(),
@@ -287,6 +290,7 @@ export const useUserStore = create<UserStore>()(
             xp: firestoreData.xp || state.xp,
             streak: firestoreData.streak || state.streak,
             streakCount: firestoreData.streakCount || state.streakCount,
+            streakFreezes: firestoreData.streakFreezes ?? state.streakFreezes ?? 2,
             // Sync completion data - use Firestore data if available
             completedReadings: firestoreData.completedReadings ?? state.completedReadings ?? [],
             completedPrayers: firestoreData.completedPrayers ?? state.completedPrayers ?? [],
@@ -404,6 +408,7 @@ export const useUserStore = create<UserStore>()(
       getSelectedPathId: () => get().selectedPathId || initialState.selectedPathId,
       getLamb: () => get().lamb || initialState.lamb,
       getStreakCount: () => get().streakCount || initialState.streakCount,
+      getStreakFreezes: () => get().streakFreezes || initialState.streakFreezes,
       getLastActivityDate: () => get().lastActivityDate || initialState.lastActivityDate,
       getVersesReadTotal: () => get().versesReadTotal || initialState.versesReadTotal,
       getChaptersReadTotal: () => get().chaptersReadTotal || initialState.chaptersReadTotal,
@@ -506,6 +511,13 @@ export const useUserStore = create<UserStore>()(
         }
         
         syncStreakWithWidget(count, get().lastActivityDate);
+      },
+
+      setStreakFreezes: (count) => {
+        set({ streakFreezes: count });
+        if (isAuthenticated()) {
+          updateField('streakFreezes', count);
+        }
       },
 
       setLastActivityDate: (date) => {

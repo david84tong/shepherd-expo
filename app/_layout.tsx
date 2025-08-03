@@ -44,6 +44,7 @@ import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
 import GlobalDevotionalsSheet, { DevotionalsSheetRef } from '../components/GlobalDevotionalsSheet';
 import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
+import StreakFreezeBottomSheet, { StreakFreezeBottomSheetRef } from '~/components/StreakFreezeBottomSheet';
 import { disableFontScaling } from './helper/disableFontScaling';
 import { adapty } from 'react-native-adapty';
 import './stores/userStore';
@@ -202,6 +203,7 @@ export default Sentry.wrap(function RootLayout() {
   const checkInRef = useRef<GlobalCheckInRef>(null);
   const devotionalsSheetRef = useRef<DevotionalsSheetRef>(null);
   const covenantSuccessSheetRef = useRef<CovenantSuccessSheetRef>(null);
+  const streakFreezeSheetRef = useRef<StreakFreezeBottomSheetRef>(null);
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
@@ -291,7 +293,15 @@ export default Sentry.wrap(function RootLayout() {
     try {
       const result = await checkStreakAndApplyPenalties();
 
-      if (result && result.heartPenalty > 0) {
+      if (result && 'streakFreezeUsed' in result && result.streakFreezeUsed) {
+        // Show streak freeze bottom sheet
+        streakFreezeSheetRef.current?.show();
+        
+        analytics.logEvent('streak_freeze_used', {
+          freezesRemaining: result.freezesRemaining || 1,
+          totalFreezes: 2, // Always 2 for now
+        });
+      } else if (result && result.heartPenalty > 0) {
         // Prepare params for heart penalty modal
         const params = {
           type: HalfModalType.HEART_PENALTY,
@@ -497,6 +507,7 @@ export default Sentry.wrap(function RootLayout() {
       (global as any).showStatsSheet = showStatsSheet;
       (global as any).showCheckIn = showCheckIn;
       (global as any).showDevotionalsSheet = showDevotionalsSheet;
+      (global as any).showStreakFreezeModal = () => streakFreezeSheetRef.current?.show();
     }
   }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet, showCheckIn, showDevotionalsSheet]);
 
@@ -974,6 +985,13 @@ export default Sentry.wrap(function RootLayout() {
               completedDays={completedCovenantDays}
               onSelectNextCovenant={handleNextCovenant}
             />
+
+            {/* Streak Freeze Bottom Sheet */}
+            <StreakFreezeBottomSheet
+              freezeSheetRef={streakFreezeSheetRef}
+            />
+
+
 
             {/* Dimmed background for modal overlays */}
             {isModalDimActive && (

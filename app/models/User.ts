@@ -71,6 +71,7 @@ export interface UserDoc {
   level: number;
   xp: number;
   streak: number;
+  streakFreezes: number;
   // Pro status
   isPro: boolean;
   isProWithReferral: boolean;
@@ -98,6 +99,7 @@ export interface UserStore extends UserDoc {
   getSelectedPathId: () => string;
   getLamb: () => Lamb;
   getStreakCount: () => number;
+  getStreakFreezes: () => number;
   getLastActivityDate: () => UserDoc['lastActivityDate'];
   getVersesReadTotal: () => number;
   getChaptersReadTotal: () => number;
@@ -134,6 +136,7 @@ export interface UserStore extends UserDoc {
   setSelectedPathId: (pathId: string) => void;
   setLamb: (lamb: Lamb) => void;
   setStreakCount: (count: number) => void;
+  setStreakFreezes: (count: number) => void;
   setLastActivityDate: (date: UserDoc['lastActivityDate']) => void;
   setLastReadingDate: (date: UserDoc['lastReadingDate']) => void;
   setLastPrayerDate: (date: UserDoc['lastPrayerDate']) => void;

@@ -1262,6 +1262,39 @@ export function DebugButton() {
                   </View>
                 </View>
 
+                {/* Set Streak Freezes Buttons */}
+                <View className="mb-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    Set Streak Freezes
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {[0, 1, 2, 3, 5].map((freezes) => (
+                      <TouchableOpacity
+                        key={freezes}
+                        className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
+                        onPress={() => {
+                          const userStore = useUserStore.getState();
+                          userStore.setStreakFreezes(freezes);
+
+                          // Force sync to Firestore
+                          syncWithFirestore();
+
+                          appLog(`Debug: Set streak freezes to ${freezes}`);
+
+                          Toast.show({
+                            type: 'success',
+                            text1: 'Streak Freezes Set!',
+                            text2: `Streak freezes set to ${freezes} ❄️`,
+                            position: 'top',
+                            visibilityTime: 3000,
+                          });
+                        }}>
+                        <Text className="font-din text-sm text-textPrimary">{`${freezes} ❄️`}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
                 {/* Test Covenant Success */}
                 <View className="mb-4">
                   <Text className="font-feather text-base text-textPrimary mb-2">
@@ -1317,6 +1350,75 @@ export function DebugButton() {
                   <Text className="font-feather text-base text-white">Test Penalty System</Text>
                   <Text className="font-din text-sm text-white/80 mt-1">
                     Sets up guaranteed penalty trigger
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Streak Freeze Scenario Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-2 border-l-4 border-l-[#4FB8FE]"
+                  onPress={() => {
+                    const now = new Date();
+                    
+                    // Set activity dates to 3 days ago to trigger streak break
+                    const activityDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3);
+                    const activityTimestamp = firestore.Timestamp.fromDate(activityDate);
+                    const userStore = useUserStore.getState();
+                    
+                    userStore.setLastActivityDate(activityTimestamp);
+                    userStore.setLastReadingDate(activityTimestamp);
+                    
+                    // Set streak to 5 and freezes to 2 for testing
+                    userStore.setStreakCount(5);
+                    userStore.setStreakFreezes(2);
+                    
+                    // Set penalty dates to 1 day ago
+                    const penaltyDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+                    const penaltyTimestamp = firestore.Timestamp.fromDate(penaltyDate);
+                    userStore.setLastReadingPenaltyDate(penaltyTimestamp);
+                    
+                    // Force sync to Firestore
+                    syncWithFirestore();
+                    
+                    Alert.alert(
+                      'Streak Freeze Test Setup',
+                      'Setup complete:\n' +
+                      '• Streak: 5\n' +
+                      '• Freezes: 2\n' +
+                      '• Last activity: 3 days ago\n' +
+                      '• Next app open should use freeze!'
+                    );
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Test Streak Freeze</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Setup scenario to trigger freeze usage
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Streak Freeze Modal Button */}
+                <TouchableOpacity
+                  className="bg-[#F0F8FF] p-4 rounded-xl my-2 border-l-4 border-l-[#87CEEB]"
+                  onPress={() => {
+                    setModalVisible(false);
+                    
+                    // Show streak freeze bottom sheet directly
+                    setTimeout(() => {
+                      if (typeof global !== 'undefined' && (global as any).showStreakFreezeModal) {
+                        (global as any).showStreakFreezeModal();
+                      } else {
+                        appLog('showStreakFreezeModal not available on global object');
+                        Toast.show({
+                          type: 'info',
+                          text1: 'Streak Freeze Sheet',
+                          text2: 'Global function not available yet',
+                          position: 'top',
+                          visibilityTime: 3000,
+                        });
+                      }
+                    }, 300);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Show Freeze Sheet</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Test the streak freeze bottom sheet
                   </Text>
                 </TouchableOpacity>
 
@@ -1919,6 +2021,52 @@ export function DebugButton() {
                     );
                   }}>
                   <Text className="font-din text-sm text-textPrimary text-center">Show Covenant Info 📊</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Show Current Streak Freeze Status */}
+              <View className="mb-4">
+                <Text className="font-feather text-base text-textPrimary mb-2">
+                  ❄️ Current Streak Freeze Status
+                </Text>
+                <TouchableOpacity
+                  className="bg-[#E8F4FD] px-4 py-3 rounded-lg border border-[#4FB8FE] mb-1"
+                  onPress={() => {
+                    const userStore = useUserStore.getState();
+                    const currentStreak = userStore.getStreakCount();
+                    const currentFreezes = userStore.getStreakFreezes();
+                    const lastActivityDate = userStore.getLastActivityDate();
+                    const lastReadingDate = userStore.getLastReadingDate();
+                    
+                    const now = new Date();
+                    const daysSinceActivity = lastActivityDate ? 
+                      Math.floor((now.getTime() - lastActivityDate.toDate().getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                    const daysSinceReading = lastReadingDate ? 
+                      Math.floor((now.getTime() - lastReadingDate.toDate().getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                    
+                    appLog('❄️ Current Streak Freeze Status:', {
+                      streakCount: currentStreak,
+                      streakFreezes: currentFreezes,
+                      daysSinceActivity,
+                      daysSinceReading,
+                      lastActivityDate: lastActivityDate?.toDate(),
+                      lastReadingDate: lastReadingDate?.toDate()
+                    });
+
+                    Alert.alert(
+                      'Streak Freeze Status',
+                      `Current Streak: ${currentStreak} 🔥\n` +
+                      `Streak Freezes: ${currentFreezes} ❄️\n` +
+                      `Days Since Activity: ${daysSinceActivity}\n` +
+                      `Days Since Reading: ${daysSinceReading}\n\n` +
+                      `${daysSinceReading > 1 && currentFreezes > 0 ? 
+                        '⚠️ Streak would break, but freeze available!' : 
+                        daysSinceReading > 1 ? 
+                        '💔 Streak would break (no freezes)' : 
+                        '✅ Streak is safe'}`
+                    );
+                  }}>
+                  <Text className="font-din text-sm text-textPrimary text-center">Show Freeze Status ❄️</Text>
                 </TouchableOpacity>
               </View>
 

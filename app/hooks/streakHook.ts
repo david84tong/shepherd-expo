@@ -121,6 +121,7 @@ export function getLambMoodByHearts(hearts: number): string {
 function calculateStreakAndPenalties({
   lambHearts,
   streakCount,
+  streakFreezes,
   lastActivityDate,
   lastReadingDate,
   lastPrayerDate,
@@ -132,6 +133,7 @@ function calculateStreakAndPenalties({
   setLambMood,
   setLambHearts,
   setStreakCount,
+  setStreakFreezes,
   setLastActivityDate,
   setLastReadingPenaltyDate,
   setLastPrayerPenaltyDate,
@@ -141,6 +143,7 @@ function calculateStreakAndPenalties({
 }: {
   lambHearts: number;
   streakCount: number;
+  streakFreezes: number;
   lastActivityDate: any;
   lastReadingDate: any;
   lastPrayerDate: any;
@@ -152,6 +155,7 @@ function calculateStreakAndPenalties({
   setLambMood: (mood: string) => void;
   setLambHearts: (hearts: number) => void;
   setStreakCount: (count: number) => void;
+  setStreakFreezes: (count: number) => void;
   setLastActivityDate: (date: any) => void;
   setLastReadingPenaltyDate: (date: any) => void;
   setLastPrayerPenaltyDate: (date: any) => void;
@@ -199,12 +203,22 @@ function calculateStreakAndPenalties({
   // REPLACE: Check if streak is broken using calendar days instead of hours
   // A streak is broken if more than 1 calendar day has passed (missed a complete day)
   const isReadingStreakBroken = daysSinceReading > 1;
+  let streakFreezeUsed = false;
 
-  // Reset streak immediately if reading streak is broken (missed a full calendar day)
+  // Check if we should use a streak freeze instead of breaking the streak
   if (isReadingStreakBroken && streakCount > 0) {
-    if (debug)
-      appLog(`🔄 Resetting streak to 0: missed ${daysSinceReading - 1} calendar day(s)`);
-    setStreakCount(0);
+    if (streakFreezes > 0) {
+      // Use a streak freeze to save the streak
+      streakFreezeUsed = true;
+      setStreakFreezes(streakFreezes - 1);
+      if (debug)
+        appLog(`❄️ Using streak freeze! Freezes remaining: ${streakFreezes - 1}`);
+    } else {
+      // No freezes available, reset streak
+      if (debug)
+        appLog(`🔄 Resetting streak to 0: missed ${daysSinceReading - 1} calendar day(s)`);
+      setStreakCount(0);
+    }
   }
 
   if (debug) {
@@ -307,8 +321,8 @@ function calculateStreakAndPenalties({
     setLambHearts(newHearts);
     setLambMood?.(getLambMoodByHearts(newHearts));
 
-    // Reset streak if reading streak is broken
-    if (isReadingStreakBroken && streakCount > 0) {
+    // Reset streak if reading streak is broken and no freeze was used
+    if (isReadingStreakBroken && streakCount > 0 && !streakFreezeUsed) {
       if (debug)
         appLog(`🔄 Resetting streak to 0: missed ${daysSinceReading - 1} calendar day(s)`);
       setStreakCount(0);
@@ -329,7 +343,9 @@ function calculateStreakAndPenalties({
     }
 
     return {
-      streakBroken: isReadingStreakBroken,
+      streakBroken: isReadingStreakBroken && !streakFreezeUsed,
+      streakFreezeUsed,
+      freezesRemaining: streakFreezes,
       heartPenalty,
       daysMissed: Math.max(0, daysSinceActivity - 1), // Subtract 1 because if you're 2 days since activity, you missed 1 day
       readingPenalized: applyReadingPenalty,
@@ -340,7 +356,9 @@ function calculateStreakAndPenalties({
   } else {
     setLambMood?.(getLambMoodByHearts(lambHearts));
     return {
-      streakBroken: isReadingStreakBroken,
+      streakBroken: isReadingStreakBroken && !streakFreezeUsed,
+      streakFreezeUsed,
+      freezesRemaining: streakFreezes,
       heartPenalty: 0,
       daysMissed: 0,
       readingPenalized: false,
@@ -402,6 +420,7 @@ export const checkStreakAndApplyPenalties = async () => {
     // Do NOT update lastActivityDate here, only after penalty calculation
     const lambHearts = userStore.lamb.hearts;
     const streakCount = userStore.streakCount || 0;
+    const streakFreezes = userStore.streakFreezes || 0;
     const lastReadingDate = userStore.lastReadingDate;
     const lastPrayerDate = userStore.lastPrayerDate;
     const lastReflectionDate = userStore.lastReflectionDate;
@@ -412,6 +431,7 @@ export const checkStreakAndApplyPenalties = async () => {
     const result = calculateStreakAndPenalties({
       lambHearts,
       streakCount,
+      streakFreezes,
       lastActivityDate,
       lastReadingDate,
       lastPrayerDate,
@@ -423,6 +443,7 @@ export const checkStreakAndApplyPenalties = async () => {
       setLambMood: userStore.setLambMood,
       setLambHearts: userStore.setLambHearts,
       setStreakCount: userStore.setStreakCount,
+      setStreakFreezes: userStore.setStreakFreezes,
       setLastActivityDate: userStore.setLastActivityDate,
       setLastReadingPenaltyDate: userStore.setLastReadingPenaltyDate,
       setLastPrayerPenaltyDate: userStore.setLastPrayerPenaltyDate,
@@ -474,6 +495,7 @@ export const useStreakManager = () => {
 
       const lambHearts = userStore.getLambHearts?.();
       const streakCount = userStore.getStreakCount();
+      const streakFreezes = userStore.getStreakFreezes();
       const lastActivityDate = userStore.getLastActivityDate();
       const lastReadingDate = userStore.lastReadingDate;
       const lastPrayerDate = userStore.lastPrayerDate;
@@ -496,6 +518,7 @@ export const useStreakManager = () => {
       const result = calculateStreakAndPenalties({
         lambHearts,
         streakCount,
+        streakFreezes,
         lastActivityDate,
         lastReadingDate,
         lastPrayerDate,
@@ -507,6 +530,7 @@ export const useStreakManager = () => {
         setLambMood: userStore.setLambMood,
         setLambHearts: userStore.setLambHearts,
         setStreakCount: userStore.setStreakCount,
+        setStreakFreezes: userStore.setStreakFreezes,
         setLastActivityDate: userStore.setLastActivityDate,
         setLastReadingPenaltyDate: userStore.setLastReadingPenaltyDate,
         setLastPrayerPenaltyDate: userStore.setLastPrayerPenaltyDate,
