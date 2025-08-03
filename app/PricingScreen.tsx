@@ -326,6 +326,7 @@ const PricingScreen = () => {
           contentContainerStyle={{
             paddingBottom: 120,
             paddingHorizontal: 20,
+            marginTop: -32,
           }}>
 
           {/* <AnimatedItem index={1} animateItemFromBottom={animateScreenFromBottom}>

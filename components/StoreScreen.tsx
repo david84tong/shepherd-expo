@@ -23,6 +23,8 @@ import PrimaryButton from './PrimaryButton';
 
 // Import icons
 import gemIcon from '~/assets/icons/greenGemIcon.png';
+import streakFreezeIcon from '~/assets/images/streakFreezeIcon.png';
+import customDevotionalIcon from '~/assets/images/customDevotionalIcon.png';
 
 // Import lamb static images
 import gold_lamb from '~/assets/lambStatic/goldSkin.png';
@@ -41,7 +43,7 @@ import pinkSkin from '~/assets/lambStatic/pinkSkin.png';
 import phoenixSkin from '~/assets/lambStatic/FIre_Skin.png';
 import { hapticLight, hapticMedium, hapticSuccess } from '~/utils/haptics';
 // Define store item types
-type StoreCategory = 'skins' | 'powerups' | 'hearts';
+type StoreCategory = 'items' | 'skins' | 'powerups' | 'hearts';
 
 interface StoreItem {
   id: string;
@@ -77,7 +79,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const userGems = useUserStore(state => state.gens || 0);
   const userLevel = useUserStore(state => state.lamb?.level || 1);
 
-  const [selectedCategory, setSelectedCategory] = useState<StoreCategory>('skins');
+  // Removed selectedCategory state - showing all items on one page
 
   const lamb = getLamb();
   const user = getUser();
@@ -96,6 +98,28 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
   // Store items with static images
   const storeItems: StoreItem[] = useMemo(() => [
+    // Items
+    {
+      id: 'streak_freeze',
+      category: 'items',
+      name: 'Streak Freeze',
+      description: 'Protects your streak for one day if you miss your daily reading',
+      price: 50,
+      currency: 'gems',
+      image: streakFreezeIcon,
+      isOwned: false,
+    },
+    {
+      id: 'custom_devotional',
+      category: 'items',
+      name: 'Custom Devotionals',
+      description: 'Create your own personalized devotionals based off check-ins',
+      price: 75,
+      currency: 'gems',
+      image: customDevotionalIcon,
+      isOwned: false,
+    },
+    
     // Skins
     {
       id: 'skin_super',
@@ -238,11 +262,18 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
   ], [userLevel, isProMember, currentStreak, hasSkin]);
 
-  // Filter items by category
-  const filteredItems = useMemo(() =>
-    storeItems.filter(item => item.category === selectedCategory),
-    [selectedCategory, storeItems]
-  );
+  // Group items by category for display
+  const itemsByCategory = useMemo(() => {
+    const grouped = storeItems.reduce((acc, item) => {
+      if (!acc[item.category]) {
+        acc[item.category] = [];
+      }
+      acc[item.category].push(item);
+      return acc;
+    }, {} as Record<StoreCategory, StoreItem[]>);
+    
+    return grouped;
+  }, [storeItems]);
 
   // Handle item purchase
   const handlePurchase = useCallback(async (item: StoreItem) => {
@@ -451,6 +482,8 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     const isAnointedLamb = item.id === 'skin_super';
     const isPhoenixSkin = item.id === 'phoenix_skin';
     const isEquipped = equippedSkin === skinId;
+    const isStreakFreeze = item.id === 'streak_freeze';
+    const isCustomDevotional = item.id === 'custom_devotional';
 
     // Debug logging for Annointed Lamb
     if (isAnointedLamb) {
@@ -503,12 +536,12 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           elevation: 10,
         } : {}}>
 
-        <View className="flex-row p-4 h-48 justify-between">
+        <View className="flex-row p-4 h-50 justify-between">
           {/* Lamb Image - Full size, no background, clipped at bottom */}
           <View className="w-48 h-full absolute left-0 bottom-0 ml-2">
             {(isAnointedLamb || isPhoenixSkin) && (
               <View
-                className="w-48 h-48 absolute bottom-[-20] rounded-full"
+                className="w-48 h-50 absolute bottom-[-20] rounded-full"
                 style={{
                   backgroundColor: isAnointedLamb 
                     ? 'rgba(252, 211, 77, 0.2)'
@@ -524,9 +557,25 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                 }}
               />
             )}
+            {/* Stacked effect for Streak Freeze */}
+            {item.id === 'streak_freeze' && (
+              <Image
+                source={item.image}
+                className="w-40 h-40 absolute bottom-[24] right-[-24] rotate-12"
+                resizeMode="contain"
+              />
+            )}
+            {/* Stacked effect for Custom Devotional */}
+            {item.id === 'custom_devotional' && (
+              <Image
+                source={item.image}
+                className="w-40 h-40 absolute bottom-[24] right-[-24] rotate-12"
+                resizeMode="contain"
+              />
+            )}
             <Image
               source={item.image}
-              className={` ${isPhoenixSkin ? "w-[200px] h-[200px] -left-[18px]" :"w-48 h-48" } absolute bottom-[-20]`}
+              className={` ${isPhoenixSkin ? "w-[200px] h-[200px] -left-[18px]" :"" }  absolute  ${item.id === 'streak_freeze' || item.id === 'custom_devotional' ? 'w-44 h-44 -rotate-10 bottom-[-12]' : 'w-48 h-48 -rotate-8 bottom-[-20]'}`}
               resizeMode="contain"
             />
           </View>
@@ -534,12 +583,12 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           {/* Content - Add left padding to account for image */}
           <View className="flex-1 ml-44 pl-4 mr-2 my-2">
             {/* Name */}
-            <Text className="font-feather text-lg text-textPrimary mb-1" numberOfLines={1}>
+            <Text className="font-feather text-lg text-textPrimary mb-1" numberOfLines={2}>
               {item.name}
             </Text>
 
             {/* Description */}
-            <Text className="font-din text-sm text-description -mb-2" numberOfLines={3}>
+            <Text className="font-din text-sm text-description -mb-2 h-16" numberOfLines={3}>
               {item.description}
             </Text>
 
@@ -650,6 +699,16 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                     featherIcon="check"
                   />
                 )
+              ) : item.id === 'custom_devotional' && !canAfford ? (
+                <PrimaryButton
+                  title="Upgrade"
+                  onPress={handleUpgradeToProForLamb}
+                  disabled={false}
+                  buttonType="orange"
+                  buttonHeight={40}
+                  width="100%"
+                  featherIcon="zap"
+                />
               ) : (
                 <PrimaryButton
                   title="Buy"
@@ -703,7 +762,27 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         className="flex-1 px-6"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}>
-        {filteredItems.map(renderStoreItem)}
+        
+        {/* Items Section */}
+        {itemsByCategory.items && itemsByCategory.items.length > 0 && (
+          <>
+            <Text className="font-feather text-xl text-textPrimary mb-4 mt-2">
+              Items
+            </Text>
+            {itemsByCategory.items.map(renderStoreItem)}
+          </>
+        )}
+        
+        {/* Skins Section */}
+        {itemsByCategory.skins && itemsByCategory.skins.length > 0 && (
+          <>
+            <Text className="font-feather text-xl text-textPrimary mb-4 mt-6">
+              Skins
+            </Text>
+            {itemsByCategory.skins.map(renderStoreItem)}
+          </>
+        )}
+        
         <View className="flex h-24 bg-clear" />
       </ScrollView>
     </SafeAreaView>
