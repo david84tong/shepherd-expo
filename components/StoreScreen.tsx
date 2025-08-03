@@ -68,16 +68,16 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const { getLamb, getUser } = useUserStore();
   const { isProMember } = useSubscriptionStore();
   const { hasSkin, purchaseSkin, equipSkin, addSkin } = useShopStore();
-  const equippedSkin = useShopStore(state => state.equippedSkin);
-  const ownedSkins = useShopStore(state => state.ownedSkins);
-  const riveRef = useHomeStore(state => state.riveRef);
-  const setCurrentSkin = useHomeStore(state => state.setCurrentSkin);
-  const {currentStreak} = useUserStore(state => state.covenantProgress);
-
+  const equippedSkin = useShopStore((state) => state.equippedSkin);
+  const ownedSkins = useShopStore((state) => state.ownedSkins);
+  const riveRef = useHomeStore((state) => state.riveRef);
+  const setCurrentSkin = useHomeStore((state) => state.setCurrentSkin);
+  const { currentStreak } = useUserStore((state) => state.covenantProgress);
+  const { streakFreezes } = useUserStore((state) => state);
 
   // Use reactive store subscriptions for real-time updates
-  const userGems = useUserStore(state => state.gens || 0);
-  const userLevel = useUserStore(state => state.lamb?.level || 1);
+  const userGems = useUserStore((state) => state.gens || 0);
+  const userLevel = useUserStore((state) => state.lamb?.level || 1);
 
   // Removed selectedCategory state - showing all items on one page
 
@@ -89,7 +89,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     if (isProMember) {
       // Add the skin if they don't have it
       if (!hasSkin('99')) {
-        appLog('🔄 Adding Annointed Lamb skin to Pro user\'s collection');
+        appLog("🔄 Adding Annointed Lamb skin to Pro user's collection");
         addSkin('99');
       }
       // Do NOT auto-equip - let users choose their skin
@@ -97,347 +97,360 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   }, [isProMember, hasSkin, addSkin]);
 
   // Store items with static images
-  const storeItems: StoreItem[] = useMemo(() => [
-    // Items
-    {
-      id: 'streak_freeze',
-      category: 'items',
-      name: 'Streak Freeze',
-      description: 'Protects your streak for one day if you miss your daily reading',
-      price: 50,
-      currency: 'gems',
-      image: streakFreezeIcon,
-      isOwned: false,
-    },
-    {
-      id: 'custom_devotional',
-      category: 'items',
-      name: 'Custom Devotionals',
-      description: 'Create your own personalized devotionals based off check-ins',
-      price: 75,
-      currency: 'gems',
-      image: customDevotionalIcon,
-      isOwned: false,
-    },
-    
-    // Skins
-    {
-      id: 'skin_super',
-      category: 'skins',
-      name: "Anointed Lamb",
-      description: 'For a limited time, all super users unlock this golden skin',
-      price: 109,
-      currency: 'gems',
-      image: userLevel < 10 ? babyGoldenSheep : gold_lamb,
-      skinNumber: 99,
-      isPro: true,
-      isOwned: isProMember, // Pro users automatically own this skin
-    },
-    
-    {
-      id: 'skin_default',
-      category: 'skins',
-      name: "Normal Skin",
-      description: 'The default skin for your lamb',
-      price: 0,
-      currency: 'gems',
-      image: userLevel < 10 ? babyLamb : normalLamb,
-      skinNumber: 0,
-      isOwned: true, // Default skin is always owned
-    },
-    {
-      id: 'skin_ten_commandments',
-      category: 'skins',
-      name: "10 Commandments",
-      description: 'Blessed with the divine laws given to Moses',
-      price: 1600,
-      currency: 'gems',
-      image: tenSkin,
-      skinNumber: 5,
-      unlockLevel: 14,
-    },
-    {
-      id: 'skin_apple',
-      category: 'skins',
-      name: "Garden Apple",
-      description: 'From the tree of knowledge in the Garden of Eden',
-      price: 1800,
-      currency: 'gems',
-      image: appleSkin,
-      skinNumber: 6,
-      unlockLevel: 11,
-    },
-    {
-      id: 'skin_lion',
-      category: 'skins',
-      name: "Den of Lions",
-      description: 'A skin for those who are brave and fearless',
-      price: 2200,
-      currency: 'gems',
-      image: lionSkin,
-      skinNumber: 7,
-      unlockLevel: 17,
-    },
-    {
-      id: 'pink_skin',
-      category: 'skins',
-      name: "The Pink Lamb",
-      description: 'Just a simple cute pink skin, limited to 1000',
-      price: 2000,
-      currency: 'gems',
-      image: pinkSkin,
-      skinNumber: 1,
-      unlockLevel: 15,
-      isOwned: hasSkin('1'), // Check if unlocked via PINK code
-    },
-    {
-      id: 'skin_noah',
-      category: 'skins',
-      name: "Noah's Ark",
-      description: 'A faithful servant who built the ark and saved all creatures',
-      price: 2700,
-      currency: 'gems',
-      image: noahSkin,
-      skinNumber: 2,
-      unlockLevel: 19,
+  const storeItems: StoreItem[] = useMemo(
+    () => [
+      // Items
+      {
+        id: 'streak_freeze',
+        category: 'items',
+        name: 'Streak Freeze',
+        description: 'Protects your streak for one day if you miss your daily reading',
+        price: 200,
+        currency: 'gems',
+        image: streakFreezeIcon,
+        isOwned: false,
+      },
+      {
+        id: 'custom_devotional',
+        category: 'items',
+        name: 'Custom Devotionals',
+        description: 'Create your own personalized devotionals based off check-ins',
+        price: 75,
+        currency: 'gems',
+        image: customDevotionalIcon,
+        isOwned: false,
+      },
 
-    },
-    {
-      id: 'skin_banana',
-      category: 'skins',
-      name: "Banana Peel",
-      description: 'A playful yellow skin that brings joy and laughter',
-      price: 3000,
-      currency: 'gems',
-      image: bananaSkin,
-      skinNumber: 4,
-      unlockLevel: 21,
-    },
-    {
-      id: 'skin_joseph_cloak',
-      category: 'skins',
-      name: "Joseph's Coat",
-      description: 'The coat of many colors given by Jacob to his beloved son Joseph',
-      price: 3600,
-      currency: 'gems',
-      image: josephsCoat,
-      skinNumber: 3,
-      unlockLevel: 22,
-    },
-    {
-      id: 'skin_whale',
-      category: 'skins',
-      name: "Jonah's Whale",
-      description: 'From the belly of the great fish that swallowed Jonah',
-      price: 4200,
-      currency: 'gems',
-      image: whale,
-      skinNumber: 8,
-      unlockLevel: 24,
-    },
-    {
-      id: 'skin_armor_of_god',
-      category: 'skins',
-      name: "Armor of God",
-      description: 'Put on the full armor of God to stand against the schemes of the devil',
-      price: 4400,
-      currency: 'gems',
-      image: armorOfGod,
-      skinNumber: 9,
-      unlockLevel: 24,
-    },
-    {
-      id: 'phoenix_skin',
-      category: 'skins',
-      name: 'Phoenix Skin',
-      description: 'A majestic skin unlocked after 21 days in a row. Embark on this alliance.',
-      price: 0,
-      currency: 'gems',
-      image: phoenixSkin,
-      skinNumber: 10,
-      unlockLevel: 1, // Level requirement is not the main unlock condition
-      isOwned: currentStreak >= 21 || hasSkin('10')
-    },
+      // Skins
+      {
+        id: 'skin_super',
+        category: 'skins',
+        name: 'Anointed Lamb',
+        description: 'For a limited time, all super users unlock this golden skin',
+        price: 109,
+        currency: 'gems',
+        image: userLevel < 10 ? babyGoldenSheep : gold_lamb,
+        skinNumber: 99,
+        isPro: true,
+        isOwned: isProMember, // Pro users automatically own this skin
+      },
 
-
-  ], [userLevel, isProMember, currentStreak, hasSkin]);
+      {
+        id: 'skin_default',
+        category: 'skins',
+        name: 'Normal Skin',
+        description: 'The default skin for your lamb',
+        price: 0,
+        currency: 'gems',
+        image: userLevel < 10 ? babyLamb : normalLamb,
+        skinNumber: 0,
+        isOwned: true, // Default skin is always owned
+      },
+      {
+        id: 'skin_ten_commandments',
+        category: 'skins',
+        name: '10 Commandments',
+        description: 'Blessed with the divine laws given to Moses',
+        price: 1600,
+        currency: 'gems',
+        image: tenSkin,
+        skinNumber: 5,
+        unlockLevel: 14,
+      },
+      {
+        id: 'skin_apple',
+        category: 'skins',
+        name: 'Garden Apple',
+        description: 'From the tree of knowledge in the Garden of Eden',
+        price: 1800,
+        currency: 'gems',
+        image: appleSkin,
+        skinNumber: 6,
+        unlockLevel: 11,
+      },
+      {
+        id: 'skin_lion',
+        category: 'skins',
+        name: 'Den of Lions',
+        description: 'A skin for those who are brave and fearless',
+        price: 2200,
+        currency: 'gems',
+        image: lionSkin,
+        skinNumber: 7,
+        unlockLevel: 17,
+      },
+      {
+        id: 'pink_skin',
+        category: 'skins',
+        name: 'The Pink Lamb',
+        description: 'Just a simple cute pink skin, limited to 1000',
+        price: 2000,
+        currency: 'gems',
+        image: pinkSkin,
+        skinNumber: 1,
+        unlockLevel: 15,
+        isOwned: hasSkin('1'), // Check if unlocked via PINK code
+      },
+      {
+        id: 'skin_noah',
+        category: 'skins',
+        name: "Noah's Ark",
+        description: 'A faithful servant who built the ark and saved all creatures',
+        price: 2700,
+        currency: 'gems',
+        image: noahSkin,
+        skinNumber: 2,
+        unlockLevel: 19,
+      },
+      {
+        id: 'skin_banana',
+        category: 'skins',
+        name: 'Banana Peel',
+        description: 'A playful yellow skin that brings joy and laughter',
+        price: 3000,
+        currency: 'gems',
+        image: bananaSkin,
+        skinNumber: 4,
+        unlockLevel: 21,
+      },
+      {
+        id: 'skin_joseph_cloak',
+        category: 'skins',
+        name: "Joseph's Coat",
+        description: 'The coat of many colors given by Jacob to his beloved son Joseph',
+        price: 3600,
+        currency: 'gems',
+        image: josephsCoat,
+        skinNumber: 3,
+        unlockLevel: 22,
+      },
+      {
+        id: 'skin_whale',
+        category: 'skins',
+        name: "Jonah's Whale",
+        description: 'From the belly of the great fish that swallowed Jonah',
+        price: 4200,
+        currency: 'gems',
+        image: whale,
+        skinNumber: 8,
+        unlockLevel: 24,
+      },
+      {
+        id: 'skin_armor_of_god',
+        category: 'skins',
+        name: 'Armor of God',
+        description: 'Put on the full armor of God to stand against the schemes of the devil',
+        price: 4400,
+        currency: 'gems',
+        image: armorOfGod,
+        skinNumber: 9,
+        unlockLevel: 24,
+      },
+      {
+        id: 'phoenix_skin',
+        category: 'skins',
+        name: 'Phoenix Skin',
+        description: 'A majestic skin unlocked after 21 days in a row. Embark on this alliance.',
+        price: 0,
+        currency: 'gems',
+        image: phoenixSkin,
+        skinNumber: 10,
+        unlockLevel: 1, // Level requirement is not the main unlock condition
+        isOwned: currentStreak >= 21 || hasSkin('10'),
+      },
+    ],
+    [userLevel, isProMember, currentStreak, hasSkin]
+  );
 
   // Group items by category for display
   const itemsByCategory = useMemo(() => {
-    const grouped = storeItems.reduce((acc, item) => {
-      if (!acc[item.category]) {
-        acc[item.category] = [];
-      }
-      acc[item.category].push(item);
-      return acc;
-    }, {} as Record<StoreCategory, StoreItem[]>);
-    
+    const grouped = storeItems.reduce(
+      (acc, item) => {
+        if (!acc[item.category]) {
+          acc[item.category] = [];
+        }
+        acc[item.category].push(item);
+        return acc;
+      },
+      {} as Record<StoreCategory, StoreItem[]>
+    );
+
     return grouped;
   }, [storeItems]);
 
   // Handle item purchase
-  const handlePurchase = useCallback(async (item: StoreItem) => {
-    hapticMedium();
+  const handlePurchase = useCallback(
+    async (item: StoreItem) => {
+      hapticMedium();
 
-    // Check if user has enough gems
-    if (item.currency === 'gems' && userGems < item.price) {
-      analytics.logEvent('Store_Purchase_Failed', {
-        item: item.id,
-        reason: 'insufficient_gems'
-      });
-      // Show alert for insufficient gems
+      // Check if user has enough gems
+      if (item.currency === 'gems' && userGems < item.price) {
+        analytics.logEvent('Store_Purchase_Failed', {
+          item: item.id,
+          reason: 'insufficient_gems',
+        });
+        // Show alert for insufficient gems
+        Alert.alert(
+          'Not Enough Gems',
+          `You need ${item.price} gems to purchase ${item.name}. You currently have ${userGems} gems.`,
+          [{ text: 'OK', style: 'default' }]
+        );
+        appLog('❌ Not enough gems to purchase:', item.name);
+        return;
+      }
+
+      // Check if user meets level requirement
+      if (item.unlockLevel && userLevel < item.unlockLevel) {
+        analytics.logEvent('Store_Purchase_Failed', {
+          item: item.id,
+          reason: 'level_locked',
+        });
+        // Show alert for level requirement
+        Alert.alert(
+          'Level Requirement',
+          `${item.name} unlocks at level ${item.unlockLevel}. You are currently level ${userLevel}.`,
+          [{ text: 'OK', style: 'default' }]
+        );
+        appLog('❌ Level requirement not met for:', item.name);
+        return;
+      }
+
+      // Show confirmation alert before purchase
       Alert.alert(
-        'Not Enough Gems',
-        `You need ${item.price} gems to purchase ${item.name}. You currently have ${userGems} gems.`,
-        [{ text: 'OK', style: 'default' }]
-      );
-      appLog('❌ Not enough gems to purchase:', item.name);
-      return;
-    }
+        'Confirm Purchase',
+        `Are you sure you want to purchase ${item.name} for ${item.price} gems?`,
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => {
+              appLog('❌ Purchase cancelled by user:', item.name);
+              analytics.logEvent('Store_Purchase_Cancelled', {
+                item: item.id,
+                price: item.price,
+              });
+            },
+          },
+          {
+            text: 'Purchase',
+            style: 'default',
+            onPress: async () => {
+              // Execute purchase after confirmation
+              try {
+                const skinId = item.skinNumber?.toString() || item.id;
+                const success = await purchaseSkin(skinId, item.price);
 
-    // Check if user meets level requirement
-    if (item.unlockLevel && userLevel < item.unlockLevel) {
-      analytics.logEvent('Store_Purchase_Failed', {
-        item: item.id,
-        reason: 'level_locked'
-      });
-      // Show alert for level requirement
-      Alert.alert(
-        'Level Requirement',
-        `${item.name} unlocks at level ${item.unlockLevel}. You are currently level ${userLevel}.`,
-        [{ text: 'OK', style: 'default' }]
-      );
-      appLog('❌ Level requirement not met for:', item.name);
-      return;
-    }
+                if (success) {
+                  appLog('✅ [StoreScreen] Purchase successful for:', item.name);
+                  analytics.logEvent('Store_Purchase_Success', {
+                    item: item.id,
+                    skinId: skinId,
+                    price: item.price,
+                  });
+                  appLog('✅ Successfully purchased skin:', item.name);
 
-    // Show confirmation alert before purchase
-    Alert.alert(
-      'Confirm Purchase',
-      `Are you sure you want to purchase ${item.name} for ${item.price} gems?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => {
-            appLog('❌ Purchase cancelled by user:', item.name);
-            analytics.logEvent('Store_Purchase_Cancelled', {
-              item: item.id,
-              price: item.price
-            });
-          }
-        },
-        {
-          text: 'Purchase',
-          style: 'default',
-          onPress: async () => {
-            // Execute purchase after confirmation
-            try {
-              const skinId = item.skinNumber?.toString() || item.id;
-              const success = await purchaseSkin(skinId, item.price);
+                  // Haptic feedback for successful purchase
+                  hapticSuccess();
 
-              if (success) {
-                appLog('✅ [StoreScreen] Purchase successful for:', item.name);
-                analytics.logEvent('Store_Purchase_Success', {
-                  item: item.id,
-                  skinId: skinId,
-                  price: item.price
-                });
-                appLog('✅ Successfully purchased skin:', item.name);
+                  // Show success alert
+                  Alert.alert(
+                    'Purchase Successful!',
+                    `${item.name} has been added to your collection. You can now equip it!`,
+                    [{ text: 'Great!', style: 'default' }]
+                  );
+                } else {
+                  analytics.logEvent('Store_Purchase_Failed', {
+                    item: item.id,
+                    reason: 'purchase_failed',
+                  });
+                  appLog('❌ Failed to purchase skin:', item.name);
 
-                // Haptic feedback for successful purchase
-                hapticSuccess()
-
-                // Show success alert
-                Alert.alert(
-                  'Purchase Successful!',
-                  `${item.name} has been added to your collection. You can now equip it!`,
-                  [{ text: 'Great!', style: 'default' }]
-                );
-              } else {
+                  // Show failure alert
+                  Alert.alert(
+                    'Purchase Failed',
+                    'Something went wrong with your purchase. Please try again.',
+                    [{ text: 'OK', style: 'default' }]
+                  );
+                }
+              } catch (error) {
+                console.error('❌ [StoreScreen] Error during purchase:', error);
                 analytics.logEvent('Store_Purchase_Failed', {
                   item: item.id,
-                  reason: 'purchase_failed'
+                  reason: 'error',
+                  error: error instanceof Error ? error.message : 'Unknown error',
                 });
-                appLog('❌ Failed to purchase skin:', item.name);
 
-                // Show failure alert
+                // Show error alert
                 Alert.alert(
-                  'Purchase Failed',
-                  'Something went wrong with your purchase. Please try again.',
+                  'Purchase Error',
+                  'An unexpected error occurred. Please try again later.',
                   [{ text: 'OK', style: 'default' }]
                 );
               }
-            } catch (error) {
-              console.error('❌ [StoreScreen] Error during purchase:', error);
-              analytics.logEvent('Store_Purchase_Failed', {
-                item: item.id,
-                reason: 'error',
-                error: error instanceof Error ? error.message : 'Unknown error'
-              });
-
-              // Show error alert
-              Alert.alert(
-                'Purchase Error',
-                'An unexpected error occurred. Please try again later.',
-                [{ text: 'OK', style: 'default' }]
-              );
-            }
-          }
-        }
-      ]
-    );
-  }, [userGems, userLevel, purchaseSkin]);
+            },
+          },
+        ]
+      );
+    },
+    [userGems, userLevel, purchaseSkin]
+  );
 
   // Handle item equip
-  const handleEquip = useCallback((item: StoreItem) => {
-    hapticLight();
+  const handleEquip = useCallback(
+    (item: StoreItem) => {
+      hapticLight();
 
-    const skinId = item.skinNumber?.toString() || item.id;
+      const skinId = item.skinNumber?.toString() || item.id;
 
-    // Update shop store (this handles the equipped skin state)
-    equipSkin(skinId);
+      // Update shop store (this handles the equipped skin state)
+      equipSkin(skinId);
 
-    // Update home store to persist the current skin
-    setCurrentSkin(skinId);
+      // Update home store to persist the current skin
+      setCurrentSkin(skinId);
 
-    appLog('🔄 Updated equipped skin to:', skinId);
+      appLog('🔄 Updated equipped skin to:', skinId);
 
-    // Update Rive animation if ref is available
-    // Note: The automatic golden skin for pro users in useHomeScreen.ts will override this
-    // if the user is pro and selects a non-golden skin
-    if (riveRef && riveRef.current && riveRef.current.setInputState) {
-      try {
-        // Use the skin that the user selected
-        const skinNumber = item.skinNumber || 0;
-        appLog('🎯 Setting Rive skin from store:', skinNumber, isProMember ? '(Pro user - golden skin)' : '');
-        riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
-        appLog('✅ Successfully updated Rive skin to:', skinNumber);
-      } catch (error) {
-        console.error('❌ Error updating Rive skin:', error);
+      // Update Rive animation if ref is available
+      // Note: The automatic golden skin for pro users in useHomeScreen.ts will override this
+      // if the user is pro and selects a non-golden skin
+      if (riveRef && riveRef.current && riveRef.current.setInputState) {
+        try {
+          // Use the skin that the user selected
+          const skinNumber = item.skinNumber || 0;
+          appLog(
+            '🎯 Setting Rive skin from store:',
+            skinNumber,
+            isProMember ? '(Pro user - golden skin)' : ''
+          );
+          riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
+          appLog('✅ Successfully updated Rive skin to:', skinNumber);
+        } catch (error) {
+          console.error('❌ Error updating Rive skin:', error);
+        }
+      } else {
+        appLog('⚠️ Rive ref not available for skin update');
       }
-    } else {
-      appLog('⚠️ Rive ref not available for skin update');
-    }
 
-    analytics.logEvent('Store_Skin_Equipped', {
-      item: item.id,
-      skinId: skinId,
-      skinNumber: item.skinNumber,
-      isPro: isProMember
-    });
+      analytics.logEvent('Store_Skin_Equipped', {
+        item: item.id,
+        skinId: skinId,
+        skinNumber: item.skinNumber,
+        isPro: isProMember,
+      });
 
-    // Show success toast
-    Toast.show({
-      type: 'success',
-      text1: 'Skin Equipped!',
-      text2: `${item.name} is now active on your lamb`,
-      position: 'top',
-      visibilityTime: 3000,
-    });
+      // Show success toast
+      Toast.show({
+        type: 'success',
+        text1: 'Skin Equipped!',
+        text2: `${item.name} is now active on your lamb`,
+        position: 'top',
+        visibilityTime: 3000,
+      });
 
-    appLog('✅ Equipped skin:', item.name, 'with skin number:', item.skinNumber);
-  }, [equipSkin, setCurrentSkin, riveRef, isProMember]);
+      appLog('✅ Equipped skin:', item.name, 'with skin number:', item.skinNumber);
+    },
+    [equipSkin, setCurrentSkin, riveRef, isProMember]
+  );
 
   // Handle upgrade to pro (for Annointed Lamb)
   const handleUpgradeToProForLamb = useCallback(async () => {
@@ -455,7 +468,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         addSkin(skinId);
 
         analytics.logEvent('Store_AnointedLamb_Upgraded', {
-          fromScreen: 'store'
+          fromScreen: 'store',
         });
         appLog('✅ Successfully upgraded to pro from Annointed Lamb card');
 
@@ -496,10 +509,10 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         isProMember,
         isOwned,
         userLevel,
-        hasSkinResult: hasSkin(skinId)
+        hasSkinResult: hasSkin(skinId),
       });
     }
-    
+
     // Add streak check for Phoenix skin
     const hasRequiredStreak = isPhoenixSkin ? currentStreak >= 21 : true;
     const isItemLocked = isLocked || (isPhoenixSkin && !hasRequiredStreak);
@@ -509,46 +522,87 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       appLog('🔍 Phoenix Skin Debug:', {
         currentStreak,
         hasRequiredStreak,
-        isLocked: isItemLocked
+        isLocked: isItemLocked,
       });
     }
 
     return (
       <View
         key={item.id}
-        className={`${isAnointedLamb
-          ? 'bg-lightYellow border-2 border-accentGold shadow-lg'
-          : isPhoenixSkin
-            ? 'border-2 border-orange shadow-lg'
-            : 'bg-surfaceCreamLight border border-brownBorder shadow-card'
-          } rounded-[24px] mb-4 overflow-hidden`}
-        style={isAnointedLamb ? {
-          shadowColor: '#FCD34D',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
-          elevation: 8,
-        } : isPhoenixSkin ? {
-          shadowColor: '#FCD34D', // Orange fire color
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.5,
-          shadowRadius: 12,
-          elevation: 10,
-        } : {}}>
+        className={`${
+          isAnointedLamb
+            ? 'bg-lightYellow border-2 border-accentGold shadow-lg'
+            : isPhoenixSkin
+              ? 'border-2 border-orange shadow-lg'
+              : 'bg-surfaceCreamLight border border-brownBorder shadow-card'
+        } rounded-[24px] mb-6`}
+        style={
+          isAnointedLamb
+            ? {
+                shadowColor: '#FCD34D',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 8,
+                overflow: 'hidden',
+              }
+            : isPhoenixSkin
+              ? {
+                  shadowColor: '#FCD34D',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.5,
+                  shadowRadius: 12,
+                  elevation: 10,
+                  overflow: 'hidden',
+                }
+              : {}
+        }>
+        {/* Stacked effect for Streak Freeze */}
+        {item.id === 'streak_freeze' && (
+          <View
+            className="rounded-xl p-1 px-2 flex-row items-center border-2 border-brownBorder"
+            style={{
+              position: 'absolute',
+              right: -14,
+              top: -4 ,
+              zIndex: 1000,
+              backgroundColor: '#FDEBB8',
+              transform: [{ rotate: '26deg' }],
+              elevation: 1000,
+            }}>
+            <Image source={gemIcon} className="w-5 h-5 mr-1" />
+            <Text className="font-feather text-body text-textPrimary">{200}</Text>
+          </View>
+        )}
+        {item.id === 'custom_devotional' && (
+          <View
+            className="rounded-xl p-1 px-2 flex-row items-center border-2 border-brownBorder"
+            style={{
+              position: 'absolute',
+              right: -14,
+              top: -4 ,
+              zIndex: 1000,
+              backgroundColor: '#FDEBB8',
+              transform: [{ rotate: '26deg' }],
+              elevation: 1000,
+            }}>
+            <Image source={gemIcon} className="w-5 h-5 mr-1" />
+            <Text className="font-feather text-body text-textPrimary">{100}</Text>
+          </View>
+        )}
 
-        <View className="flex-row p-4 h-50 justify-between">
+        <View className="flex-row p-5 h-50 justify-between overflow-hidden" style={{ zIndex: 1 }}>
           {/* Lamb Image - Full size, no background, clipped at bottom */}
+
           <View className="w-48 h-full absolute left-0 bottom-0 ml-2">
             {(isAnointedLamb || isPhoenixSkin) && (
               <View
                 className="w-48 h-50 absolute bottom-[-20] rounded-full"
                 style={{
-                  backgroundColor: isAnointedLamb 
+                  backgroundColor: isAnointedLamb
                     ? 'rgba(252, 211, 77, 0.2)'
                     : 'rgba(249, 115, 22, 0.1)', // Orange glow for Phoenix
-                  shadowColor: isAnointedLamb 
-                    ? '#FCD34D'
-                    : '#F97316',
+                  shadowColor: isAnointedLamb ? '#FCD34D' : '#F97316',
                   shadowOffset: { width: 0, height: 0 },
                   right: 4,
                   shadowOpacity: isAnointedLamb ? 0.6 : 0.7,
@@ -557,6 +611,53 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                 }}
               />
             )}
+
+            {/* Stacked effect for Streak Freeze */}
+            {item.id === 'streak_freeze' && (
+              <View
+                className="absolute left-2 -top-[24px] rounded-xl p-1 px-2"
+                style={{
+                  backgroundColor: '#B4F1FF',
+                  borderWidth: 1,
+                  borderColor: '#5AC7EA',
+                  zIndex: 1000,
+                  elevation: 1000,
+                }}>
+                <Text
+                  className="font-bold text-sm "
+                  numberOfLines={1}
+                  style={{
+                    fontSize: 12,
+                    color: '#5AC7EA',
+                  }}>
+                  {streakFreezes}x left
+                </Text>
+              </View>
+            )}
+
+            {/* Stacked effect for Custom Devotional */}
+            {item.id === 'custom_devotional' && (
+              <View
+                className="absolute left-2 -top-[24px] rounded-xl p-1 px-2"
+                style={{
+                  backgroundColor: '#FFE680',
+                  borderWidth: 1,
+                  borderColor: '#F3B12B',
+                  zIndex: 1000,
+                  elevation: 1000,
+                }}>
+                <Text
+                  className="font-bold text-sm "
+                  numberOfLines={1}
+                  style={{
+                    fontSize: 12,
+                    color: '#F3B12B',
+                  }}>
+                  {streakFreezes}x left
+                </Text>
+              </View>
+            )}
+
             {/* Stacked effect for Streak Freeze */}
             {item.id === 'streak_freeze' && (
               <Image
@@ -575,7 +676,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
             )}
             <Image
               source={item.image}
-              className={` ${isPhoenixSkin ? "w-[200px] h-[200px] -left-[18px]" :"" }  absolute  ${item.id === 'streak_freeze' || item.id === 'custom_devotional' ? 'w-44 h-44 -rotate-10 bottom-[-12]' : 'w-48 h-48 -rotate-8 bottom-[-20]'}`}
+              className={` ${isPhoenixSkin ? 'w-[200px] h-[200px] -left-[18px]' : ''}  absolute  ${item.id === 'streak_freeze' || item.id === 'custom_devotional' ? 'w-44 h-44 -rotate-10 bottom-[-12]' : 'w-48 h-48 -rotate-8 bottom-[-20]'}`}
               resizeMode="contain"
             />
           </View>
@@ -600,7 +701,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                   isEquipped ? (
                     <PrimaryButton
                       title="Equipped"
-                      onPress={() => { }}
+                      onPress={() => {}}
                       disabled={true}
                       buttonType="blue"
                       buttonHeight={40}
@@ -634,7 +735,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                   isEquipped ? (
                     <PrimaryButton
                       title="Equipped"
-                      onPress={() => { }}
+                      onPress={() => {}}
                       disabled={true}
                       buttonType="blue"
                       buttonHeight={40}
@@ -656,7 +757,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                   <PrimaryButton
                     title={`${currentStreak < 21 ? `${currentStreak}/21 streak ` : i18n.t('unlocked')}`}
                     onPress={() => {
-                      if(currentStreak >= 21){
+                      if (currentStreak >= 21) {
                         handleEquip(item);
                       }
                     }}
@@ -670,7 +771,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               ) : isItemLocked ? (
                 <PrimaryButton
                   title={`Unlocks lvl ${item.unlockLevel}`}
-                  onPress={() => { }}
+                  onPress={() => {}}
                   disabled={true}
                   buttonType="blue"
                   buttonHeight={40}
@@ -681,7 +782,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                 isEquipped ? (
                   <PrimaryButton
                     title="Equipped"
-                    onPress={() => { }}
+                    onPress={() => {}}
                     disabled={true}
                     buttonType="blue"
                     buttonHeight={40}
@@ -735,7 +836,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       {/* Header */}
       <View className="flex-row items-center justify-between px-6 pt-8 pb-4 relative">
         {/* Gems counter - left */}
-        <View className="w-24 flex-row items-center bg-lightYellow px-3 py-1.5 rounded-full">
+        <View className="flex-row items-center bg-lightYellow px-3 py-1.5 rounded-full">
           <Image source={gemIcon} className="w-5 h-5 mr-1" />
           <Text className="font-feather text-body text-textPrimary">{userGems}</Text>
         </View>
@@ -762,27 +863,22 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         className="flex-1 px-6"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}>
-        
         {/* Items Section */}
         {itemsByCategory.items && itemsByCategory.items.length > 0 && (
           <>
-            <Text className="font-feather text-xl text-textPrimary mb-4 mt-2">
-              Items
-            </Text>
+            <Text className="font-feather text-xl text-textPrimary mb-4 mt-2">Items</Text>
             {itemsByCategory.items.map(renderStoreItem)}
           </>
         )}
-        
+
         {/* Skins Section */}
         {itemsByCategory.skins && itemsByCategory.skins.length > 0 && (
           <>
-            <Text className="font-feather text-xl text-textPrimary mb-4 mt-6">
-              Skins
-            </Text>
+            <Text className="font-feather text-xl text-textPrimary mb-4 mt-6">Skins</Text>
             {itemsByCategory.skins.map(renderStoreItem)}
           </>
         )}
-        
+
         <View className="flex h-24 bg-clear" />
       </ScrollView>
     </SafeAreaView>

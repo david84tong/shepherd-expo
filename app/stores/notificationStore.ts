@@ -14,6 +14,7 @@ export const NOTIFICATION_IDS = {
   MISSED_REMINDER: 'missed-reminder',
   DAILY_REMINDER: 'daily-reminder',
   ADAPTIVE_REMINDER: 'adaptive-reminder',
+  STREAK_FREEZE_REMINDER: 'streak-freeze-reminder',
 };
 
 // Type for the timestamp from Firestore
@@ -76,6 +77,9 @@ interface NotificationState {
 
   // Action: Specifically reschedule streak notifications for the next day (after streak completion)
   rescheduleStreakNotificationsForNextDay: () => Promise<boolean>;
+
+  // Action: Schedule streak freeze reminder notification for 3 days after freeze is used
+  scheduleStreakFreezeReminder: (freezesRemaining: number) => Promise<void>;
 }
 
 // Configure notification behavior
@@ -568,6 +572,7 @@ export const useNotificationStore = create<NotificationState>()(
           await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.STREAK_WARNING);
           await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.STREAK_BROKEN);
           await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.MISSED_REMINDER);
+          await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.STREAK_FREEZE_REMINDER);
           appLog('Streak notifications canceled');
         } catch (error) {
           console.error('Failed to cancel streak notifications:', error);
@@ -737,6 +742,68 @@ export const useNotificationStore = create<NotificationState>()(
         } catch (error) {
           console.error('Failed to reschedule streak notifications for the next day:', error);
           return false;
+        }
+      },
+
+      // Schedule streak freeze reminder notification
+      scheduleStreakFreezeReminder: async (freezesRemaining: number) => {
+        try {
+          // Check if notifications are enabled
+          if (!get().notificationsEnabled) {
+            appLog('📱 Notifications are disabled, skipping streak freeze reminder');
+            return;
+          }
+
+          // Get permission
+          const { status } = await Notifications.getPermissionsAsync();
+          if (status !== 'granted') {
+            appLog('📱 Notification permission not granted, skipping streak freeze reminder');
+            return;
+          }
+
+          // Calculate notification time: 3 days from now at 9:00 AM
+          const now = new Date();
+          const notificationTime = new Date(now);
+          notificationTime.setDate(notificationTime.getDate() + 3); // 3 days later
+          notificationTime.setHours(9, 0, 0, 0); // 9:00 AM
+
+          // If the calculated time is in the past (edge case), add one more day
+          if (notificationTime <= now) {
+            notificationTime.setDate(notificationTime.getDate() + 1);
+          }
+
+          appLog(
+            `📱 Scheduling streak freeze reminder for ${notificationTime.toLocaleString()}`
+          );
+
+          // Cancel any existing streak freeze notifications
+          await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.STREAK_FREEZE_REMINDER);
+
+          // Schedule the notification
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: 'Streak Freeze saved your lamb! 🐑❄️',
+              body: `Got 1 minute for God? You have ${freezesRemaining} freeze(s) left!`,
+              sound: true,
+              data: { 
+                type: 'streak-freeze-reminder',
+                freezesRemaining 
+              },
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.DATE,
+              date: notificationTime,
+            },
+            identifier: NOTIFICATION_IDS.STREAK_FREEZE_REMINDER,
+          });
+
+          const hoursFromNow = (notificationTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+          appLog(
+            `📱 Streak freeze reminder scheduled successfully in ${hoursFromNow.toFixed(1)} hours`
+          );
+
+        } catch (error) {
+          console.error('📱 Failed to schedule streak freeze reminder:', error);
         }
       },
     }),

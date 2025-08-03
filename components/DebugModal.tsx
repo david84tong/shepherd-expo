@@ -4,11 +4,13 @@ import { useRouter, usePathname } from 'expo-router';
 import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert, TextInput, NativeModules } from 'react-native';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
+import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { useUserStore } from '../app/stores/userStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useDevotionalStore } from '../app/stores/devotionalStore';
+import { useNotificationStore } from '../app/stores/notificationStore';
 import { useAuth, isSignedIn } from '../app/hooks/authHook';
 import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
@@ -946,6 +948,129 @@ export function DebugButton() {
                 </View>
               </View>
 
+              {/* Notification Testing Section */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">📱 Notification Testing</Text>
+                
+                {/* Notification Permission & Status */}
+                <TouchableOpacity
+                  className="bg-[#F0E6FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
+                  onPress={async () => {
+                    try {
+                      const { status } = await Notifications.getPermissionsAsync();
+                      const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+                      
+                      appLog('📱 Notification Status:', {
+                        permission: status,
+                        scheduledCount: scheduledNotifications.length,
+                        scheduled: scheduledNotifications.map(n => ({
+                          id: n.identifier,
+                          title: n.content.title,
+                          body: n.content.body,
+                          trigger: n.trigger
+                        }))
+                      });
+                      
+                      Alert.alert(
+                        'Notification Status',
+                        `Permission: ${status}\n` +
+                        `Scheduled: ${scheduledNotifications.length} notifications\n\n` +
+                        `Check console for detailed list`
+                      );
+                    } catch (error) {
+                      appLog('Error checking notification status:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Error checking notifications',
+                        text2: String(error),
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Check Notification Status</Text>
+                  <Text className="font-din text-sm text-[#7C6F94] mt-1">
+                    Check permissions & list scheduled notifications
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Immediate Notification */}
+                <TouchableOpacity
+                  className="bg-[#E8F3E0] p-4 rounded-xl my-1.5 border-l-4 border-l-[#A0D468]"
+                  onPress={async () => {
+                    try {
+                      await Notifications.scheduleNotificationAsync({
+                        content: {
+                          title: 'Test Notification 🧪',
+                          body: 'This is a test notification from debug menu',
+                          sound: true,
+                          data: { type: 'test' },
+                        },
+                        trigger: {
+                          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+                          seconds: 3,
+                        },
+                        identifier: 'debug-test-notification',
+                      });
+                      
+                      Toast.show({
+                        type: 'success',
+                        text1: 'Test Notification Scheduled! 📱',
+                        text2: 'Will appear in 3 seconds',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    } catch (error) {
+                      appLog('Error scheduling test notification:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Failed to schedule test notification',
+                        text2: String(error),
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Test Immediate Notification</Text>
+                  <Text className="font-din text-sm text-[#7C927E] mt-1">
+                    Schedule test notification in 3 seconds
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Clear All Notifications */}
+                <TouchableOpacity
+                  className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
+                  onPress={async () => {
+                    try {
+                      await Notifications.cancelAllScheduledNotificationsAsync();
+                      
+                      Toast.show({
+                        type: 'success',
+                        text1: 'All Notifications Cleared! 🗑️',
+                        text2: 'All scheduled notifications have been cancelled',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                      
+                      appLog('📱 All scheduled notifications cleared');
+                    } catch (error) {
+                      appLog('Error clearing notifications:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Failed to clear notifications',
+                        text2: String(error),
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Clear All Notifications</Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">
+                    Cancel all scheduled notifications
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">
                   Animations & Modals
@@ -1419,6 +1544,42 @@ export function DebugButton() {
                   <Text className="font-feather text-base text-textPrimary">Show Freeze Sheet</Text>
                   <Text className="font-din text-sm text-[#6A8A94] mt-1">
                     Test the streak freeze bottom sheet
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Streak Freeze Notification Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-2 border-l-4 border-l-[#4FB8FE]"
+                  onPress={async () => {
+                    try {
+                      const notificationStore = useNotificationStore.getState();
+                      
+                      // Schedule a test freeze notification with 2 freezes remaining
+                      await notificationStore.scheduleStreakFreezeReminder(2);
+                      
+                      Toast.show({
+                        type: 'success',
+                        text1: 'Freeze Notification Scheduled! ❄️',
+                        text2: 'Will notify in 3 days at 9 AM about 2 freezes left',
+                        position: 'top',
+                        visibilityTime: 4000,
+                      });
+                      
+                      appLog('❄️ Test freeze notification scheduled for 3 days from now at 9 AM');
+                    } catch (error) {
+                      appLog('Error scheduling test freeze notification:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Failed to schedule notification',
+                        text2: String(error),
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Test Freeze Notification</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Schedule freeze reminder for 3 days from now
                   </Text>
                 </TouchableOpacity>
 

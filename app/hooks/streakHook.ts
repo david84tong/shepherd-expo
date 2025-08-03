@@ -210,9 +210,10 @@ function calculateStreakAndPenalties({
     if (streakFreezes > 0) {
       // Use a streak freeze to save the streak
       streakFreezeUsed = true;
-      setStreakFreezes(streakFreezes - 1);
+      const newFreezeCount = streakFreezes - 1;
+      setStreakFreezes(newFreezeCount);
       if (debug)
-        appLog(`❄️ Using streak freeze! Freezes remaining: ${streakFreezes - 1}`);
+        appLog(`❄️ Using streak freeze! Freezes remaining: ${newFreezeCount}`);
     } else {
       // No freezes available, reset streak
       if (debug)
@@ -345,7 +346,7 @@ function calculateStreakAndPenalties({
     return {
       streakBroken: isReadingStreakBroken && !streakFreezeUsed,
       streakFreezeUsed,
-      freezesRemaining: streakFreezes,
+      freezesRemaining: streakFreezeUsed ? streakFreezes - 1 : streakFreezes,
       heartPenalty,
       daysMissed: Math.max(0, daysSinceActivity - 1), // Subtract 1 because if you're 2 days since activity, you missed 1 day
       readingPenalized: applyReadingPenalty,
@@ -358,7 +359,7 @@ function calculateStreakAndPenalties({
     return {
       streakBroken: isReadingStreakBroken && !streakFreezeUsed,
       streakFreezeUsed,
-      freezesRemaining: streakFreezes,
+      freezesRemaining: streakFreezeUsed ? streakFreezes - 1 : streakFreezes,
       heartPenalty: 0,
       daysMissed: 0,
       readingPenalized: false,
@@ -452,6 +453,18 @@ export const checkStreakAndApplyPenalties = async () => {
       debug: true,
     });
 
+    // Schedule freeze notification if a freeze was used
+    if (result.streakFreezeUsed) {
+      try {
+        const notificationStore = useNotificationStore.getState();
+        await notificationStore.scheduleStreakFreezeReminder(result.freezesRemaining);
+        appLog(`❄️ Scheduled freeze reminder notification for ${result.freezesRemaining} freezes remaining`);
+      } catch (notificationError) {
+        appLog('Error scheduling freeze notification:', notificationError);
+        // Continue even if notification scheduling fails
+      }
+    }
+
     // Sync changes back to Firestore if authenticated and there were significant changes
     if (isAuthenticated() && (result.heartPenalty > 0 || result.streakBroken || result.newDay)) {
       try {
@@ -538,6 +551,17 @@ export const useStreakManager = () => {
         resetCompletionStates: homeStore.resetCompletionStates,
         debug: true,
       });
+
+      // Schedule freeze notification if a freeze was used
+      if (result.streakFreezeUsed) {
+        try {
+          await notificationStore.scheduleStreakFreezeReminder(result.freezesRemaining);
+          appLog(`❄️ Scheduled freeze reminder notification for ${result.freezesRemaining} freezes remaining`);
+        } catch (notificationError) {
+          appLog('Error scheduling freeze notification:', notificationError);
+          // Continue even if notification scheduling fails
+        }
+      }
 
       // Sync changes back to Firestore if authenticated and there were significant changes
       if (isAuthenticated() && (result.heartPenalty > 0 || result.streakBroken || result.newDay)) {
