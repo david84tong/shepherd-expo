@@ -108,7 +108,9 @@ const COLORS: Record<number, string> = {
   0: 'bg-pillBorder', // gray (using pillBorder color from config)
 };
 
-type DayMap = { [date: string]: { reading: boolean; prayer: boolean; reflection: boolean } };
+const STREAK_FREEZE_COLOR = 'bg-[#ADD8E6]'; // light blue color for streak freeze days (matching StreakScreen)
+
+type DayMap = { [date: string]: { reading: boolean; prayer: boolean; reflection: boolean; streakFreeze: boolean } };
 
 function toDateSafe(ts: any): Date {
   if (!ts) return new Date();
@@ -205,24 +207,31 @@ function getMonthGrid(
   readings: Reading[],
   prayers: Prayer[],
   reflections: Reflection[],
+  streakFreezeUsedDates: string[],
   year: number,
   month: number // 0-indexed for JS Date
 ) {
-  // Build a map: { 'YYYY-MM-DD': {reading:bool, prayer:bool, reflection:bool} }
-  const map: DayMap = {};
-  readings.forEach((r: Reading) => {
+  try {
+    // Build a map: { 'YYYY-MM-DD': {reading:bool, prayer:bool, reflection:bool, streakFreeze:bool} }
+    const map: DayMap = {};
+    
+    // Validate and create streak freeze set
+    const validStreakFreezeUsedDates = Array.isArray(streakFreezeUsedDates) ? streakFreezeUsedDates : [];
+    const streakFreezeSet = new Set(validStreakFreezeUsedDates);
+  
+  (readings || []).forEach((r: Reading) => {
     const d = dayjs(toDateSafe(r.date)).format('YYYY-MM-DD');
-    if (!map[d]) map[d] = { reading: false, prayer: false, reflection: false };
+    if (!map[d]) map[d] = { reading: false, prayer: false, reflection: false, streakFreeze: false };
     map[d].reading = true;
   });
-  prayers.forEach((p: Prayer) => {
+  (prayers || []).forEach((p: Prayer) => {
     const d = dayjs(toDateSafe(p.date)).format('YYYY-MM-DD');
-    if (!map[d]) map[d] = { reading: false, prayer: false, reflection: false };
+    if (!map[d]) map[d] = { reading: false, prayer: false, reflection: false, streakFreeze: false };
     map[d].prayer = true;
   });
-  reflections.forEach((rf: Reflection) => {
+  (reflections || []).forEach((rf: Reflection) => {
     const d = dayjs(toDateSafe(rf.date)).format('YYYY-MM-DD');
-    if (!map[d]) map[d] = { reading: false, prayer: false, reflection: false };
+    if (!map[d]) map[d] = { reading: false, prayer: false, reflection: false, streakFreeze: false };
     map[d].reflection = true;
   });
 
@@ -245,9 +254,11 @@ function getMonthGrid(
   for (let i = firstWeekday; i < 7; i++) {
     if (dayCounter <= daysInMonth) {
       const d = dayjs(new Date(year, month, dayCounter)).format('YYYY-MM-DD');
+      const dayData = map[d] || { reading: false, prayer: false, reflection: false, streakFreeze: false };
+      dayData.streakFreeze = streakFreezeSet.has(d);
       week.push({
         date: d,
-        ...(map[d] || { reading: false, prayer: false, reflection: false }),
+        ...dayData,
       });
       dayCounter++;
     }
@@ -260,9 +271,11 @@ function getMonthGrid(
     for (let i = 0; i < 7; i++) {
       if (dayCounter <= daysInMonth) {
         const d = dayjs(new Date(year, month, dayCounter)).format('YYYY-MM-DD');
+        const dayData = map[d] || { reading: false, prayer: false, reflection: false, streakFreeze: false };
+        dayData.streakFreeze = streakFreezeSet.has(d);
         week.push({
           date: d,
-          ...(map[d] || { reading: false, prayer: false, reflection: false }),
+          ...dayData,
         });
         dayCounter++;
       } else {
@@ -272,6 +285,18 @@ function getMonthGrid(
     grid.push(week);
   }
   return grid;
+  } catch (error) {
+    appLog('Error in getMonthGrid:', error, {
+      readings: readings?.length,
+      prayers: prayers?.length,
+      reflections: reflections?.length,
+      streakFreezeUsedDates: streakFreezeUsedDates?.length,
+      year,
+      month
+    });
+    // Return empty grid on error
+    return [];
+  }
 }
 
 // Function to handle haptic feedback
@@ -284,9 +309,10 @@ interface StatsScreenProps {
 }
 
 export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
-  const readings = useUserStore((s) => s.getCompletedReadings());
-  const prayers = useUserStore((s) => s.getCompletedPrayers());
-  const reflections = useUserStore((s) => s.getCompletedReflections());
+  const readings = useUserStore((s) => s.getCompletedReadings()) || [];
+  const prayers = useUserStore((s) => s.getCompletedPrayers()) || [];
+  const reflections = useUserStore((s) => s.getCompletedReflections()) || [];
+  const streakFreezeUsedDates = useUserStore((s) => s.getStreakFreezeUsedDates?.()) || [];
 
   // Get the showOldReflectionSheet function directly from uiStore
   const showOldReflectionSheet = useUIStore((state) => state.showOldReflectionSheet);
@@ -366,10 +392,10 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
   const now = dayjs();
   const year = now.year();
   const month = now.month(); // 0-indexed
-  const monthGrid = getMonthGrid(readings, prayers, reflections, year, month);
+  const monthGrid = getMonthGrid(readings, prayers, reflections, streakFreezeUsedDates, year, month);
 
   // Recent reflections (sorted desc)
-  const recentReflections = [...reflections]
+  const recentReflections = [...(reflections || [])]
     .sort((a, b) => toDateSafe(b.date).getTime() - toDateSafe(a.date).getTime())
     .slice(0, 3);
 
@@ -713,6 +739,26 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                 {week.map((day, dayIdx) => {
                   if (!day)
                     return <View key={dayIdx} className="w-8 h-8 rounded-md bg-transparent" />;
+                  
+                  // If day has streak freeze, use light blue color with white border
+                  if (day.streakFreeze) {
+                    return (
+                      <TouchableOpacity
+                        key={day.date}
+                        className={`w-8 h-8 rounded-md ${STREAK_FREEZE_COLOR} border-2 border-white items-center justify-center`}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          // Provide light haptic feedback
+                          hapticLight();
+
+                          // In the future, this could show detail for the specific day
+                          appLog('Day pressed (streak freeze):', day.date);
+                        }}>
+                        <Text className="text-white text-xs">❄️</Text>
+                      </TouchableOpacity>
+                    );
+                  }
+                  
                   const count = [day.reading, day.prayer, day.reflection].filter(Boolean).length;
                   return (
                     <TouchableOpacity
@@ -732,22 +778,28 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
               </View>
             ))}
 
-            <View className="flex-row justify-end mt-4">
-              <View className="flex-row items-center mr-3">
+            <View className="flex-row justify-end mt-4 flex-wrap">
+              <View className="flex-row items-center mr-3 mb-1">
                 <View className="w-3 h-3 rounded-sm bg-pillBorder mr-1" />
                 <Text className="font-din text-description text-xs">0</Text>
               </View>
-              <View className="flex-row items-center mr-3">
+              <View className="flex-row items-center mr-3 mb-1">
                 <View className="w-3 h-3 rounded-sm bg-accentGold/60 mr-1" />
                 <Text className="font-din text-description text-xs">1</Text>
               </View>
-              <View className="flex-row items-center mr-3">
+              <View className="flex-row items-center mr-3 mb-1">
                 <View className="w-3 h-3 rounded-sm bg-accentGold/80 mr-1" />
                 <Text className="font-din text-description text-xs">2</Text>
               </View>
-              <View className="flex-row items-center">
+              <View className="flex-row items-center mr-3 mb-1">
                 <View className="w-3 h-3 rounded-sm bg-accentGold mr-1" />
                 <Text className="font-din text-description text-xs">3</Text>
+              </View>
+              <View className="flex-row items-center mb-1">
+                <View className="w-3 h-3 rounded-sm bg-[#ADD8E6] border border-white mr-1 items-center justify-center">
+                  <Text className="text-white text-[8px]">❄️</Text>
+                </View>
+                <Text className="font-din text-description text-xs">Freeze</Text>
               </View>
             </View>
           </View>

@@ -58,8 +58,8 @@ const buildWeekCells = (
     if (d.isBefore(accountCreated, 'day')) status = 'BEFORE_ACCOUNT';
     else if (isToday) status = completed.has(key) ? 'COMPLETED' : 'TODAY_PENDING';
     else if (d.isAfter(today, 'day')) status = 'FUTURE';
-    else if (completed.has(key)) status = 'COMPLETED';
     else if (streakFreezeUsedDates.has(key)) status = 'STREAK_FREEZE';
+    else if (completed.has(key)) status = 'COMPLETED';
     else status = 'MISSED';
 
     return {
@@ -257,10 +257,20 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   }, [completedSet, lastReadingDate]);
 
   // 3. build the centered grid (today in the middle)
-  const streakFreezeUsedSet = useMemo(() => new Set(streakFreezeUsedDates), [streakFreezeUsedDates]);
+  const streakFreezeUsedSet = useMemo(() => new Set(streakFreezeUsedDates || []), [streakFreezeUsedDates]);
+  
   
   const weekCells = useMemo(
-    () => buildWeekCells(today, createdDate, augmentedCompletedSet, streakFreezeUsedSet),
+    () => {
+      if (__DEV__) {
+        appLog('[StreakScreen] Building week cells with streak freeze data:', {
+          streakFreezeUsedDates: Array.from(streakFreezeUsedSet),
+          completedDates: Array.from(augmentedCompletedSet),
+          today: today.format('YYYY-MM-DD'),
+        });
+      }
+      return buildWeekCells(today, createdDate, augmentedCompletedSet, streakFreezeUsedSet);
+    },
     [today, createdDate, augmentedCompletedSet, streakFreezeUsedSet]
   );
 
