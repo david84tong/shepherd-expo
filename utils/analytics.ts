@@ -8,6 +8,7 @@ import {
   Identify,
   reset as amplitudeReset,
 } from '@amplitude/analytics-react-native';
+import { Platform } from 'react-native';
 
 // Mixpanel token
 const MIXPANEL_TOKEN = '7178bfcd1e0972001d3e6c066e8fb18b';
@@ -30,9 +31,12 @@ class Analytics {
 
     try {
       // Initialize Mixpanel
-      this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
+      const trackAutomaticEvents = false;
+      const useNative = true;
+      this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, trackAutomaticEvents, useNative);
       await this.mixpanel.init();
       console.log('✅ Mixpanel initialized successfully');
+      this.mixpanel.track('test_event', { platform: Platform.OS });
 
       // Initialize Amplitude
       await amplitudeInit(AMPLITUDE_API_KEY);

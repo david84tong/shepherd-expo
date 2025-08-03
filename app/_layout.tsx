@@ -63,6 +63,7 @@ import { COVENANT_STATES } from './hooks/streakHook';
 import { useUserStore } from './stores/userStore';
 import CovenantSuccessSheet, { CovenantSuccessSheetRef } from '../components/CovenantSuccessSheet';
 import * as Sentry from '@sentry/react-native';
+import { performanceMonitor, trackOperation, trackRive } from './utils/performanceMonitor';
 
 Sentry.init({
   dsn: 'https://c9b3a3c9ed0846a755ee7175b07982f8@o4509279727321088.ingest.us.sentry.io/4509279728828416',
@@ -528,6 +529,7 @@ export default Sentry.wrap(function RootLayout() {
     const initializationTimeout = setTimeout(() => {
       if (!appReady) {
         console.warn('App initialization timed out, forcing ready state');
+        Sentry.captureMessage('App initialization timeout - forcing ready state', 'warning');
         setAppReady(true);
         SplashScreen.hideAsync();
       }
@@ -562,6 +564,11 @@ export default Sentry.wrap(function RootLayout() {
 
   // Modify the initializeApp function to handle both scenarios
   const initializeApp = async () => {
+    const endTracking = trackOperation('app_initialization', {
+      riveAssetsLoaded,
+      fontsLoaded: !!fontsLoaded
+    });
+
     try {
       appLog('🚀 Starting app initialization...');
 
@@ -588,9 +595,14 @@ export default Sentry.wrap(function RootLayout() {
         await initializeNotifications();
         
         // Note: checkAndShowCheckInIfNeeded is called in the isInitialized useEffect
-      } catch (error) { }
+      } catch (error) { 
+        appLog('Non-critical initialization error:', error);
+        Sentry.captureException(error);
+      }
+      
       // Set Rive ready
       setIsRiveReady(true);
+      trackRive('splash_screen', 'start');
       setShowRiveAnimation(true);
       setAppReady(true);
 
@@ -598,8 +610,11 @@ export default Sentry.wrap(function RootLayout() {
       setTimeout(() => {
         SplashScreen.hideAsync();
       }, 100);
+      
+      endTracking();
     } catch (error) {
       appLog('Error during app initialization:', error);
+      Sentry.captureException(error);
       Alert.alert('Error during app initialization:', error instanceof Error ? error.message : String(error));
       setHasError(true);
       setAppReady(true);
@@ -831,12 +846,19 @@ export default Sentry.wrap(function RootLayout() {
             style={styles.riveAnimation}
             autoplay={true}
             onPause={() => {
+              appLog('Rive animation paused');
+              trackRive('splash_screen', 'end');
               setShowRiveAnimation(false);
             }}
             onStop={() => {
+              appLog('Rive animation stopped');
+              trackRive('splash_screen', 'end');
               setShowRiveAnimation(false);
             }}
-            onError={() => {
+            onError={(error) => {
+              appLog('Rive animation error:', error);
+              trackRive('splash_screen', 'error');
+              Sentry.captureException(error);
               setShowRiveAnimation(false);
             }}
             />
@@ -846,12 +868,19 @@ export default Sentry.wrap(function RootLayout() {
             style={styles.riveAnimation}
             autoplay={true}
             onPause={() => {
+              appLog('Rive animation paused');
+              trackRive('splash_screen', 'end');
               setShowRiveAnimation(false);
             }}
             onStop={() => {
+              appLog('Rive animation stopped');
+              trackRive('splash_screen', 'end');
               setShowRiveAnimation(false);
             }}
-            onError={() => {
+            onError={(error) => {
+              appLog('Rive animation error:', error);
+              trackRive('splash_screen', 'error');
+              Sentry.captureException(error);
               setShowRiveAnimation(false);
             }}
           />

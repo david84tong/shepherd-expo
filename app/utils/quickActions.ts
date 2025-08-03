@@ -57,7 +57,7 @@ export const setupQuickActions = async () => {
  */
 export const handleQuickAction = async (action: QuickActions.Action) => {
   // Track the quick action press
-  analytics.logEvent('quick_action_pressed', {
+  analytics.trackEvent('quick_action_pressed', {
     action_id: action.id,
     action_title: action.title,
     action_subtitle: action.subtitle,
@@ -71,7 +71,7 @@ export const handleQuickAction = async (action: QuickActions.Action) => {
       if (supported) {
         await Linking.openURL(DISCOUNT_DEEP_LINK);
         // Track successful deep link opening
-        analytics.logEvent('quick_action_deep_link_opened', {
+        analytics.trackEvent('quick_action_deep_link_opened', {
           action_id: action.id,
           deep_link: DISCOUNT_DEEP_LINK,
           success: true
@@ -79,7 +79,7 @@ export const handleQuickAction = async (action: QuickActions.Action) => {
       } else {
         console.error('Cannot open deep link:', DISCOUNT_DEEP_LINK);
         // Track failed deep link opening
-        analytics.logEvent('quick_action_deep_link_failed', {
+        analytics.trackEvent('quick_action_deep_link_failed', {
           action_id: action.id,
           deep_link: DISCOUNT_DEEP_LINK,
           success: false,
@@ -89,7 +89,7 @@ export const handleQuickAction = async (action: QuickActions.Action) => {
     } catch (error) {
       console.error('Error opening deep link:', error);
       // Track error opening deep link
-      analytics.logEvent('quick_action_deep_link_error', {
+      analytics.trackEvent('quick_action_deep_link_error', {
         action_id: action.id,
         deep_link: DISCOUNT_DEEP_LINK,
         success: false,
@@ -108,7 +108,7 @@ export const handleQuickAction = async (action: QuickActions.Action) => {
       if (supported) {
         await Linking.openURL(url);
         // Track successful form URL opening
-        analytics.logEvent('quick_action_form_opened', {
+        analytics.trackEvent('quick_action_form_opened', {
           action_id: action.id,
           form_url: url,
           success: true
@@ -116,7 +116,7 @@ export const handleQuickAction = async (action: QuickActions.Action) => {
       } else {
         console.error('Cannot open URL:', url);
         // Track failed form URL opening
-        analytics.logEvent('quick_action_form_failed', {
+        analytics.trackEvent('quick_action_form_failed', {
           action_id: action.id,
           form_url: url,
           success: false,
@@ -126,7 +126,7 @@ export const handleQuickAction = async (action: QuickActions.Action) => {
     } catch (error) {
       console.error('Error opening URL:', error);
       // Track error opening form URL
-      analytics.logEvent('quick_action_form_error', {
+      analytics.trackEvent('quick_action_form_error', {
         action_id: action.id,
         form_url: url,
         success: false,
