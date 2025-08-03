@@ -111,16 +111,17 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         image: streakFreezeIcon,
         isOwned: false,
       },
-      {
+      // Only show custom devotionals for non-pro users
+      ...(isProMember ? [] : [{
         id: 'custom_devotional',
-        category: 'items',
+        category: 'items' as StoreCategory,
         name: 'Custom Devotionals',
         description: 'Create your own personalized devotionals based off check-ins',
         price: 200,
-        currency: 'gems',
+        currency: 'gems' as 'gems',
         image: customDevotionalIcon,
         isOwned: false,
-      },
+      }] as StoreItem[]),
 
       // Skins
       {
