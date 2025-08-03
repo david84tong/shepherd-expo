@@ -79,6 +79,7 @@ export interface UserDoc {
   proExpiryDate?: FirebaseFirestoreTypes.Timestamp;
   completedMapPaths: MapPathCompletion[];
   customDevotionals: any[];
+  customDevotionalsLeft: number;
 }
 
 export interface UserStore extends UserDoc {
@@ -121,6 +122,7 @@ export interface UserStore extends UserDoc {
   getCompletedReadings: () => Reading[];
   getSkins: () => string[];
   getCovenantProgress: () => CovenantProgress;
+  getCustomDevotionalsLeft: () => number;
   // Getters for Lamb fields
   getLambLevel: () => number;
   getLambXp: () => number;
@@ -165,6 +167,8 @@ export interface UserStore extends UserDoc {
   addSkin: (skin: string) => void;
   setIsProFromOnboarding: (isProFromOnboarding: boolean) => void;
   setCovenantProgress: (progress: CovenantProgress) => void;
+  setCustomDevotionalsLeft: (count: number) => void;
+  decrementCustomDevotionalsLeft: () => void;
   // Setters for Lamb fields
   setLambLevel: (level: number) => void;
   setLambXp: (xp: number) => void;

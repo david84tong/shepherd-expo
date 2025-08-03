@@ -73,7 +73,8 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const riveRef = useHomeStore((state) => state.riveRef);
   const setCurrentSkin = useHomeStore((state) => state.setCurrentSkin);
   const { currentStreak } = useUserStore((state) => state.covenantProgress);
-  const { streakFreezes } = useUserStore((state) => state);
+  const { streakFreezes, customDevotionalsLeft } = useUserStore((state) => state);
+  const { setCustomDevotionalsLeft, setGens } = useUserStore();
 
   // Use reactive store subscriptions for real-time updates
   const userGems = useUserStore((state) => state.gens || 0);
@@ -115,7 +116,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         category: 'items',
         name: 'Custom Devotionals',
         description: 'Create your own personalized devotionals based off check-ins',
-        price: 100,
+        price: 200,
         currency: 'gems',
         image: customDevotionalIcon,
         isOwned: false,
@@ -337,17 +338,21 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
             onPress: async () => {
               // Execute purchase after confirmation
               try {
-                const skinId = item.skinNumber?.toString() || item.id;
-                const success = await purchaseSkin(skinId, item.price);
+                // Handle custom devotionals differently
+                if (item.id === 'custom_devotional') {
+                  // Deduct gems and add custom devotionals
+                  const newGems = userGems - item.price;
+                  const newCustomDevotionalsLeft = customDevotionalsLeft + 1;
+                  
+                  setGens(newGems);
+                  setCustomDevotionalsLeft(newCustomDevotionalsLeft);
 
-                if (success) {
-                  appLog('✅ [StoreScreen] Purchase successful for:', item.name);
+                  appLog('✅ [StoreScreen] Custom devotional purchase successful');
                   analytics.logEvent('Store_Purchase_Success', {
                     item: item.id,
-                    skinId: skinId,
                     price: item.price,
+                    type: 'custom_devotional',
                   });
-                  appLog('✅ Successfully purchased skin:', item.name);
 
                   // Haptic feedback for successful purchase
                   hapticSuccess();
@@ -355,22 +360,70 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                   // Show success alert
                   Alert.alert(
                     'Purchase Successful!',
-                    `${item.name} has been added to your collection. You can now equip it!`,
+                    `You now have ${newCustomDevotionalsLeft} custom devotional${newCustomDevotionalsLeft > 1 ? 's' : ''} available!`,
+                    [{ text: 'Great!', style: 'default' }]
+                  );
+                } else if (item.id === 'streak_freeze') {
+                  // Handle streak freeze purchase
+                  const newGems = userGems - item.price;
+                  const currentFreezes = useUserStore.getState().streakFreezes;
+                  
+                  setGens(newGems);
+                  useUserStore.getState().setStreakFreezes(currentFreezes + 1);
+
+                  appLog('✅ [StoreScreen] Streak freeze purchase successful');
+                  analytics.logEvent('Store_Purchase_Success', {
+                    item: item.id,
+                    price: item.price,
+                    type: 'streak_freeze',
+                  });
+
+                  // Haptic feedback for successful purchase
+                  hapticSuccess();
+
+                  // Show success alert
+                  Alert.alert(
+                    'Purchase Successful!',
+                    `You now have ${currentFreezes + 1} streak freeze${currentFreezes + 1 > 1 ? 's' : ''} available!`,
                     [{ text: 'Great!', style: 'default' }]
                   );
                 } else {
-                  analytics.logEvent('Store_Purchase_Failed', {
-                    item: item.id,
-                    reason: 'purchase_failed',
-                  });
-                  appLog('❌ Failed to purchase skin:', item.name);
+                  // Handle skin purchases
+                  const skinId = item.skinNumber?.toString() || item.id;
+                  const success = await purchaseSkin(skinId, item.price);
 
-                  // Show failure alert
-                  Alert.alert(
-                    'Purchase Failed',
-                    'Something went wrong with your purchase. Please try again.',
-                    [{ text: 'OK', style: 'default' }]
-                  );
+                  if (success) {
+                    appLog('✅ [StoreScreen] Purchase successful for:', item.name);
+                    analytics.logEvent('Store_Purchase_Success', {
+                      item: item.id,
+                      skinId: skinId,
+                      price: item.price,
+                    });
+                    appLog('✅ Successfully purchased skin:', item.name);
+
+                    // Haptic feedback for successful purchase
+                    hapticSuccess();
+
+                    // Show success alert
+                    Alert.alert(
+                      'Purchase Successful!',
+                      `${item.name} has been added to your collection. You can now equip it!`,
+                      [{ text: 'Great!', style: 'default' }]
+                    );
+                  } else {
+                    analytics.logEvent('Store_Purchase_Failed', {
+                      item: item.id,
+                      reason: 'purchase_failed',
+                    });
+                    appLog('❌ Failed to purchase skin:', item.name);
+
+                    // Show failure alert
+                    Alert.alert(
+                      'Purchase Failed',
+                      'Something went wrong with your purchase. Please try again.',
+                      [{ text: 'OK', style: 'default' }]
+                    );
+                  }
                 }
               } catch (error) {
                 console.error('❌ [StoreScreen] Error during purchase:', error);
@@ -392,7 +445,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         ]
       );
     },
-    [userGems, userLevel, purchaseSkin]
+    [userGems, userLevel, purchaseSkin, customDevotionalsLeft, setGens, setCustomDevotionalsLeft]
   );
 
   // Handle item equip
@@ -497,6 +550,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     const isEquipped = equippedSkin === skinId;
     const isStreakFreeze = item.id === 'streak_freeze';
     const isCustomDevotional = item.id === 'custom_devotional';
+    const isCustomDevotionalLocked = isCustomDevotional && userGems < 100;
 
     // Debug logging for Annointed Lamb
     if (isAnointedLamb) {
@@ -587,7 +641,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               elevation: 1000,
             }}>
             <Image source={gemIcon} className="w-5 h-5 mr-1" />
-            <Text className="font-feather text-body text-textPrimary">{100}</Text>
+            <Text className="font-feather text-body text-textPrimary">{200}</Text>
           </View>
         )}
 
@@ -653,7 +707,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                     fontSize: 12,
                     color: '#F3B12B',
                   }}>
-                  {streakFreezes}x left
+                  {customDevotionalsLeft}x left
                 </Text>
               </View>
             )}
@@ -800,7 +854,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                     featherIcon="check"
                   />
                 )
-              ) : item.id === 'custom_devotional' && !canAfford ? (
+              ) : isCustomDevotionalLocked ? (
                 <PrimaryButton
                   title="Upgrade"
                   onPress={handleUpgradeToProForLamb}

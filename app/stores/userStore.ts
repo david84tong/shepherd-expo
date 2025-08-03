@@ -193,7 +193,7 @@ const initialState: UserDoc = {
   chaptersReadTotal: 0,
   bibleVersion: 'ESV',
   proStatus: 'free',
-  gens: 10,
+  gens: 100,
   createdAt: Timestamp.now(),
   updatedAt: Timestamp.now(),
   completedReflections: [],
@@ -216,6 +216,7 @@ const initialState: UserDoc = {
   skins: [],
   checkIns: [],
   customDevotionals: [],
+  customDevotionalsLeft: 0,
   setNotificationTime: async (_time: string) => {
     // This will be overridden by the actual implementation
     console.warn('setNotificationTime not implemented in initial state');
@@ -332,6 +333,8 @@ export const useUserStore = create<UserStore>()(
             proExpiryDate: firestoreData.proExpiryDate || state.proExpiryDate,
             // Sync check-in data - ensure it's always an array
             checkIns: Array.isArray(firestoreData.checkIns) ? firestoreData.checkIns : (state.checkIns || []),
+            // Sync custom devotionals data
+            customDevotionalsLeft: firestoreData.customDevotionalsLeft ?? state.customDevotionalsLeft ?? 0,
             // Sync covenant progress
             covenantProgress: firestoreData.covenantProgress || state.covenantProgress,
           };
@@ -445,6 +448,7 @@ export const useUserStore = create<UserStore>()(
       getHasSeenBibleReaderTutorial: () => get().hasSeenBibleReaderTutorial || false,
       getSkins: () => get().skins || initialState.skins,
       getCheckIns: () => get().checkIns,
+      getCustomDevotionalsLeft: () => get().customDevotionalsLeft || initialState.customDevotionalsLeft,
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
@@ -808,6 +812,24 @@ export const useUserStore = create<UserStore>()(
             updateUserData({ checkIns: updatedCheckIns });
           }
           return { checkIns: updatedCheckIns };
+        });
+      },
+
+      // Custom Devotionals methods
+      setCustomDevotionalsLeft: (count: number) => {
+        set({ customDevotionalsLeft: count });
+        if (isAuthenticated()) {
+          updateUserData({ customDevotionalsLeft: count });
+        }
+      },
+
+      decrementCustomDevotionalsLeft: () => {
+        set((state) => {
+          const newCount = Math.max(0, (state.customDevotionalsLeft || 0) - 1);
+          if (isAuthenticated()) {
+            updateUserData({ customDevotionalsLeft: newCount });
+          }
+          return { customDevotionalsLeft: newCount };
         });
       },
     }),

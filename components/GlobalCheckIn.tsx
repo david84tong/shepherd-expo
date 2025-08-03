@@ -5,12 +5,12 @@ import BottomSheet, {
 } from '@gorhom/bottom-sheet';
 import { Ionicons, FontAwesome6 } from '@expo/vector-icons';
 import React, { useCallback, useRef, useImperativeHandle, useState, useEffect } from 'react';
-import { View, Text, Pressable, Animated, Dimensions, Image, ScrollView } from 'react-native';
+import { View, Text, Pressable, Animated, Dimensions, Image, ScrollView, Alert } from 'react-native';
 import Rive, { RiveRef } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
 
 import PrimaryButton from './PrimaryButton';
-import { hapticMedium } from '~/utils/haptics';
+import { hapticMedium, hapticSuccess } from '~/utils/haptics';
 import { appLog, RPH } from '~/app/helper/helper';
 import analytics from '~/utils/analytics';
 import { useCheckInStore } from '~/app/stores/checkInStore';
@@ -116,7 +116,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const { setCustomDevotional, setIsFromCheckIn, createCustomDevotionalFromCheckIn } =
     useDevotionalStore();
   const { readingCompleted } = useHomeStore();
-  const { addCheckIn, getGens, setGens } = useUserStore();
+  const { addCheckIn, getGens, setGens,customDevotionalsLeft,setCustomDevotionalsLeft } = useUserStore();
   const { playChestOpeningSound } = useSoundStore();
 
   // Use CheckIn store
@@ -272,6 +272,87 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     gemTextOpacity,
   ]);
 
+  // Handle custom devotional purchase with gem confirmation
+  const handleCustomDevotionalPurchase = useCallback(async () => {
+    appLog('[GlobalCheckIn] handleCustomDevotionalPurchase started');
+    
+    const { getGens, setGens, customDevotionalsLeft, setCustomDevotionalsLeft } = useUserStore.getState();
+    const currentGems = getGens();
+    const gemCost = 100;
+    
+    // Check if user has enough gems
+    if (currentGems < gemCost) {
+      appLog('[GlobalCheckIn] Not enough gems for custom devotional, showing free trial');
+      analytics.logEvent('checkin_custom_devotional_insufficient_gems', {
+        currentGems,
+        requiredGems: gemCost,
+      });
+      
+      // Show free trial paywall
+      await safelyPresentPaywall('free');
+      return;
+    }
+    
+    // Show confirmation alert
+    Alert.alert(
+      'Purchase Custom Devotional',
+      `Are you sure you want to create a custom devotional for 100 💎?\n\nYou currently have ${currentGems} gems.`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => {
+            appLog('[GlobalCheckIn] Custom devotional purchase cancelled');
+            analytics.logEvent('checkin_custom_devotional_purchase_cancelled', {
+              currentGems,
+              gemCost,
+            });
+          },
+        },
+        {
+          text: 'Purchase',
+          style: 'default',
+          onPress: async () => {
+            try {
+              // Deduct gems and add custom devotional count
+              const newGems = currentGems - gemCost;
+              const newCustomDevotionalsLeft = customDevotionalsLeft + 1;
+              
+              setGens(newGems);
+              setCustomDevotionalsLeft(newCustomDevotionalsLeft);
+              
+              appLog('[GlobalCheckIn] Custom devotional purchased successfully', {
+                newGems,
+                newCustomDevotionalsLeft,
+              });
+              
+              // Haptic feedback
+              hapticSuccess();
+              
+              // Log analytics
+              analytics.logEvent('checkin_custom_devotional_purchased', {
+                gemCost,
+                newGems,
+                newCustomDevotionalsLeft,
+              });
+              
+              // Now generate the custom devotional
+              await handleGenerateCustomDevotional();
+              
+            } catch (error) {
+              console.error('[GlobalCheckIn] Error purchasing custom devotional:', error);
+              Alert.alert(
+                'Purchase Failed',
+                'There was an error processing your purchase. Please try again.',
+                [{ text: 'OK' }]
+              );
+            }
+          },
+        },
+      ]
+    );
+  }, []);
+
   // Handle custom devotional generation
   const handleGenerateCustomDevotional = useCallback(async () => {
     appLog('[GlobalCheckIn] handleGenerateCustomDevotional started');
@@ -307,7 +388,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       finalIsPro: isPro
     });
     
-    if (!isPro) {
+    if (!isPro && customDevotionalsLeft <= 0) {
       appLog('[GlobalCheckIn] User is not pro, presenting free trial paywall');
       await safelyPresentPaywall('free');
       return;
@@ -372,7 +453,47 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         struggle: currentStruggle,
       });
 
-      // Don't navigate here - it's already handled in the button onPress
+      // Set check-in flag
+      setIsFromCheckIn(true);
+
+      // Set navigation flag to prevent check-in from showing during navigation
+      const { setIsNavigating } = useCheckInStore.getState();
+      setIsNavigating(true);
+
+      // Close the sheet directly without handleDismiss to prevent reappearing
+      bottomSheetRef.current?.close();
+
+      // Navigate after sheet closes
+      setTimeout(() => {
+        router.push('/devotionalLoading' as any);
+
+        // Reset navigation flag after a delay
+        setTimeout(() => {
+          setIsNavigating(false);
+        }, 3000); // 3 seconds should be enough for navigation to complete
+
+        // Reset state after navigation
+        setTimeout(() => {
+          setCurrentScreen('mood');
+          setSelectedMood(null);
+          setSelectedFocus(null);
+          setSelectedStruggle(null);
+          clearCurrentSession();
+          setIsGenerating(false);
+          setCheckInSaved(false);
+          setGemsAwarded(false);
+          setShowRewardAnimation(false);
+          setCustomDevotionalsLeft(customDevotionalsLeft - 1);
+          // Reset animations
+          moodAnim.setValue(0);
+          focusAnim.setValue(screenWidth);
+          struggleAnim.setValue(screenWidth);
+          successAnim.setValue(screenWidth);
+          rewardCardOpacity.setValue(0);
+          rewardCardScale.setValue(0.8);
+          gemTextOpacity.setValue(0);
+        }, 100);
+      }, 300);
     } catch (error) {
       appLog('Error generating custom devotional:', error);
       setIsGenerating(false);
@@ -1068,70 +1189,55 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         <PrimaryButton
           title={
             currentFocus !== '' || currentStruggle !== ''
-              ? i18n.t('checkin_generate_custom_devotional')
+              ? (() => {
+                  // Check if user is pro
+                  const { isProMember } = useSubscriptionStore.getState();
+                  const { getUser, customDevotionalsLeft } = useUserStore.getState();
+                  const user = getUser();
+                  
+                  // If user is pro, show normal text
+                  if (isProMember || user?.isPro || user?.isProWithReferral) {
+                    return i18n.t('checkin_generate_custom_devotional');
+                  }
+                  
+                  // If user has custom devotionals left, show normal text
+                  if (customDevotionalsLeft > 0) {
+                    return i18n.t('checkin_generate_custom_devotional');
+                  }
+                  
+                  // If user is not pro and has no custom devotionals left, show with gem cost
+                  return `${i18n.t('checkin_generate_custom_devotional_for_gems')} (-100 💎)`;
+                })()
               : i18n.t('checkin_start_todays_devotional')
           }
           onPress={async () => {
             if (currentFocus !== '' || currentStruggle !== '') {
-              // Check if user is pro before generating custom devotional
+              // Check if user is pro or has custom devotionals left
               const { isProMember } = useSubscriptionStore.getState();
-              if (!isProMember) {
-                appLog('[GlobalCheckIn] User is not pro, presenting free trial paywall');
-                await safelyPresentPaywall('free');
+              const { getUser, customDevotionalsLeft } = useUserStore.getState();
+              const user = getUser();
+              
+              // Check if user is pro
+              const isPro = isProMember || user?.isPro || user?.isProWithReferral;
+              
+              if (isPro) {
+                // Pro user - generate custom devotional directly
+                appLog('[GlobalCheckIn] Pro user generating custom devotional');
+                await handleGenerateCustomDevotional();
                 return;
               }
-              // Log the current check-in state
-              const checkInState = useCheckInStore.getState();
-              appLog('[GlobalCheckIn] Before navigation - check-in state:', {
-                todaysCheckIn: checkInState.getTodaysCheckIn(),
-                hasCompletedToday: checkInState.hasCompletedTodaysCheckIn(),
-                lastCheckInTime: checkInState.lastCheckInTime,
-                hasBeenOneHour: checkInState.hasBeenOneHourSinceLastCheckIn(),
-              });
-
-              // Set check-in flag
-              setIsFromCheckIn(true);
-
-              // Set navigation flag to prevent check-in from showing during navigation
-              const { setIsNavigating } = useCheckInStore.getState();
-              setIsNavigating(true);
-
-              // Close the sheet directly without handleDismiss to prevent reappearing
-              bottomSheetRef.current?.close();
-
-              // Navigate after sheet closes
-              setTimeout(() => {
-                router.push('/devotionalLoading' as any);
-
-                // Reset navigation flag after a delay
-                setTimeout(() => {
-                  setIsNavigating(false);
-                }, 3000); // 3 seconds should be enough for navigation to complete
-
-                // Reset state after navigation
-                setTimeout(() => {
-                  setCurrentScreen('mood');
-                  setSelectedMood(null);
-                  setSelectedFocus(null);
-                  setSelectedStruggle(null);
-                  clearCurrentSession();
-                  setIsGenerating(false);
-                  setCheckInSaved(false);
-                  setGemsAwarded(false);
-                  setShowRewardAnimation(false);
-                  // Reset animations
-                  moodAnim.setValue(0);
-                  focusAnim.setValue(screenWidth);
-                  struggleAnim.setValue(screenWidth);
-                  successAnim.setValue(screenWidth);
-                  rewardCardOpacity.setValue(0);
-                  rewardCardScale.setValue(0.8);
-                  gemTextOpacity.setValue(0);
-                }, 100);
-              }, 300);
-
-              // Generate custom devotional in background (check-in already saved)
-              handleGenerateCustomDevotional();
+              
+              // Non-pro user - check if they have custom devotionals left
+              if (customDevotionalsLeft > 0) {
+                // User has custom devotionals left - generate directly
+                appLog('[GlobalCheckIn] User has custom devotionals left, generating');
+                await handleGenerateCustomDevotional();
+                return;
+              }
+              
+              // Non-pro user with no custom devotionals left - show purchase flow
+              appLog('[GlobalCheckIn] Non-pro user needs to purchase custom devotional');
+              await handleCustomDevotionalPurchase();
             } else {
               // Check-in already saved, just log analytics
               analytics.logEvent('checkin_completed', {
