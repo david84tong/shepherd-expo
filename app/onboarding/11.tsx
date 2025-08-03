@@ -107,6 +107,7 @@ export default function SaveProgressScreen() {
   const [showNoAccountToast, setShowNoAccountToast] = useState(false);
   const ageRange = useOnboardingStore.getState().getAllResponses().ageRange;
   const isSmallAge = ageRange === 'under-18';
+  const isUnder12 = ageRange === 'under-12';
   // Animation shared values
   const headerOpacity = useSharedValue(0);
   const headerTranslateY = useSharedValue(40);
@@ -357,7 +358,7 @@ export default function SaveProgressScreen() {
         proStatus: 'free',
         createdAt: now,
         updatedAt: now,
-        gens: 0,
+        gens: 100,
         lastReadingDate: now,
         lastPrayerDate: now,
         lastReflectionDate: now,
@@ -385,6 +386,9 @@ export default function SaveProgressScreen() {
           state: COVENANT_STATES.NOT_STARTED,
         },
         customDevotionals: [],
+        streakFreezes: 0,
+        streakFreezeUsedDates: [],
+        customDevotionalsLeft: 0,
       };
 
       appLog('Creating user data:', JSON.stringify(userData));
@@ -1042,10 +1046,10 @@ export default function SaveProgressScreen() {
             <>
               {/* Social Sign In Buttons */}
               <Animated.View style={buttonsStyle}>
-                {isSmallAge && Platform.OS === 'android' ? null : (
+                {isSmallAge && Platform.OS === 'android' && !isUnder12 ? null : (
                   <View className="items-center mb-4">
                     {/* Platform-specific primary button */}
-                    {Platform.OS === 'ios' ? (
+                    {(Platform.OS === 'ios' && !isUnder12) ? (
                       <TouchableOpacity
                         style={{ height: RPH(6) }}
                         className="flex-row items-center justify-center bg-black w-full  px-6 rounded-[16px] mb-4 shadow-appleShadow"
@@ -1073,7 +1077,7 @@ export default function SaveProgressScreen() {
                             : i18n.t('onboarding_continue_with_apple')}
                         </Text>
                       </TouchableOpacity>
-                    ) : (
+                    ) : (Platform.OS === 'android' || isUnder12) ? (
                       <TouchableOpacity
                         className="flex-row items-center justify-center bg-white w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow border-2 border-gray-200"
                         onPress={handleGoogleSignIn}
@@ -1100,7 +1104,7 @@ export default function SaveProgressScreen() {
                             : i18n.t('onboarding_continue_with_google')}
                         </Text>
                       </TouchableOpacity>
-                    )}
+                    ) : null}
 
                     {/* Email/Password button - only show in login mode */}
                     {isLoginMode && showEmailPassword && !showEmailForm && (
@@ -1126,7 +1130,7 @@ export default function SaveProgressScreen() {
                     className="items-center"
                     style={{
                       marginTop:
-                        isSmallAge && Platform.OS === 'android'
+                        isSmallAge && Platform.OS === 'android' && !isUnder12
                           ? Dimensions.get('window').height * 0.05
                           : 0,
                     }}

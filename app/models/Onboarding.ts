@@ -59,6 +59,7 @@ export type OnboardingResponses = {
 
   /** Screen 9 - "What is your age range?" */
   ageRange?:
+    | 'under-12'
     | 'under-18'
     | '18-24'
     | '25-34'
