@@ -686,11 +686,6 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
           {/* Phoenix Skin Banner */}
           <PhoenixSkinBanner />
 
-          {/* Mood & Struggles Graphs */}
-          <View className="mx-6 mt-4">
-            <MoodStrugglesGraphs />
-          </View>
-
           {/* Heatmap Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 border border-brownBorder">
             <View className="flex-row justify-between items-center mb-4">
@@ -755,6 +750,11 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                 <Text className="font-din text-description text-xs">3</Text>
               </View>
             </View>
+          </View>
+
+          {/* Mood & Struggles Graphs */}
+          <View className="mx-6 mt-4">
+            <MoodStrugglesGraphs />
           </View>
 
           {/* Activity Summary Card - Moved to bottom */}

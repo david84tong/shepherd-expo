@@ -90,10 +90,10 @@ export default function StreakCommitmentScreen() {
   ]);
   const [riveLoaded, setRiveLoaded] = useState(false);
 
-  // State - Default to 21 days
-  const [selectedStreak, setSelectedStreak] = useState<number>(21);
-  const [showRewardAnimation, setShowRewardAnimation] = useState(true);
-  const [showFireLambAnimation, setShowFireLambAnimation] = useState(true);
+  // State - No default selection
+  const [selectedStreak, setSelectedStreak] = useState<number | null>(null);
+  const [showRewardAnimation, setShowRewardAnimation] = useState(false);
+  const [showFireLambAnimation, setShowFireLambAnimation] = useState(false);
 
   // Refs
   const riveRef = useRef<RiveRef>(null);
@@ -202,15 +202,17 @@ export default function StreakCommitmentScreen() {
   const handleStreakSelect = (days: number) => {
     hapticLight();
     
-    const wasFireLamb = selectedStreak === 21;
     const isFireLamb = days === 21;
     
     setSelectedStreak(days);
     
+    // Show animations when selecting
+    setShowRewardAnimation(true);
+    
     // Update animations based on selection
-    if (isFireLamb && !wasFireLamb) {
+    if (isFireLamb) {
       setShowFireLambAnimation(true);
-    } else if (!isFireLamb && wasFireLamb) {
+    } else {
       setShowFireLambAnimation(false);
     }
     
@@ -410,10 +412,18 @@ export default function StreakCommitmentScreen() {
         >
           <View className="flex-1 items-center">
             <View className="h-[350px] items-center justify-center mb-5">
-              {renderLambAnimation()}
-              {renderRewardAnimation()}
-              {renderRewardCard()}
-              {renderRewardCardForPhoenix()}
+              {!selectedStreak ? (
+                <Text className="font-feather text-2xl text-textPrimary text-center px-8">
+                  Select your bible study goal
+                </Text>
+              ) : (
+                <>
+                  {renderLambAnimation()}
+                  {renderRewardAnimation()}
+                  {renderRewardCard()}
+                  {renderRewardCardForPhoenix()}
+                </>
+              )}
             </View>
             <CustomAnimatedView style={optionsStyle} className="mt-8 space-y-4 w-full gap-2">
               {STREAK_OPTIONS.map((option) => (
