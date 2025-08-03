@@ -28,7 +28,7 @@ import PrimaryButton from '~/components/PrimaryButton';
 import analytics from '../../../utils/analytics';
 import { isSignedIn } from '../../hooks/authHook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IS_ANDROID } from '../../utils/utils';
+import { IS_ANDROID, IS_IOS } from '../../utils/utils';
 import i18n from '~/app/utils/i18n';
 import { ONBOARDING_COMPLETED_KEY } from '../../models/Onboarding';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
@@ -228,7 +228,7 @@ const OldPricingScreen = () => {
     return (
       <>
         {/* Header */}
-        {IS_ANDROID || __DEV__ && (
+        {IS_ANDROID || __DEV__ || IS_IOS && (
           <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
             <View className="flex-row items-center justify-between px-5 py-3 mb-3">
               <Animated.View entering={FadeIn.duration(600)}>
