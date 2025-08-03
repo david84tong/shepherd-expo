@@ -1578,11 +1578,11 @@ export function DebugButton() {
                     // Add some fake streak freeze used dates for testing
                     const today = new Date();
                     const yesterday = new Date(today);
-                    yesterday.setDate(yesterday.getDate() - 1);
+                    yesterday.setDate(yesterday.getDate() - 2);
                     const twoDaysAgo = new Date(today);
-                    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+                    twoDaysAgo.setDate(twoDaysAgo.getDate() - 3);
                     const fiveDaysAgo = new Date(today);
-                    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+                    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 6);
                     
                     const testFreezeUsedDates = [
                       yesterday.toISOString().split('T')[0],
