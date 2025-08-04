@@ -1,4 +1,5 @@
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import { COVENANT_STATES } from '../hooks/streakHook';
 
 export interface MapPathCompletion {
   date: FirebaseFirestoreTypes.Timestamp;
@@ -11,6 +12,21 @@ export interface MapPathCompletion {
   endChapter: number;
 }
 
+export interface CheckIn {
+  mood: string;
+  focus: string; // can be blank
+  struggles: string; // can be blank
+  // customDevotionalId: string;
+  timeStamp: FirebaseFirestoreTypes.Timestamp;
+}
+
+export interface CovenantProgress {
+  currentStreak: number;
+  targetDays: number;
+  progress: number;
+  state: typeof COVENANT_STATES[keyof typeof COVENANT_STATES];
+}
+
 export interface UserDoc {
   //onboarding questions
   id: string;
@@ -18,7 +34,9 @@ export interface UserDoc {
   email?: string; // User email from authentication
   spiritualGoal: string;
   experienceLevel: string;
+  covenantProgress: CovenantProgress;
   notificationTime: string;
+  notificationEnabled?: boolean;
   setNotificationTime: (time: string) => Promise<void>;
   frequencyGoal: string;
   denomination?: string;
@@ -48,24 +66,20 @@ export interface UserDoc {
   hasSeenWidgetModal: boolean;
   hasSeenBibleReaderTutorial: boolean;
   skins: string[];
-  // Check-in data - dictionary with date keys (YYYYMMDD format)
-  checkIns?: {
-    [dateKey: string]: {
-      mood: string;
-      focus: string;
-      struggle: string;
-      completedAt: FirebaseFirestoreTypes.Timestamp;
-    };
-  };
+  checkIns: CheckIn[];
   // Progress data
   level: number;
   xp: number;
   streak: number;
+  streakFreezes: number;
+  streakFreezeUsedDates: string[]; // Array of 'YYYY-MM-DD' date strings when freezes were used
   // Pro status
   isPro: boolean;
   isProWithReferral: boolean;
-  proExpiryDate: FirebaseFirestoreTypes.Timestamp;
+  proExpiryDate?: FirebaseFirestoreTypes.Timestamp;
   completedMapPaths: MapPathCompletion[];
+  customDevotionals: any[];
+  customDevotionalsLeft: number;
 }
 
 export interface UserStore extends UserDoc {
@@ -87,6 +101,8 @@ export interface UserStore extends UserDoc {
   getSelectedPathId: () => string;
   getLamb: () => Lamb;
   getStreakCount: () => number;
+  getStreakFreezes: () => number;
+  getStreakFreezeUsedDates: () => string[];
   getLastActivityDate: () => UserDoc['lastActivityDate'];
   getVersesReadTotal: () => number;
   getChaptersReadTotal: () => number;
@@ -105,7 +121,8 @@ export interface UserStore extends UserDoc {
   getCompletedPrayers: () => Prayer[];
   getCompletedReadings: () => Reading[];
   getSkins: () => string[];
-
+  getCovenantProgress: () => CovenantProgress;
+  getCustomDevotionalsLeft: () => number;
   // Getters for Lamb fields
   getLambLevel: () => number;
   getLambXp: () => number;
@@ -123,6 +140,9 @@ export interface UserStore extends UserDoc {
   setSelectedPathId: (pathId: string) => void;
   setLamb: (lamb: Lamb) => void;
   setStreakCount: (count: number) => void;
+  setStreakFreezes: (count: number) => void;
+  setStreakFreezeUsedDates: (dates: string[]) => void;
+  addStreakFreezeUsedDate: (date: string) => void;
   setLastActivityDate: (date: UserDoc['lastActivityDate']) => void;
   setLastReadingDate: (date: UserDoc['lastReadingDate']) => void;
   setLastPrayerDate: (date: UserDoc['lastPrayerDate']) => void;
@@ -146,7 +166,9 @@ export interface UserStore extends UserDoc {
   setSkins: (skins: string[]) => void;
   addSkin: (skin: string) => void;
   setIsProFromOnboarding: (isProFromOnboarding: boolean) => void;
-
+  setCovenantProgress: (progress: CovenantProgress) => void;
+  setCustomDevotionalsLeft: (count: number) => void;
+  decrementCustomDevotionalsLeft: () => void;
   // Setters for Lamb fields
   setLambLevel: (level: number) => void;
   setLambXp: (xp: number) => void;
@@ -160,7 +182,7 @@ export interface UserStore extends UserDoc {
   addXp: (amount: number) => void;
   resetUserStore: () => void;
 
-  syncFirestoreData: (firestoreData: UserDoc) => void;
+  syncFirestoreData: (firestoreData: UserDoc) => Promise<void>;
 
   // Add new getter/setter for widget modal
   getHasSeenWidgetModal: () => boolean;
@@ -172,11 +194,7 @@ export interface UserStore extends UserDoc {
 
   setCompletedMapPaths: (paths: MapPathCompletion[]) => void;
   addCompletedMapPath: (path: MapPathCompletion) => void;
-  
-  // Check-in getter/setter
-  getCheckIns: () => UserDoc['checkIns'];
-  setCheckIns: (checkIns: UserDoc['checkIns']) => Promise<void>;
-  addCheckIn: (dateKey: string, checkInData: NonNullable<UserDoc['checkIns']>[string]) => Promise<void>;
+  addCheckIn: (dateKey: string, checkIn: CheckIn) => Promise<void>;
 }
 
 export interface Reading {
@@ -188,6 +206,7 @@ export interface Reading {
 
 export interface Reflection {
   date: FirebaseFirestoreTypes.Timestamp;
+  reflectionPrompt: string;
   content: string;
 }
 

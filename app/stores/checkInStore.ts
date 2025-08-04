@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { appLog } from '../helper/helper';
 
 export interface CheckInData {
   mood: string;
@@ -24,8 +25,8 @@ interface CheckInState {
   // Last check-in timestamp
   lastCheckInTime: string | null;
   
-  // Temporary flag to prevent auto-show after worldwide devotional
-  temporarilyDisableAutoShow: boolean;
+  // Navigation flag to prevent showing during navigation
+  isNavigating: boolean;
   
   // Actions
   setMood: (mood: string) => void;
@@ -40,7 +41,7 @@ interface CheckInState {
   shouldShowCustomDevotional: () => boolean;
   hasBeenOneHourSinceLastCheckIn: () => boolean;
   resetCheckInData: () => void;
-  setTemporarilyDisableAutoShow: (value: boolean) => void;
+  setIsNavigating: (value: boolean) => void;
 }
 
 const getTodayDateString = () => {
@@ -57,7 +58,7 @@ export const useCheckInStore = create<CheckInState>()(
       todaysCheckIn: null,
       checkInHistory: [],
       lastCheckInTime: null,
-      temporarilyDisableAutoShow: false,
+      isNavigating: false,
 
       // Actions
       setMood: (mood: string) => {
@@ -158,14 +159,17 @@ export const useCheckInStore = create<CheckInState>()(
       hasBeenOneHourSinceLastCheckIn: () => {
         const state = get();
         
-        // If temporarily disabled, return false to prevent auto-show
-        if (state.temporarilyDisableAutoShow) return false;
-        
         if (!state.lastCheckInTime) return true; // If never checked in, return true
         
         const lastCheckIn = new Date(state.lastCheckInTime);
         const now = new Date();
         const hoursSinceLastCheckIn = (now.getTime() - lastCheckIn.getTime()) / (1000 * 60 * 60);
+        
+        appLog('[CheckInStore] Time since last check-in:', {
+          lastCheckInTime: state.lastCheckInTime,
+          hoursSinceLastCheckIn,
+          hasBeenOneHour: hoursSinceLastCheckIn >= 1
+        });
         
         return hoursSinceLastCheckIn >= 1;
       },
@@ -178,12 +182,12 @@ export const useCheckInStore = create<CheckInState>()(
           todaysCheckIn: null,
           checkInHistory: [],
           lastCheckInTime: null,
-          temporarilyDisableAutoShow: false,
+          isNavigating: false,
         });
       },
       
-      setTemporarilyDisableAutoShow: (value: boolean) => {
-        set({ temporarilyDisableAutoShow: value });
+      setIsNavigating: (value: boolean) => {
+        set({ isNavigating: value });
       },
     }),
     {

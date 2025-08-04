@@ -3,6 +3,7 @@ import { Pressable } from 'react-native';
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
 import { hapticLight } from '~/utils/haptics';
+import { appLog } from '~/app/helper/helper';
 
 interface BackButtonProps {
   onPress: () => void;
@@ -41,11 +42,11 @@ const BackButton: React.FC<BackButtonProps> = ({
         `}
         style={({ pressed }) => [{ elevation: pressed ? 2 : 5 }]}
         onPressIn={() => {
-          console.log('🔘 BackButton onPressIn');
+          appLog('🔘 BackButton onPressIn');
           setIsPressed(true);
         }}
         onPressOut={() => {
-          console.log('🔘 BackButton onPressOut');
+          appLog('🔘 BackButton onPressOut');
           setIsPressed(false);
         }}>
         <Ionicons

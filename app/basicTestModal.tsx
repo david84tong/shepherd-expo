@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 
 import { useUIStore } from './stores/uiStore'; // Import the store
+import { appLog } from './helper/helper';
 
 export enum PopUpModalType {
   HEART_PENALTY = 'HEART_PENALTY',
@@ -16,16 +17,16 @@ export default function BasicTestModalScreen() {
 
   // Set/unset dim state on mount/unmount with delay for activation
   useEffect(() => {
-    console.log('[basicTestModal] Mounting, scheduling dim activation...');
+    appLog('[basicTestModal] Mounting, scheduling dim activation...');
     // Delay setting dim active slightly
     const timer = setTimeout(() => {
-      console.log('[basicTestModal] Timer fired, setting dim active');
+      appLog('[basicTestModal] Timer fired, setting dim active');
       setIsModalDimActive(true);
     }, 500); // 100ms delay - adjust if needed
 
     return () => {
       // This cleanup runs when the component unmounts (modal is dismissed)
-      console.log('[basicTestModal] Unmounting, clearing timer and setting dim inactive');
+      appLog('[basicTestModal] Unmounting, clearing timer and setting dim inactive');
       clearTimeout(timer); // Clear the timer if unmounting before it fires
       setIsModalDimActive(false); // Set inactive immediately on unmount
     };

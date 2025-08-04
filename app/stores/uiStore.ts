@@ -2,6 +2,7 @@ import { create } from 'zustand';
 // Define the callback type directly here
 export type BookChapterSelectorCallback = (bookId: number, chapter: number) => void;
 import { Reflection } from '../models/User'; // Import Reflection type
+import { appLog } from '../helper/helper';
 
 interface UIState {
   isModalDimActive: boolean;
@@ -74,13 +75,17 @@ interface UIState {
   tabBarVisible: boolean;
   setShowDevotionalContent: (value: boolean) => void;
   setTabBarVisible: (visible: boolean) => void;
+
+  // Devotional reader state
+  devotionalReaderVisible: boolean;
+  setDevotionalReaderVisible: (visible: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
   // Modal dim state
   isModalDimActive: false,
   setIsModalDimActive: (isActive) => {
-    console.log(`[UIStore] Setting isModalDimActive to: ${isActive}`); // Log state changes
+    appLog(`[UIStore] Setting isModalDimActive to: ${isActive}`); // Log state changes
     set({ isModalDimActive: isActive });
   },
   
@@ -88,14 +93,14 @@ export const useUIStore = create<UIState>((set) => ({
   isPrayerSheetVisible: false,
   prayerGeneratedCallback: null,
   showPrayerSheet: (onPrayerGeneratedCallback) => {
-    console.log('[UIStore] Showing prayer sheet');
+    appLog('[UIStore] Showing prayer sheet');
     set({
       isPrayerSheetVisible: true,
       prayerGeneratedCallback: onPrayerGeneratedCallback || null,
     });
   },
   hidePrayerSheet: () => {
-    console.log('[UIStore] Hiding prayer sheet');
+    appLog('[UIStore] Hiding prayer sheet');
     set({ isPrayerSheetVisible: false, prayerGeneratedCallback: null });
   },
   
@@ -107,14 +112,14 @@ export const useUIStore = create<UIState>((set) => ({
     onSelect: null,
   },
   showBookChapterSelector: (initialBookId, initialChapter, onSelect) => {
-    console.log('[UIStore] Showing book chapter selector');
+    appLog('[UIStore] Showing book chapter selector');
     set({
       isBookChapterSelectorVisible: true,
       bookChapterSelectorParams: { initialBookId, initialChapter, onSelect },
     });
   },
   hideBookChapterSelector: () => {
-    console.log('[UIStore] Hiding book chapter selector');
+    appLog('[UIStore] Hiding book chapter selector');
     set({
       isBookChapterSelectorVisible: false,
       bookChapterSelectorParams: { initialBookId: 1, initialChapter: 1, onSelect: null },
@@ -134,33 +139,33 @@ export const useUIStore = create<UIState>((set) => ({
   // Store sheet state and actions
   isStoreSheetVisible: false,
   showStoreSheet: () => {
-    console.log('[UIStore] Showing store sheet');
+    appLog('[UIStore] Showing store sheet');
     set({ isStoreSheetVisible: true });
   },
   hideStoreSheet: () => {
-    console.log('[UIStore] Hiding store sheet');
+    appLog('[UIStore] Hiding store sheet');
     set({ isStoreSheetVisible: false });
   },
   
   // Stats sheet state and actions
   isStatsSheetVisible: false,
   showStatsSheet: () => {
-    console.log('[UIStore] Showing stats sheet');
+    appLog('[UIStore] Showing stats sheet');
     set({ isStatsSheetVisible: true });
   },
   hideStatsSheet: () => {
-    console.log('[UIStore] Hiding stats sheet');
+    appLog('[UIStore] Hiding stats sheet');
     set({ isStatsSheetVisible: false });
   },
   
   // Devotionals sheet state and actions
   isDevotionalsSheetVisible: false,
   showDevotionalsSheet: () => {
-    console.log('[UIStore] Showing devotionals sheet');
+    appLog('[UIStore] Showing devotionals sheet');
     set({ isDevotionalsSheetVisible: true });
   },
   hideDevotionalsSheet: () => {
-    console.log('[UIStore] Hiding devotionals sheet');
+    appLog('[UIStore] Hiding devotionals sheet');
     set({ isDevotionalsSheetVisible: false });
   },
     
@@ -170,19 +175,19 @@ export const useUIStore = create<UIState>((set) => ({
   
   // Widget prompt and guide actions
   showWidgetPrompt: () => {
-    console.log('[UIStore] Showing widget prompt');
+    appLog('[UIStore] Showing widget prompt');
     set({ isWidgetPromptVisible: true });
   },
   hideWidgetPrompt: () => {
-    console.log('[UIStore] Hiding widget prompt');
+    appLog('[UIStore] Hiding widget prompt');
     set({ isWidgetPromptVisible: false });
   },
   showWidgetGuide: () => {
-    console.log('[UIStore] Showing widget guide');
+    appLog('[UIStore] Showing widget guide');
     set({ isWidgetPromptVisible: false, isWidgetGuideVisible: true });
   },
   hideWidgetGuide: () => {
-    console.log('[UIStore] Hiding widget guide');
+    appLog('[UIStore] Hiding widget guide');
     set({ isWidgetGuideVisible: false });
   },
 
@@ -190,4 +195,8 @@ export const useUIStore = create<UIState>((set) => ({
   tabBarVisible: true,
   setShowDevotionalContent: (value) => set({ showDevotionalContent: value }),
   setTabBarVisible: (visible) => set({ tabBarVisible: visible }),
+
+  // Devotional reader state
+  devotionalReaderVisible: false,
+  setDevotionalReaderVisible: (visible) => set({ devotionalReaderVisible: visible }),
 })); 

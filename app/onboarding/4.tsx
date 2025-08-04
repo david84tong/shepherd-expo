@@ -14,7 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import analytics from '~/utils/analytics';
 import i18n from '../utils/i18n';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 import { hapticLight } from '~/utils/haptics';
 
 export default function OnboardingBibleFamiliarityScreen() {
@@ -93,7 +93,7 @@ export default function OnboardingBibleFamiliarityScreen() {
     try {
       hapticLight();
     } catch (error) {
-      console.log('Haptics not available');
+      appLog('Haptics not available');
     }
 
     analytics.logEvent('OnboardingFamilarityScreen_Tapped_Continue', {

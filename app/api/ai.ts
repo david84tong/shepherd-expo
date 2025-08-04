@@ -1,3 +1,5 @@
+import { appLog } from "../helper/helper";
+
 interface BibleVerseContext {
   bookName: string;
   chapter: number;
@@ -84,7 +86,7 @@ export async function createDevotionalFromVerse(
   idToken: string
 ): Promise<DevotionalAIResponse> {
   try {
-    console.log('[AI API] Starting devotional creation for:', {
+    appLog('[AI API] Starting devotional creation for:', {
       book: verseContext.bookName,
       chapter: verseContext.chapter,
       verse: verseContext.verse,
@@ -93,22 +95,75 @@ export async function createDevotionalFromVerse(
 
     // Check network connectivity first
     const isConnected = await checkNetworkConnectivity();
-    console.log('[AI API] Network connectivity check:', isConnected);
+    appLog('[AI API] Network connectivity check:', isConnected);
     
     if (!isConnected) {
-      console.log('[AI API] No network connectivity, using fallback devotional');
+      appLog('[AI API] No network connectivity, using fallback devotional');
       return createFallbackDevotional(verseContext);
     }
+
+    // Get user onboarding data from user store
+    const { useUserStore } = require('../stores/userStore');
+    const { useLanguageStore } = require('../stores/languageStore');
+    
+    const userStore = useUserStore.getState();
+    const languageStore = useLanguageStore.getState();
+    
+    // Extract user onboarding information
+    const userName = userStore.getDisplayName() || 'Friend';
+    const userAge = userStore.getAgeRange() || '';
+    const userDenomination = userStore.getDenomination() || '';
+    const userBibleFamiliarity = userStore.getExperienceLevel() || 'new';
+    const userLanguage = languageStore.language || 'en';
+    
+    appLog('[AI API] User context for verse devotional:', {
+      name: userName,
+      age: userAge,
+      denomination: userDenomination,
+      bibleFamiliarity: userBibleFamiliarity,
+      language: userLanguage
+    });
 
     // Create an AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      console.log('[AI API] Request timeout after 30 seconds');
+      appLog('[AI API] Request timeout after 30 seconds');
       controller.abort();
     }, 30000); // 30 second timeout
 
     try {
-      console.log('[AI API] Making fetch request to API...');
+      appLog('[AI API] Making fetch request to API...');
+      
+      // Build user context for the prompt
+      let userContext = '';
+      if (userName && userName !== 'Anonymous User') {
+        userContext += ` Their name is ${userName}.`;
+      }
+      if (userAge) {
+        userContext += ` They are in the ${userAge} age range.`;
+      }
+      if (userDenomination) {
+        userContext += ` They identify as ${userDenomination}.`;
+      }
+      if (userBibleFamiliarity) {
+        const familiarityDescription = userBibleFamiliarity === 'new' ? 'new to the Bible' : 
+                                     userBibleFamiliarity === 'growing' ? 'growing in Bible knowledge' : 
+                                     userBibleFamiliarity === 'mature' ? 'mature in Bible knowledge' : 
+                                     'familiar with the Bible';
+        userContext += ` They are ${familiarityDescription}.`;
+      }
+      if (userLanguage && userLanguage !== 'en') {
+        const languageNames: Record<string, string> = {
+          'es': 'Spanish',
+          'fr': 'French',
+          'de': 'German',
+          'pt': 'Portuguese',
+          'nl': 'Dutch'
+        };
+        const languageName = languageNames[userLanguage] || userLanguage;
+        userContext += ` They primarily speak ${languageName}.`;
+      }
+
       const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-4.1-mini', {
         method: 'POST',
         headers: {
@@ -119,15 +174,15 @@ export async function createDevotionalFromVerse(
           "messages": [
             {
               "role": "system",
-              "content": `You are a Christian devotional writer. Create a meaningful devotional based on the Bible verse: ${verseContext.bookName} ${verseContext.chapter}:${verseContext.verse} - "${verseContext.verseText}". 
+              "content": `You are a Christian devotional writer who creates personalized devotionals based on the Bible verse: ${verseContext.bookName} ${verseContext.chapter}:${verseContext.verse} - "${verseContext.verseText}".${userContext}
 
 Please respond with a JSON object containing exactly these four fields:
 - "title": A compelling, short title (3-6 words) for this devotional that captures the main theme
-- "context": 4-5 sentences explaining the historical and spiritual context of this verse
+- "context": 4-5 sentences explaining the historical and spiritual context of this verse, written at an appropriate level for their Bible familiarity
 - "prayer": A heartfelt prayer (2-3 sentences) related to this verse that someone could pray
 - "reflectionPrompt": A thoughtful question or prompt (1-2 sentences) to help someone reflect on how this verse applies to their life
 
-Make sure your response is valid JSON format.`
+Make sure your response is valid JSON format and is personalized to their spiritual background and experience level.`
             },
             {
               "role": "user",
@@ -139,22 +194,29 @@ Make sure your response is valid JSON format.`
       });
 
       clearTimeout(timeoutId);
-      console.log('[AI API] Fetch request completed');
+      appLog('[AI API] Fetch request completed');
 
-      console.log('[AI API] Response status:', response.status, response.statusText);
+      appLog('[AI API] Response status:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[AI API] HTTP error:', {
           status: response.status,
           statusText: response.statusText,
-          errorText
+          errorText: errorText || 'No error details available'
         });
+        
+        // If it's a 500 error, try to return a fallback instead of throwing
+        if (response.status === 500) {
+          appLog('[AI API] Server error (500) detected, using fallback devotional');
+          return createFallbackDevotional(verseContext);
+        }
+        
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data: AIResponse = await response.json();
-      console.log('[AI API] Response received:', {
+      appLog('[AI API] Response received:', {
         hasRole: !!data?.role,
         hasContent: !!data?.content,
         contentLength: data?.content?.length
@@ -169,15 +231,27 @@ Make sure your response is valid JSON format.`
       // Parse the JSON response from AI
       let devotionalData: DevotionalAIResponse;
       try {
-        if (data.content && data.content.startsWith('{') && data.content.endsWith('}')) {
-          devotionalData = JSON.parse(data.content);
-        } else {
-          throw new Error('AI response is not in valid JSON format');
-        }
-
+        // Clean up the content - remove any potential whitespace or special characters
+        const cleanContent = data.content.trim();
         
+        // Check if it looks like JSON
+        if (cleanContent && cleanContent.startsWith('{') && cleanContent.endsWith('}')) {
+          // Try to parse the JSON
+          devotionalData = JSON.parse(cleanContent);
+          appLog('[AI API] Successfully parsed devotional JSON');
+        } else {
+          // Try to extract JSON from the content in case it's wrapped in other text
+          const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            devotionalData = JSON.parse(jsonMatch[0]);
+            appLog('[AI API] Successfully extracted and parsed JSON from response');
+          } else {
+            throw new Error('AI response is not in valid JSON format');
+          }
+        }
       } catch (parseError) {
-        console.error('Failed to parse AI response as JSON:', data.content);
+        console.error('[AI API] Failed to parse AI response as JSON. Parse error:', parseError);
+        console.error('[AI API] Raw content that failed to parse:', data.content);
         // Fallback: try to extract content manually or provide defaults
         devotionalData = {
           title: `Reflection on ${verseContext.bookName} ${verseContext.chapter}:${verseContext.verse}`,
@@ -192,7 +266,7 @@ Make sure your response is valid JSON format.`
         throw new Error('AI response missing required devotional fields');
       }
 
-      console.log('[AI API] Devotional created successfully:', {
+      appLog('[AI API] Devotional created successfully:', {
         title: devotionalData.title,
         contextLength: devotionalData.context.length,
         prayerLength: devotionalData.prayer.length
@@ -209,13 +283,13 @@ Make sure your response is valid JSON format.`
     
     // Check if it's a network error, timeout, or other network-related issue
     if (error instanceof TypeError && error.message.includes('Network error')) {
-      console.log('[AI API] Network error detected, using fallback devotional');
+      appLog('[AI API] Network error detected, using fallback devotional');
       return createFallbackDevotional(verseContext);
     } else if (error instanceof Error && error.name === 'AbortError') {
-      console.log('[AI API] Request timeout detected, using fallback devotional');
+      appLog('[AI API] Request timeout detected, using fallback devotional');
       return createFallbackDevotional(verseContext);
     } else if (error instanceof Error && error.message.includes('fetch')) {
-      console.log('[AI API] Fetch error detected, using fallback devotional');
+      appLog('[AI API] Fetch error detected, using fallback devotional');
       return createFallbackDevotional(verseContext);
     }
     
@@ -225,7 +299,7 @@ Make sure your response is valid JSON format.`
 
 // Fallback devotional creation when API is unavailable
 function createFallbackDevotional(verseContext: BibleVerseContext): DevotionalAIResponse {
-  console.log('[AI API] Creating fallback devotional for:', verseContext);
+  appLog('[AI API] Creating fallback devotional for:', verseContext);
   
   // Create a simple but meaningful devotional based on the verse
   const fallbackDevotionals = [
@@ -268,28 +342,50 @@ export async function createDevotionalFromCheckIn(
   idToken: string
 ): Promise<DevotionalAIResponse> {
   try {
-    console.log('[AI API] Creating devotional from check-in:', checkInData);
+    appLog('[AI API] Creating devotional from check-in:', checkInData);
 
     // Check network connectivity first
     const isConnected = await checkNetworkConnectivity();
-    console.log('[AI API] Network connectivity check:', isConnected);
+    appLog('[AI API] Network connectivity check:', isConnected);
     
     if (!isConnected) {
-      console.log('[AI API] No network connectivity, using fallback devotional');
+      appLog('[AI API] No network connectivity, using fallback devotional');
       return createCheckInFallbackDevotional(checkInData);
     }
+
+    // Get user onboarding data from user store
+    const { useUserStore } = require('../stores/userStore');
+    const { useLanguageStore } = require('../stores/languageStore');
+    
+    const userStore = useUserStore.getState();
+    const languageStore = useLanguageStore.getState();
+    
+    // Extract user onboarding information
+    const userName = userStore.getDisplayName() || 'Friend';
+    const userAge = userStore.getAgeRange() || '';
+    const userDenomination = userStore.getDenomination() || '';
+    const userBibleFamiliarity = userStore.getExperienceLevel() || 'new';
+    const userLanguage = languageStore.language || 'en';
+    
+    appLog('[AI API] User context for devotional:', {
+      name: userName,
+      age: userAge,
+      denomination: userDenomination,
+      bibleFamiliarity: userBibleFamiliarity,
+      language: userLanguage
+    });
 
     // Create an AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      console.log('[AI API] Request timeout after 30 seconds');
+      appLog('[AI API] Request timeout after 30 seconds');
       controller.abort();
     }, 30000); // 30 second timeout
 
     try {
-      console.log('[AI API] Making fetch request to API...');
+      appLog('[AI API] Making fetch request to API...');
       
-      // Build a context-aware prompt based on check-in data
+      // Build a comprehensive context-aware prompt based on check-in data and user profile
       let promptContext = `The person is feeling ${checkInData.mood.toLowerCase()}.`;
       
       if (checkInData.focus) {
@@ -298,6 +394,36 @@ export async function createDevotionalFromCheckIn(
       
       if (checkInData.struggle) {
         promptContext += ` They are currently struggling with ${checkInData.struggle.toLowerCase()}.`;
+      }
+
+      // Add user profile context
+      let userContext = '';
+      if (userName && userName !== 'Anonymous User') {
+        userContext += ` Their name is ${userName}.`;
+      }
+      if (userAge) {
+        userContext += ` They are in the ${userAge} age range.`;
+      }
+      if (userDenomination) {
+        userContext += ` They identify as ${userDenomination}.`;
+      }
+      if (userBibleFamiliarity) {
+        const familiarityDescription = userBibleFamiliarity === 'new' ? 'new to the Bible' : 
+                                     userBibleFamiliarity === 'growing' ? 'growing in Bible knowledge' : 
+                                     userBibleFamiliarity === 'mature' ? 'mature in Bible knowledge' : 
+                                     'familiar with the Bible';
+        userContext += ` They are ${familiarityDescription}.`;
+      }
+      if (userLanguage && userLanguage !== 'en') {
+        const languageNames: Record<string, string> = {
+          'es': 'Spanish',
+          'fr': 'French',
+          'de': 'German',
+          'pt': 'Portuguese',
+          'nl': 'Dutch'
+        };
+        const languageName = languageNames[userLanguage] || userLanguage;
+        userContext += ` They primarily speak ${languageName}.`;
       }
 
       const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-4.1-mini', {
@@ -310,19 +436,21 @@ export async function createDevotionalFromCheckIn(
           "messages": [
             {
               "role": "system",
-              "content": `You are a compassionate Christian devotional writer who creates personalized devotionals based on someone's emotional state and spiritual needs. ${promptContext}
+              "content": `You are a compassionate Christian devotional writer who creates deeply personalized devotionals based on someone's emotional state, spiritual needs, and personal background. 
 
-Create a meaningful devotional that specifically addresses their current emotional state${checkInData.focus ? ', area of focus' : ''}${checkInData.struggle ? ', and struggle' : ''}.
+${promptContext}${userContext}
+
+Create a meaningful devotional that specifically addresses their current emotional state${checkInData.focus ? ', area of focus' : ''}${checkInData.struggle ? ', and struggle' : ''}, while being mindful of their spiritual background and experience level.
 
 Please respond with a JSON object containing exactly these fields:
 - "title": A compelling, short title (3-6 words) that relates to their mood${checkInData.focus ? ' and focus area' : ''}
-- "context": 4-5 sentences that acknowledge their feelings and provide biblical wisdom specific to their situation
+- "context": 4-5 sentences that acknowledge their feelings and provide biblical wisdom specific to their situation, written at an appropriate level for their Bible familiarity
 - "verse": The actual Bible verse text (not the reference, but the full verse text)
 - "bibleReference": The Bible reference (e.g., "Philippians 4:13" or "Romans 8:28")
 - "prayer": A heartfelt prayer (2-3 sentences) that specifically addresses their mood${checkInData.focus ? ', focus area' : ''}${checkInData.struggle ? ', and struggle' : ''}
 - "reflectionPrompt": A thoughtful question or prompt (1-2 sentences) to help them process their emotions and find God's guidance
 
-Make sure your response is valid JSON format and is deeply personalized to their specific situation. The verse should be particularly relevant to their current emotional state and needs.`
+Make sure your response is valid JSON format and is deeply personalized to their specific situation. The verse should be particularly relevant to their current emotional state and needs. Consider their denomination and Bible familiarity when choosing language and theological depth.`
             },
             {
               "role": "user",
@@ -334,22 +462,29 @@ Make sure your response is valid JSON format and is deeply personalized to their
       });
 
       clearTimeout(timeoutId);
-      console.log('[AI API] Fetch request completed');
+      appLog('[AI API] Fetch request completed');
 
-      console.log('[AI API] Response status:', response.status, response.statusText);
+      appLog('[AI API] Response status:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[AI API] HTTP error:', {
           status: response.status,
           statusText: response.statusText,
-          errorText
+          errorText: errorText || 'There was an error in generating the text completion response'
         });
+        
+        // If it's a 500 error, try to return a fallback instead of throwing
+        if (response.status === 500) {
+          appLog('[AI API] Server error (500) detected, using fallback devotional');
+          return createCheckInFallbackDevotional(checkInData);
+        }
+        
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data: AIResponse = await response.json();
-      console.log('[AI API] Response received:', {
+      appLog('[AI API] Response received:', {
         hasRole: !!data?.role,
         hasContent: !!data?.content,
         contentLength: data?.content?.length
@@ -364,16 +499,29 @@ Make sure your response is valid JSON format and is deeply personalized to their
       // Parse the JSON response from AI
       let devotionalData: DevotionalAIResponse;
       try {
-        if (data.content && data.content.startsWith('{') && data.content.endsWith('}')) {
-          devotionalData = JSON.parse(data.content);
-          
-          // Log the parsed data to debug
-          console.log('[AI API] Parsed devotional data:', devotionalData);
+        // Clean up the content - remove any potential whitespace or special characters
+        const cleanContent = data.content.trim();
+        
+        // Check if it looks like JSON
+        if (cleanContent && cleanContent.startsWith('{') && cleanContent.endsWith('}')) {
+          // Try to parse the JSON
+          devotionalData = JSON.parse(cleanContent);
+          appLog('[AI API] Successfully parsed check-in devotional JSON');
+          appLog('[AI API] Parsed devotional data:', devotionalData);
         } else {
-          throw new Error('AI response is not in valid JSON format');
+          // Try to extract JSON from the content in case it's wrapped in other text
+          const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            devotionalData = JSON.parse(jsonMatch[0]);
+            appLog('[AI API] Successfully extracted and parsed JSON from response');
+            appLog('[AI API] Parsed devotional data:', devotionalData);
+          } else {
+            throw new Error('AI response is not in valid JSON format');
+          }
         }
       } catch (parseError) {
-        console.error('Failed to parse AI response as JSON:', data.content);
+        console.error('[AI API] Failed to parse AI response as JSON. Parse error:', parseError);
+        console.error('[AI API] Raw content that failed to parse:', data.content);
         // Fallback to check-in based devotional
         return createCheckInFallbackDevotional(checkInData);
       }
@@ -383,7 +531,7 @@ Make sure your response is valid JSON format and is deeply personalized to their
         throw new Error('AI response missing required devotional fields');
       }
 
-      console.log('[AI API] Custom devotional created successfully:', {
+      appLog('[AI API] Custom devotional created successfully:', {
         title: devotionalData.title,
         contextLength: devotionalData.context.length,
         prayerLength: devotionalData.prayer.length
@@ -398,14 +546,24 @@ Make sure your response is valid JSON format and is deeply personalized to their
   } catch (error) {
     console.error('[AI API] Error creating devotional from check-in:', error);
     
-    // Return fallback devotional for any error
+    // Log detailed error info for debugging
+    if (error instanceof Error) {
+      console.error('[AI API] Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+    }
+    
+    // Always return fallback devotional for any error to ensure user gets content
+    appLog('[AI API] Returning fallback devotional due to error');
     return createCheckInFallbackDevotional(checkInData);
   }
 }
 
 // Fallback devotional creation based on check-in data
 function createCheckInFallbackDevotional(checkInData: CheckInData): DevotionalAIResponse {
-  console.log('[AI API] Creating fallback devotional for check-in:', checkInData);
+  appLog('[AI API] Creating fallback devotional for check-in:', checkInData);
   
   // Create mood-specific devotionals
   const moodDevotionals: Record<string, Partial<DevotionalAIResponse>> = {
@@ -424,6 +582,14 @@ function createCheckInFallbackDevotional(checkInData: CheckInData): DevotionalAI
       bibleReference: '1 Thessalonians 5:18',
       prayer: 'Lord, thank You for this sense of well-being. Help me to remain grateful and mindful of Your presence throughout this day. Amen.',
       reflectionPrompt: 'What specific blessings can you thank God for today?'
+    },
+    'meh': {
+      title: 'Finding Peace in the Middle',
+      context: 'Sometimes we feel neither great nor terrible - just "meh." God meets us in these ordinary moments too. Even in the mundane, God is working.',
+      verse: 'Not that I am speaking of being in need, for I have learned in whatever situation I am to be content.',
+      bibleReference: 'Philippians 4:11',
+      prayer: 'Lord, help me find Your presence in this ordinary day. Give me eyes to see Your work even when I don\'t feel particularly inspired. Amen.',
+      reflectionPrompt: 'What small act of faithfulness can you commit to today, regardless of how you feel?'
     },
     'meb': {
       title: 'Finding Peace in the Middle',
@@ -459,8 +625,12 @@ function createCheckInFallbackDevotional(checkInData: CheckInData): DevotionalAI
     }
   };
 
-  // Get the base devotional for the mood
-  const baseDevotional = moodDevotionals[checkInData.mood] || moodDevotionals['meb'];
+  // Get the base devotional for the mood (handle case variations)
+  const moodKey = checkInData.mood.toLowerCase();
+  const baseDevotional = moodDevotionals[checkInData.mood] || 
+                        moodDevotionals[moodKey] || 
+                        moodDevotionals['meh'] || 
+                        moodDevotionals['meb'];
   
   // Customize based on focus area if provided
   if (checkInData.focus) {
@@ -494,7 +664,7 @@ function createCheckInFallbackDevotional(checkInData: CheckInData): DevotionalAI
     reflectionPrompt: baseDevotional.reflectionPrompt || 'How is God inviting you to grow today?'
   };
   
-  console.log('[AI API] Fallback devotional result:', result);
+  appLog('[AI API] Fallback devotional result:', result);
   
   return result;
 }
@@ -510,7 +680,7 @@ export async function checkNetworkConnectivity(): Promise<boolean> {
     });
     return true;
   } catch (error) {
-    console.log('[AI API] Network connectivity check failed:', error);
+    appLog('[AI API] Network connectivity check failed:', error);
     return false;
   }
 }

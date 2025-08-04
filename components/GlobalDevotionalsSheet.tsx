@@ -14,6 +14,10 @@ import { Devotional } from '~/app/models/Devotional';
 import firestore from '@react-native-firebase/firestore';
 import { router } from 'expo-router';
 import SavedDevotionalCard from '~/components/SavedDevotionalCard';
+import i18n from '~/app/utils/i18n';
+import { useHomeStore } from '~/app/stores/homeStore';
+import { appLog } from '~/app/helper/helper';
+
 
 // Define the ref type
 export type DevotionalsSheetRef = {
@@ -27,10 +31,10 @@ interface GlobalDevotionalsSheetProps {
 }
 
 const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotionalsSheetRef }) => {
-  // Add internal ref for the actual BottomSheet
-  const bottomSheetRef = useRef<BottomSheet>(null);
+  // Add navigation guard to prevent multiple navigations
+  const hasNavigated = useRef(false);
 
-  // Snap points for 95% height
+  // Snap points for 90% height
   const snapPoints = useMemo(() => ['90%'], []);
 
   // Access UI store for visibility
@@ -45,17 +49,21 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
   // Get current user and devotional store
   const currentUser = useUserStore.getState();
   const { setCustomDevotional } = useDevotionalStore();
+  const bottomSheetRef = useRef<BottomSheet>(null);
 
   // Fetch saved devotionals when sheet becomes visible
   useEffect(() => {
     if (isDevotionalsSheetVisible && currentUser?.id) {
       fetchSavedDevotionals();
-      // Ensure the sheet expands to full height
-      setTimeout(() => {
-        bottomSheetRef.current?.expand();
-      }, 100);
     }
   }, [isDevotionalsSheetVisible, currentUser?.id]);
+
+  // Reset navigation guard when component unmounts
+  useEffect(() => {
+    return () => {
+      hasNavigated.current = false;
+    };
+  }, []);
 
   const fetchSavedDevotionals = async () => {
     if (!currentUser?.id) return;
@@ -89,7 +97,7 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
       setSavedDevotionals(devotionals);
     } catch (err) {
       console.error('Error fetching saved devotionals:', err);
-      setError('Failed to load saved devotionals');
+      setError(i18n.t('error_loading_saved_devotionals'));
     } finally {
       setIsLoading(false);
     }
@@ -110,6 +118,12 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
     [hideDevotionalsSheet]
   );
 
+  function showDevotionalReader(){
+    if(!useUIStore.getState().devotionalReaderVisible){
+       useUIStore.getState().setDevotionalReaderVisible(true);
+    }
+  }
+
   // Show the sheet
   const showSheet = useCallback(() => {
     bottomSheetRef.current?.snapToIndex(0);
@@ -119,9 +133,31 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
   // Handle start devotional
   const handleStartDevotional = useCallback((devotional: Devotional) => {
     hapticLight();
+    appLog('[GlobalDevotionalsSheet] Starting saved devotional:', devotional.id);
+    
+    // Check navigation guard before navigating
+    if (hasNavigated.current) {
+      appLog('[GlobalDevotionalsSheet] Navigation already occurred, skipping');
+      return;
+    }
+    
+    // Set the devotional as custom devotional (same as creating custom devotional)
     setCustomDevotional(devotional);
+    
+    // Close the sheet
     hideDevotionalsSheet();
-    router.replace('/(tabs)');
+    
+    // Navigate to home screen with showDevotional parameter to trigger DevotionalReader
+    // router.navigate('/(tabs)?showDevotional=true');
+    showDevotionalReader();
+    hasNavigated.current = true;
+    router.navigate({
+      pathname: '/(tabs)',
+      params: { showDevotional: 'true' }
+    });
+    setTimeout(() => {
+      hasNavigated.current = false;
+    }, 2000);
   }, [setCustomDevotional, hideDevotionalsSheet]);
 
   // Custom backdrop renderer
@@ -137,7 +173,10 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
     devotionalsSheetRef,
     () => ({
       show: showSheet,
-      close: () => bottomSheetRef.current?.close(),
+      close: () => {
+        hasNavigated.current = false;
+        bottomSheetRef.current?.close()
+      },
       expand: () => bottomSheetRef.current?.expand(),
     }),
     [showSheet]
@@ -152,11 +191,11 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
   );
 
   const renderEmptyState = () => (
-    <View style={styles.emptyState}>
+    <View style={styles.emptyState} className='mt-20'>
       <Feather name="heart" size={48} color="#795323" style={{ opacity: 0.3 }} />
-      <Text style={styles.emptyStateTitle}>No Saved Devotionals</Text>
+      <Text style={styles.emptyStateTitle}>{i18n.t('no_saved_devotionals')}</Text>
       <Text style={styles.emptyStateText}>
-        Like devotionals to see them here
+        {i18n.t('no_saved_devotionals_desc')}
       </Text>
     </View>
   );
@@ -166,7 +205,11 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
       {isDevotionalsSheetVisible ? (
         <BottomSheet
           ref={bottomSheetRef}
-          index={-1}
+          index={1}
+          onClose={()=>{
+           
+            hasNavigated.current = false;
+          }}
           snapPoints={snapPoints}
           enablePanDownToClose={true}
           onChange={handleSheetChange}
@@ -184,7 +227,7 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
           <BottomSheetScrollView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-              <Text className="text-2xl font-feather text-textPrimary ml-1">Saved Devotionals</Text>
+              <Text className="text-2xl font-feather text-textPrimary ml-1">{i18n.t('saved_devotionals_title')}</Text>
               <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
                 <Feather name="x" size={24} color="#795323" />
               </TouchableOpacity>
@@ -195,13 +238,13 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
               {isLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color="#795323" />
-                  <Text style={styles.loadingText}>Loading saved devotionals...</Text>
+                  <Text style={styles.loadingText}>{i18n.t('loading_saved_devotionals')}</Text>
                 </View>
               ) : error ? (
                 <View style={styles.errorContainer}>
                   <Text style={styles.errorText}>{error}</Text>
                   <TouchableOpacity onPress={fetchSavedDevotionals} style={styles.retryButton}>
-                    <Text style={styles.retryButtonText}>Retry</Text>
+                    <Text style={styles.retryButtonText}>{i18n.t('retry_button')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : savedDevotionals.length === 0 ? (

@@ -9,9 +9,11 @@ import Animated, {
   withSpring,
   useSharedValue,
   withDelay,
+  useReducedMotion,
 } from 'react-native-reanimated';
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
+import { appLog } from '../app/helper/helper';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '~/app/stores/userStore';
 import { useNotificationStore } from '~/app/stores/notificationStore';
@@ -25,8 +27,9 @@ import { AppFonts } from '~/app/constants/appFonts';
 import { RPH } from '~/app/helper/helper';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { useSoundStore } from '~/app/stores/soundStore';
+import { useUIStore } from '~/app/stores/uiStore';
 /* ─────────────── helper ─────────────── */
-type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
+type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE' | 'STREAK_FREEZE';
 
 interface WeekCell {
   dateKey: string; // 'YYYY-MM-DD'
@@ -42,7 +45,8 @@ interface WeekCell {
 const buildWeekCells = (
   today: dayjs.Dayjs,
   accountCreated: dayjs.Dayjs,
-  completed: Set<string>
+  completed: Set<string>,
+  streakFreezeUsedDates: Set<string>
 ): WeekCell[] => {
   return Array.from({ length: 7 }).map((_, i) => {
     // Start 3 days before today and go up to 3 days after today
@@ -54,6 +58,7 @@ const buildWeekCells = (
     if (d.isBefore(accountCreated, 'day')) status = 'BEFORE_ACCOUNT';
     else if (isToday) status = completed.has(key) ? 'COMPLETED' : 'TODAY_PENDING';
     else if (d.isAfter(today, 'day')) status = 'FUTURE';
+    else if (streakFreezeUsedDates.has(key)) status = 'STREAK_FREEZE';
     else if (completed.has(key)) status = 'COMPLETED';
     else status = 'MISSED';
 
@@ -98,18 +103,21 @@ const calculateStreakLogic = (
 
 export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresses?: string, isReflectPresses?: string }) => {
 
+  // Check if reduced motion is enabled
+  const reducedMotion = useReducedMotion();
+
   // Animation states
   const animationsInitialized = useRef(false);
-  const screenOpacity = useSharedValue(0);
-  const flameOpacity = useSharedValue(0);
-  const flameScale = useSharedValue(0.5);
-  const streakNumberOpacity = useSharedValue(0);
-  const streakTextOpacity = useSharedValue(0);
-  const cardOpacity = useSharedValue(0);
-  const cardTranslateY = useSharedValue(30);
-  const subtextOpacity = useSharedValue(0);
-  const buttonOpacity = useSharedValue(0);
-  const buttonTranslateY = useSharedValue(20);
+  const screenOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const flameOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const flameScale = useSharedValue(reducedMotion ? 1 : 0.5);
+  const streakNumberOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const streakTextOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const cardOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const cardTranslateY = useSharedValue(reducedMotion ? 0 : 30);
+  const subtextOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const buttonOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const buttonTranslateY = useSharedValue(reducedMotion ? 0 : 20);
   const riveRef = useRef<RiveRef>(null);
   const isMounted = useRef(true);
   const insets = useSafeAreaInsets();
@@ -120,6 +128,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   const completedReadings = useUserStore((s) => s.getCompletedReadings?.());
   const lastReadingDate = useUserStore((s) => s.lastReadingDate);
   const setStreakCount = useUserStore((state) => state.setStreakCount);
+  const streakFreezeUsedDates = useUserStore((s) => s.getStreakFreezeUsedDates?.()) || [];
   const [debugDisplayInfo, setDebugDisplayInfo] = useState<any>(null); // Renamed for clarity
 
   // Get notification store methods
@@ -135,24 +144,24 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   useEffect(() => {
     const resetNotifications = async () => {
       try {
-        console.log('📱 StreakScreen: Rescheduling streak notifications for the next day');
+        appLog('📱 StreakScreen: Rescheduling streak notifications for the next day');
 
         // Reschedule streak notifications for the next day
         const success = await rescheduleStreakNotificationsForNextDay();
 
         if (success) {
-          console.log('📱 StreakScreen: Successfully rescheduled streak notifications');
+          appLog('📱 StreakScreen: Successfully rescheduled streak notifications');
         } else {
-          console.log('📱 StreakScreen: Failed to reschedule streak notifications');
+          appLog('📱 StreakScreen: Failed to reschedule streak notifications');
         }
 
         // Also reschedule daily reminder if user has a notification time preference
         if (preferredNotificationTime && preferredNotificationTime !== 'none') {
-          console.log('📱 StreakScreen: Rescheduling daily reminder for next day');
+          appLog('📱 StreakScreen: Rescheduling daily reminder for next day');
           await scheduleDailyReminder(preferredNotificationTime);
-          console.log('📱 StreakScreen: Daily reminder successfully rescheduled');
+          appLog('📱 StreakScreen: Daily reminder successfully rescheduled');
         } else {
-          console.log(
+          appLog(
             '📱 StreakScreen: No preferred notification time set, skipping daily reminder'
           );
         }
@@ -160,7 +169,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
         // Log all scheduled notifications for debugging
         await listScheduledNotifications();
       } catch (error) {
-        console.log('📱 StreakScreen: Error rescheduling notifications:', error);
+        appLog('📱 StreakScreen: Error rescheduling notifications:', error);
       }
     };
 
@@ -248,9 +257,21 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   }, [completedSet, lastReadingDate]);
 
   // 3. build the centered grid (today in the middle)
+  const streakFreezeUsedSet = useMemo(() => new Set(streakFreezeUsedDates || []), [streakFreezeUsedDates]);
+  
+  
   const weekCells = useMemo(
-    () => buildWeekCells(today, createdDate, augmentedCompletedSet),
-    [today, createdDate, augmentedCompletedSet]
+    () => {
+      if (__DEV__) {
+        appLog('[StreakScreen] Building week cells with streak freeze data:', {
+          streakFreezeUsedDates: Array.from(streakFreezeUsedSet),
+          completedDates: Array.from(augmentedCompletedSet),
+          today: today.format('YYYY-MM-DD'),
+        });
+      }
+      return buildWeekCells(today, createdDate, augmentedCompletedSet, streakFreezeUsedSet);
+    },
+    [today, createdDate, augmentedCompletedSet, streakFreezeUsedSet]
   );
 
   // 4. calculate streak (memoized to prevent recalculation)
@@ -258,7 +279,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
     const newCalculatedStreak = calculateStreakLogic(today, augmentedCompletedSet, createdDate);
 
     if (__DEV__) {
-      console.log('[StreakScreen] Streak Calculation Details:', {
+      appLog('[StreakScreen] Streak Calculation Details:', {
         streakValue: newCalculatedStreak,
         today: today.format('YYYY-MM-DD'),
         completedDates: Array.from(augmentedCompletedSet),
@@ -271,7 +292,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   // Update the user's streakCount in the store whenever streak changes
   useEffect(() => {
     setStreakCount(streak);
-    console.log('streak', streak);
+    appLog('streak', streak);
 
     // Track notification rescheduling with the current streak value
     analytics.logEvent('StreakScreen_RescheduledNotifications', {
@@ -311,6 +332,12 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   // Setup animations when component mounts
   useLayoutEffect(() => {
     if (animationsInitialized.current) return;
+
+    // Skip animations if reduced motion is enabled
+    if (reducedMotion) {
+      animationsInitialized.current = true;
+      return;
+    }
 
     // Start with screen fade in - set immediate value to avoid flicker
     screenOpacity.value = 0;
@@ -365,7 +392,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
         console.error('Error playing Rive animation:', e);
       }
     }
-  }, []);
+  }, [reducedMotion]);
 
   // Define animated styles
   const containerStyle = useAnimatedStyle(() => ({
@@ -401,7 +428,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   }));
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/successLamb.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/success_lamb.riv')]);
 
   const subText = getStreakSubtext(streak);
 
@@ -412,7 +439,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
     analytics.logEvent('StreakScreen_Tapped_Continue', {
       streak: streak,
     });
-    console.log(
+    appLog(
       '[StreakScreen] Continue pressed. Resetting pathInProgress and navigating to home.'
     );
     setPathInProgress(false);
@@ -426,13 +453,11 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
     //     isPrayPresses: isPrayPresses
     //   }
     // });
-    router.push({
-      pathname: '/(tabs)',
-      params: {
-        isPrayPresses: isPrayPresses,
-        isReflectPresses: isReflectPresses
-      }
-    });
+    const devotionalReaderVisible = useUIStore.getState().devotionalReaderVisible;
+    if(devotionalReaderVisible){
+      useUIStore.getState().setDevotionalReaderVisible(false);
+    }
+    router.back();
   };
 
   // Show loading indicator if assets aren't loaded yet
@@ -446,8 +471,8 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   }
 
   return (
-    <Animated.View style={containerStyle} className="flex-1 bg-surfaceCream justify-between">
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <Animated.View style={[containerStyle, { flex: 1, position: 'relative' }]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         {/* Large flame with streak number */}
         <Animated.View style={flameContainerStyle} className="items-center mt-10 mb-2">
           <View className="relative justify-center items-center mb-1">
@@ -468,7 +493,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
               ) : (
                 <Rive
                   key={`rive-streak-${streak}`}
-                  url={riveAssets[0].uri!}
+                  resourceName='success_lamb'
                   artboardName="streak"
                   autoplay
                   style={{
@@ -497,7 +522,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
         {/* Day tracker card */}
         <Animated.View
           style={cardStyle}
-          className="mx-4 rounded-card border-4 border-border bg-white py-4 px-2 py-6">
+          className="mx-4 rounded-card border-4 border-border bg-white px-2 py-6">
           <View className="flex-row justify-between items-center mb-2 px-4">
             {weekCells.map((cell) => (
               <View key={cell.dateKey} className="items-center mx-1">
@@ -525,6 +550,11 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
                     <Text className="text-[#999] text-xl">✕</Text>
                   </View>
                 )}
+                {cell.status === 'STREAK_FREEZE' && (
+                  <View className="w-10 h-10 rounded-full bg-[#ADD8E6] border-2 border-white items-center justify-center">
+                    <Text className="text-white text-lg">❄️</Text>
+                  </View>
+                )}
               </View>
             ))}
           </View>
@@ -535,38 +565,50 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
             {subText}
           </Animated.Text>
         </Animated.View>
-
-        {/* Continue button */}
-        <Animated.View style={buttonStyle} className="px-6 pb-10 mt-8">
-          <PrimaryButton buttonType="blue" title="Go home" onPress={handleContinue} />
-        </Animated.View>
-
-        {/* Development debug info */}
-        {/* {__DEV__ && debugDisplayInfo && (
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 80,
-            left: 10,
-            right: 10,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            padding: 8,
-            borderRadius: 5,
-          }}>
-          <Text style={{ color: 'white', fontSize: 10 }}>
-            Streak: {debugDisplayInfo.streak} | Dates completed:{' '}
-            {debugDisplayInfo.completedDates?.join(', ')}
-          </Text>
-          <Text style={{ color: 'white', fontSize: 10 }}>
-            Today: {debugDisplayInfo.today} | Created: {debugDisplayInfo.createdDate}
-          </Text>
-          <Text style={{ color: 'white', fontSize: 10 }}>
-            HasToday: {String(debugDisplayInfo.hasTodayCompleted)} | HasYesterday:{' '}
-            {String(debugDisplayInfo.hasYesterdayCompleted)}
-          </Text>
-        </View>
-      )} */}
       </ScrollView>
+
+      {/* Continue button fixed at bottom */}
+      <Animated.View
+        style={[
+          buttonStyle,
+          {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: insets.bottom + 24, // Add safe area and some padding
+            paddingHorizontal: 24,
+            zIndex: 10,
+          },
+        ]}
+      >
+        <PrimaryButton buttonType="blue" title="Continue" onPress={handleContinue} />
+      </Animated.View>
+
+      {/* Development debug info */}
+      {/* {__DEV__ && debugDisplayInfo && (
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 80,
+          left: 10,
+          right: 10,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          padding: 8,
+          borderRadius: 5,
+        }}>
+        <Text style={{ color: 'white', fontSize: 10 }}>
+          Streak: {debugDisplayInfo.streak} | Dates completed:{' '}
+          {debugDisplayInfo.completedDates?.join(', ')}
+        </Text>
+        <Text style={{ color: 'white', fontSize: 10 }}>
+          Today: {debugDisplayInfo.today} | Created: {debugDisplayInfo.createdDate}
+        </Text>
+        <Text style={{ color: 'white', fontSize: 10 }}>
+          HasToday: {String(debugDisplayInfo.hasTodayCompleted)} | HasYesterday:{' '}
+          {String(debugDisplayInfo.hasYesterdayCompleted)}
+        </Text>
+      </View>
+    )} */}
     </Animated.View>
   );
 };

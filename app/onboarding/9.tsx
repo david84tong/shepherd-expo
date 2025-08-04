@@ -15,7 +15,7 @@ import { useNotificationStore } from '../stores/notificationStore';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
 import i18n from '../utils/i18n';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 import { hapticLight } from '~/utils/haptics';
 
 export default function NotificationPermissionScreen() {
@@ -109,19 +109,19 @@ export default function NotificationPermissionScreen() {
     try {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
-      console.log('📱 Existing notification status:', existingStatus);
+      appLog('📱 Existing notification status:', existingStatus);
 
       if (existingStatus !== 'granted') {
-        console.log('📱 Requesting notification permissions...');
+        appLog('📱 Requesting notification permissions...');
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
-        console.log('📱 New notification status after request:', status);
+        appLog('📱 New notification status after request:', status);
       }
 
       if (finalStatus === 'granted') {
         analytics.logEvent("OnboardingNotificationPermissionScreen_Granted");
 
-        console.log('📱 Notification permissions GRANTED in onboarding');
+        appLog('📱 Notification permissions GRANTED in onboarding');
 
         // Enable notifications in our store
         notificationStore.setNotificationsEnabled(true);
@@ -133,25 +133,25 @@ export default function NotificationPermissionScreen() {
         });
 
         // Schedule streak warning notifications first
-        console.log('📱 Onboarding: Scheduling streak warning notifications');
+        appLog('📱 Onboarding: Scheduling streak warning notifications');
         await notificationStore.scheduleStreakReminders();
 
         // Schedule daily reminder using the evening timeframe
-        console.log('📱 Onboarding: Scheduling daily reminder for evening');
+        appLog('📱 Onboarding: Scheduling daily reminder for evening');
         await notificationStore.scheduleDailyReminder('evening');
 
         // List all scheduled notifications to confirm
-        console.log('📱 Listing all scheduled notifications:');
+        appLog('📱 Listing all scheduled notifications:');
         await notificationStore.listScheduledNotifications();
 
-        console.log('📱 All notifications successfully scheduled during onboarding');
+        appLog('📱 All notifications successfully scheduled during onboarding');
 
         router.push('/onboarding/10');
         return;
       } else {
         analytics.logEvent("OnboardingNotificationPermissionScreen_Denied");
 
-        console.log('📱 Notification permissions DENIED in onboarding');
+        appLog('📱 Notification permissions DENIED in onboarding');
 
         // Disable notifications in our store
         notificationStore.setNotificationsEnabled(false);
@@ -183,7 +183,7 @@ export default function NotificationPermissionScreen() {
 
       router.push('/onboarding/10');
     } catch (error) {
-      console.log('📱 Error requesting notification permissions:', error);
+      appLog('📱 Error requesting notification permissions:', error);
 
       // Disable notifications in case of error
       notificationStore.setNotificationsEnabled(false);

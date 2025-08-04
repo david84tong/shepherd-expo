@@ -30,6 +30,7 @@ import { useHomeStore } from '../app/stores/homeStore';
 import { KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
+import { appLog } from '~/app/helper/helper';
 interface PrayerSheetProps {
   prayerSheetRef: React.RefObject<PrayerSheetRef>;
   onPrayerGenerated?: () => void;
@@ -90,7 +91,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({ prayerSheetRef, onPrayerGener
   const handlePrayerGenerate = useCallback(() => {
     if (!prayerInput.trim()) return;
 
-    console.log(`Generating prayer for: ${prayerInput}, isCustomInput: ${isCustomInput}`);
+    appLog(`Generating prayer for: ${prayerInput}, isCustomInput: ${isCustomInput}`);
 
     // Check if this is a predefined topic or a truly custom entry
     const isPredefinedTopic = orderedTopics.some(
@@ -105,9 +106,9 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({ prayerSheetRef, onPrayerGener
     addRecentPrayer(prayerInput);
 
     if (!isPredefinedTopic && isCustomInput) {
-      console.log(`Added "${prayerInput}" to recent prayers as a custom prayer`);
+      appLog(`Added "${prayerInput}" to recent prayers as a custom prayer`);
     } else {
-      console.log(
+      appLog(
         `Added "${prayerInput}" to recent prayers (for functionality) but it's a predefined topic`
       );
     }
@@ -123,17 +124,17 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({ prayerSheetRef, onPrayerGener
     setTimeout(() => {
       // Make sure the prayer input value is still in recentPrayers[0]
       const currentPrayers = usePrayerStore.getState().recentPrayers;
-      console.log('Current recent prayers before callback:', currentPrayers);
+      appLog('Current recent prayers before callback:', currentPrayers);
 
       if (prayerGeneratedCallback) {
-        console.log('Executing prayer generated callback from UIStore');
+        appLog('Executing prayer generated callback from UIStore');
         prayerGeneratedCallback();
       } else if (onPrayerGenerated) {
-        console.log('Executing prayer generated callback from props');
+        appLog('Executing prayer generated callback from props');
         onPrayerGenerated();
       } else {
         // Fallback if no callback provided - show the alert as before
-        console.log('No callback provided, showing alert');
+        appLog('No callback provided, showing alert');
         Alert.alert('Prayer Generated', `Your prayer for "${prayerInput}" has been generated.`, [
           { text: 'Amen', style: 'default' },
         ]);

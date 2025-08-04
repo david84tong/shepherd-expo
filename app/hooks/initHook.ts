@@ -6,41 +6,22 @@ import { PATH_OPTIONS, PathOption } from '../models/Path';
 import { checkStreakAndApplyPenalties } from './streakHook';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
-import analytics from '../../utils/analytics';
-// Key to check if app has been initialized
-const APP_INITIALIZED_KEY = 'app_initialized';
-// Generate a unique UUID for anonymous users
-const generateUUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = (Math.random() * 16) | 0,
-      v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v?.toString(16);
-  });
-};
-// Helper function to safely format timestamp
-const formatTimestamp = (timestamp: any) => {
-  if (!timestamp) return 'Not set';
-  if (timestamp.toDate && typeof timestamp.toDate === 'function') {
-    return timestamp.toDate().toLocaleString();
-  }
-  return 'Invalid timestamp';
-};
+import { initializeAnalytics, trackEvent } from '../../utils/analytics';
+import { appLog } from '../helper/helper';
 // This function can be called after init or when app comes to foreground
 export const onAppForegroundOrInit = async () => {
-  console.log('onAppForegroundOrInit=====>', onAppForegroundOrInit);
-  
+  appLog('onAppForegroundOrInit=====>', onAppForegroundOrInit);
+
   // Initialize analytics if not already initialized
-  if (!analytics.isInitialized) {
-    console.log('🔧 Initializing analytics on app foreground...');
-    await analytics.init();
-  }
-  
+  appLog('🔧 Initializing analytics on app foreground...');
+  await initializeAnalytics();
+
   const getUser = useUserStore.getState().getUser;
   const setSelectedPath = usePathStore.getState().setSelectedPath;
   const currentUser = auth().currentUser;
   try {
     if (!currentUser) {
-      console.log('No authenticated user found');
+      appLog('No authenticated user found');
       return;
     }
     const { success, data: firestoreData } = await fetchFromFirestore({
@@ -48,7 +29,8 @@ export const onAppForegroundOrInit = async () => {
     });
     if (success && firestoreData) {
       // Update the Zustand store with Firestore data
-      useUserStore.getState().syncFirestoreData(firestoreData);
+      await useUserStore.getState().syncFirestoreData(firestoreData);
+
       // Update selected path if needed
       const updatedUserData = getUser();
       if (updatedUserData.selectedPathId) {
@@ -61,11 +43,11 @@ export const onAppForegroundOrInit = async () => {
       }
       // Update completedMapPaths from Firestore if available
       if (firestoreData?.completedMapPaths) {
-        console.log('Syncing completedMapPaths from Firestore:', firestoreData.completedMapPaths);
+        appLog('Syncing completedMapPaths from Firestore:', firestoreData.completedMapPaths);
         useUserStore.getState().setCompletedMapPaths(firestoreData.completedMapPaths);
       }
     }
-    console.log('onAppForegroundOrInit complete');
+    appLog('onAppForegroundOrInit complete');
   } catch (firestoreError) {
     console.error('Error fetching user from Firestore (foreground/init):', firestoreError);
   }
@@ -76,25 +58,26 @@ const restoreUserState = async () => {
   try {
     const firebaseUser = auth().currentUser;
     if (!firebaseUser) {
-      console.log('No authenticated user found');
+      appLog('No authenticated user found');
       return false;
     }
-    console.log('Restoring user state for:', firebaseUser.uid);
+    appLog('Restoring user state for:', firebaseUser.uid);
     // First try to fetch from Firestore
     const { success, data: firestoreData } = await fetchFromFirestore({
       currentLoggedUser: firebaseUser,
     });
     if (!success || !firestoreData) {
-      console.log('Failed to fetch user data from Firestore');
+      appLog('Failed to fetch user data from Firestore');
       return false;
     }
-    console.log('Successfully fetched Firestore data:', firestoreData);
+    appLog('Successfully fetched Firestore data:', firestoreData);
     const prayerCompleted = useHomeStore.getState().prayerCompleted;
     const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
     const readingCompleted = useHomeStore.getState().readingCompleted;
     const completedMapPaths = useUserStore.getState().completedMapPaths;
     // Update the Zustand store with Firestore data
-    useUserStore.getState().syncFirestoreData(firestoreData);
+    await useUserStore.getState().syncFirestoreData(firestoreData);
+
     if (firestoreData?.completedPrayers && !prayerCompleted) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -155,10 +138,10 @@ const restoreUserState = async () => {
     // Ensure we have all the required data
     const userData = useUserStore.getState().getUser();
     if (!userData) {
-      console.log('No user data found after sync');
+      appLog('No user data found after sync');
       return false;
     }
-    console.log('User state restored successfully');
+    appLog('User state restored successfully');
     return true;
   } catch (error) {
     console.error('Error restoring user state:', error);
@@ -167,29 +150,36 @@ const restoreUserState = async () => {
 };
 export const useAppInitialization = () => {
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isAnalyticsReady, setIsAnalyticsReady] = useState(false);
+
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Initialize analytics first
-        console.log('🔧 Initializing analytics...');
-        await analytics.init();
-        
+        // Initialize analytics first and wait for completion
+        appLog('🔧 Initializing analytics...');
+        await initializeAnalytics();
+        appLog('✅ Analytics initialized successfully');
+        setIsAnalyticsReady(true);
+
         // Test analytics integration
-        analytics.testAnalytics();
-        
+        trackEvent('test_analytics_integration', {
+          source: 'init_hook',
+          timestamp: new Date().toISOString(),
+        });
+
         // Restore user state
         await restoreUserState();
         setIsInitialized(true);
       } catch (error) {
         console.error('Error during app initialization:', error);
-        setIsInitialized(true); // Set to true even on error to not block the app
+        setIsAnalyticsReady(true); // Set to true even on error to not block the app
+        setIsInitialized(true);
       }
     };
     initializeApp();
   }, []);
-  return { isInitialized };
+  return { isInitialized, isAnalyticsReady };
 };
 
 // Default export for Expo Router compatibility
-export default {}
-
+export default {};

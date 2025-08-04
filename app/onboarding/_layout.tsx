@@ -9,6 +9,7 @@ import { ONBOARDING_COMPLETED_KEY, ONBOARDING_STORAGE_KEY } from '../models/Onbo
 import ProgressBar from './components/ProgressBar';
 import { useAppInitialization } from '../hooks/initHook';
 import { debugOnboardingStorage, useOnboardingStore } from '../stores/onboardingStore';
+import { appLog } from '../helper/helper';
 
 // Define the actual screens we have implemented - MOVED HERE
 const IMPLEMENTED_SCREENS = [
@@ -25,11 +26,15 @@ const IMPLEMENTED_SCREENS = [
   '9',
   '10', // Ensure 10 is included
   'rating',
+  'streakCommitment',
   '11',
   'auth',
   'lambFound',
   'pathAffinity',
   'LoadingScreen',
+  'OldPricingScreen',
+  'PricingScreen',
+  'pricing',
 ];
 
 export default function OnboardingLayout() {
@@ -63,9 +68,11 @@ export default function OnboardingLayout() {
     pathname !== '/onboarding/11' &&
     !pathname.includes('Loading') &&
     !pathname.includes('/onboarding/auth') &&
-    !pathname.includes('/pricing');
+    !pathname.includes('/pricing') &&
+    !pathname.includes('/PricingScreen') &&
+    !pathname.includes('/onboarding/pricing/OldPricingScreen');
 
-  console.log(
+  appLog(
     `[OnboardingLayout] Path: ${pathname}, Should show progress bar: ${shouldShowProgressBar}`
   );
   // --- DEBUG LOGGING END ---
@@ -75,16 +82,23 @@ export default function OnboardingLayout() {
     // Only update screen from pathname if store is initialized
     // This prevents overriding the saved screen during app startup
     if (pathname && isInitialized) {
-      const screen = pathname.split('/').pop() || '1';
+      // Extract the screen path relative to `/onboarding/` so nested routes like `pricing/OldPricingScreen` are preserved.
+      let screen = pathname.startsWith('/onboarding/')
+        ? pathname.substring('/onboarding/'.length) // keep everything after `/onboarding/`
+        : pathname.startsWith('/')
+        ? pathname.slice(1)
+        : pathname;
 
-      console.log(
+      if (!screen) screen = '1';
+
+      appLog(
         `[OnboardingLayout] Pathname changed to: ${pathname}, extracted screen: ${screen}, current screen: ${currentScreen}`
       );
 
       // Only update if the screen is actually different from what's saved
       // This prevents unnecessary updates during navigation
       if (screen !== currentScreen) {
-        console.log(
+        appLog(
           `[OnboardingLayout] Screen changed from ${currentScreen} to ${screen}, saving...`
         );
 
@@ -106,7 +120,7 @@ export default function OnboardingLayout() {
         (async () => {
           try {
             await setCurrentScreen(screen);
-            console.log(`[OnboardingLayout] ✅ Successfully saved screen: ${screen}`);
+            appLog(`[OnboardingLayout] ✅ Successfully saved screen: ${screen}`);
           } catch (error) {
             console.error(`[OnboardingLayout] ❌ Failed to save screen: ${screen}`, error);
           }
@@ -118,29 +132,35 @@ export default function OnboardingLayout() {
   // Log initialization status for debugging
   useEffect(() => {
     if (appIsInitialized) {
-      console.log('🔍 App initialization complete, user data ready');
+      appLog('🔍 App initialization complete, user data ready');
     }
   }, [appIsInitialized]);
 
   // Handle navigation to saved screen after mounting (backup - tabs layout should handle this)
   useEffect(() => {
-    console.log(
+    appLog(
       `[OnboardingLayout] Navigation effect triggered - isInitialized: ${isInitialized}, needsNavigation: ${needsNavigationToSavedScreen}, savedScreen: ${savedScreenToNavigateTo}`
     );
 
     // This is now mainly a backup since tabs layout should handle the redirect
     if (isInitialized && needsNavigationToSavedScreen && savedScreenToNavigateTo) {
-      console.log(`🚀 Backup navigation to saved screen: ${savedScreenToNavigateTo}`);
+      appLog(`🚀 Backup navigation to saved screen: ${savedScreenToNavigateTo}`);
 
       // Shorter delay since this is backup navigation
       const timeoutId = setTimeout(() => {
         try {
-          console.log(
-            `[OnboardingLayout] 🔄 Backup navigation executing: /onboarding/${savedScreenToNavigateTo}`
+          // Handle legacy saved screen values that didn't include nested path (e.g., "OldPricingScreen")
+          let targetScreen = savedScreenToNavigateTo;
+          if (targetScreen === 'OldPricingScreen') {
+            targetScreen = 'OldPricingScreen';
+          }
+
+          appLog(
+            `[OnboardingLayout] 🔄 Backup navigation executing: /onboarding/${targetScreen}`
           );
-          router.replace(`/onboarding/${savedScreenToNavigateTo}` as any);
+          router.replace(`/onboarding/${targetScreen}` as any);
           clearSavedScreenNavigation();
-          console.log(`[OnboardingLayout] ✅ Backup navigation completed`);
+          appLog(`[OnboardingLayout] ✅ Backup navigation completed`);
         } catch (error) {
           console.error('[OnboardingLayout] ❌ Error in backup navigation:', error);
         }
@@ -148,7 +168,7 @@ export default function OnboardingLayout() {
 
       return () => clearTimeout(timeoutId);
     } else {
-      console.log(
+      appLog(
         `[OnboardingLayout] ⏸️ Backup navigation skipped - tabs layout should handle this`
       );
     }
@@ -164,10 +184,10 @@ export default function OnboardingLayout() {
     try {
       const data = await debugOnboardingStorage();
       const allKeys = await AsyncStorage.getAllKeys();
-      console.log('🔍 DEBUG: All keys in AsyncStorage:', allKeys);
+      appLog('🔍 DEBUG: All keys in AsyncStorage:', allKeys);
       return data;
     } catch (error) {
-      console.log('❌ Error checking storage:', error);
+      appLog('❌ Error checking storage:', error);
       return null;
     }
   };
@@ -200,7 +220,7 @@ export default function OnboardingLayout() {
             );
             router.push('/onboarding/1' as any);
           } catch (error) {
-            console.log('❌ Error resetting onboarding data:', error);
+            appLog('❌ Error resetting onboarding data:', error);
           }
         },
       },
@@ -240,7 +260,7 @@ export default function OnboardingLayout() {
             options={{
               contentStyle: {
                 backgroundColor: '#FDEBB8',
-                marginTop: screen === '1' || screen === 'LoadingScreen' ? 0 : insets.top > 20 ? 48 : 0,
+                marginTop: screen === '1' || screen === 'LoadingScreen' || screen === '11' ? 0 : insets.top > 20 ? 48 : 0,
               },
               ...(screen === '1' && {
                 gestureEnabled: false,
@@ -257,7 +277,9 @@ export default function OnboardingLayout() {
         !(pathname == '/onboarding/11') &&
         !pathname.includes('/onboarding/LoadingScreen') &&
         !pathname.includes('/onboarding/auth') &&
-        !pathname.includes('/pricing') && (
+        !pathname.includes('/pricing') &&
+        !pathname.includes('/PricingScreen') &&
+        !pathname.includes('/onboarding/pricing/OldPricingScreen') && (
           <Animated.View
             style={[
               {

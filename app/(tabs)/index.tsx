@@ -10,11 +10,9 @@ import {
   TouchableOpacity,
   Image,
   Animated,
-  Modal,
 } from 'react-native';
 import BottomSheet, { BottomSheetScrollView, SCREEN_HEIGHT } from '@gorhom/bottom-sheet';
 import Toast from 'react-native-toast-message';
-import { useAssets } from 'expo-asset';
 import { useHomeScreen } from '../hooks/useHomeScreen';
 import { useHomeStore } from '../stores/homeStore';
 import DevotionalReader from '../../components/DevotionalReader';
@@ -23,7 +21,6 @@ import SecondaryButton from '../../components/SecondaryButton';
 import HeartsExplainerModal from '../../components/HeartsExplainerModal';
 import ExplainerModal from '../../components/ExplainerModal';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
-import bibleIcon from '../../assets/icons/bibleIcon.png';
 import FullScreenShareCard from '../../components/FullScreenShareCard';
 import SpotlightOverlay from '../../components/SpotlightOverlay';
 // import PrayerView from '~/components/PrayerView';
@@ -35,15 +32,13 @@ import { imageAssets, useAssetsStore } from '../stores/assetsStore';
 import { useDevotionalStore } from '../stores/devotionalStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
-import { useCheckInStore } from '../stores/checkInStore';
-import { useMemo, useState, useEffect } from 'react';
+import useSubscriptionStore from '../stores/subscriptionStore';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import type { Devotional } from '../models/Devotional';
-import { devotionalBackgrounds } from '../models/Devotional';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
-import * as Haptics from 'expo-haptics';
 import { responsiveHeight } from 'react-native-responsive-dimensions';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 import analytics from '~/utils/analytics';
 import BottomControls from '../components/BottomControls';
 import i18n from '../utils/i18n';
@@ -51,11 +46,9 @@ import { useLanguageStore } from '../stores/languageStore';
 import { AppFonts } from '../constants/appFonts';
 import React from 'react';
 import { hapticLight } from '~/utils/haptics';
-import OnboardingPathScreen from '../onboarding/8';
-import { Feather } from '@expo/vector-icons';
 import CardStack from '../components/CardStack';
-import { useRouter } from 'expo-router';
-import auth from '@react-native-firebase/auth';
+import { useRouter, useFocusEffect } from 'expo-router';
+import firestore from '@react-native-firebase/firestore';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -70,81 +63,137 @@ const gemIcon = imageAssets[8];
 const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
-console.log('📄 HomeScreen file loaded at:', new Date().toISOString());
+appLog('📄 HomeScreen file loaded at:', new Date().toISOString());
+
+// Memoized scroll view content to prevent unnecessary re-renders
+const MemoizedScrollContent = React.memo(({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>;
+});
+MemoizedScrollContent.displayName = 'MemoizedScrollContent';
 
 export default function HomeScreen() {
-  console.log('🏠 HomeScreen function called at:', new Date().toISOString());
-  
-  const router = useRouter();
+  appLog('🏠 HomeScreen function called at:', new Date().toISOString());
 
-  // Direct function call to test
-  React.useEffect(() => {
-    console.log('🔥 INLINE EFFECT RUNNING!');
-  }, []);
+  const router = useRouter();
 
   // Add a state to ensure component is mounted
   const [isMounted, setIsMounted] = useState(false);
-  console.log('📍 State initialized');
+  appLog('📍 State initialized');
 
   // Test effect to verify component is mounting
   useEffect(() => {
     const timestamp = new Date().toISOString();
-    console.log(`🎉 [${timestamp}] HomeScreen component mounted!`);
+    appLog(`🎉 [${timestamp}] HomeScreen component mounted!`);
     setIsMounted(true);
 
     try {
       // Initialize next unit preview based on current completion state
       const initializeNextUnit = usePathStore.getState().initializeNextUnitPreview;
       initializeNextUnit();
+
+      // Force sync Firebase data to ensure we have latest completedMapPaths
+      const syncData = useUserStore.getState().syncFirestoreData;
+      const currentUser = useUserStore.getState();
+      if (currentUser.id && syncData) {
+        appLog('🔄 Syncing Firestore data on mount...');
+        // Fetch latest user data from Firestore
+        firestore()
+          .collection('users')
+          .doc(currentUser.id)
+          .get()
+          .then((doc) => {
+            if (doc.exists) {
+              const userData = doc.data();
+              if (userData && userData.completedMapPaths) {
+                appLog(
+                  '📥 Fresh completedMapPaths from Firestore:',
+                  userData.completedMapPaths
+                );
+                syncData(userData as any).catch((error: any) => {
+                  console.error('❌ Error in syncData:', error);
+                });
+              }
+            }
+          })
+          .catch((error) => {
+            console.error('❌ Error syncing Firestore data:', error);
+          });
+      }
+
+      // Force refresh pro status to ensure it's properly synced after referral code application
+      const { forceRefreshProStatus } = useSubscriptionStore.getState();
+      forceRefreshProStatus().catch((error: any) => {
+        console.error('❌ Error refreshing pro status:', error);
+      });
     } catch (error) {
-      console.error('❌ Error initializing next unit preview:', error);
+      console.error('❌ Error initializing:', error);
     }
 
     return () => {
-      console.log(`👋 [${timestamp}] HomeScreen component unmounting`);
+      appLog(`👋 [${timestamp}] HomeScreen component unmounting`);
     };
   }, []);
 
-  console.log('📍 First useEffect registered');
+  appLog('📍 First useEffect registered');
 
   // Separate effect for fetching devotional - runs when component is mounted
   useEffect(() => {
-    console.log("isMounted ==>", isMounted);
+    appLog('isMounted ==>', isMounted);
     // if (!isMounted) return;
 
     const timestamp = new Date().toISOString();
-    console.log(`🎯 [${timestamp}] Component is mounted, attempting to fetch devotional...`);
+    appLog(`🎯 [${timestamp}] Component is mounted, attempting to fetch devotional...`);
 
     try {
       const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
       if (fetchDevotional) {
-        console.log(`✅ [${timestamp}] fetchTodaysDevotional function found!`);
+        appLog(`✅ [${timestamp}] fetchTodaysDevotional function found!`);
         fetchDevotional()
           .then(() => {
             const devotionalStore = useDevotionalStore.getState();
             const data = devotionalStore.currentDevotional;
-            console.log(`📖 [${timestamp}] Devotional fetched successfully:`, data?.id, data?.bibleReference);
+            appLog(
+              `📖 [${timestamp}] Devotional fetched successfully:`,
+              data?.id,
+              data?.bibleReference
+            );
           })
           .catch((error: any) => {
-            console.error(`❌ [${timestamp}] Error fetching devotional:`, error);
+            console.error(`❌ [${timestamp}] Error fetching devotional`, error);
           });
       } else {
-        console.log(`❌ [${timestamp}] fetchTodaysDevotional function not found!`);
+        appLog(`❌ [${timestamp}] fetchTodaysDevotional function not found!`);
       }
     } catch (error) {
       console.error('❌ Error in devotional useEffect:', error);
     }
   }, []);
 
-  console.log('📍 Second useEffect registered');
+  appLog('📍 Second useEffect registered');
+
+  // Fetch recent devotionals on mount
+  useEffect(() => {
+    appLog('📚 Fetching recent devotionals on mount');
+    fetchRecentDevotionals().catch((error) => {
+      console.error('❌ Error fetching recent devotionals on mount:', error);
+    });
+  }, []);
 
   // Local state for prayer success screen visibility
   const [showPrayerSuccess, setShowPrayerSuccess] = useState(false);
 
   // Add state to track the selected devotional for FullScreenShareCard
-  const [selectedDevotionalForShare, setSelectedDevotionalForShare] = useState<Devotional | null>(null);
+  const [selectedDevotionalForShare, setSelectedDevotionalForShare] = useState<Devotional | null>(
+    null
+  );
 
-  console.log('📍 About to call useHomeScreen hook');
+  // Track scroll position without triggering re-renders
+  const scrollOffsetRef = useRef(0);
+  const scrollViewRef = useRef<any>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  appLog('📍 About to call useHomeScreen hook');
 
   const {
     // State
@@ -167,6 +216,7 @@ export default function HomeScreen() {
     showJournalContent,
     showShareCard,
     isDarkContant,
+    riveInitialized,
 
     // Store values
     mode,
@@ -219,6 +269,7 @@ export default function HomeScreen() {
     levelInfo,
     buttonTitle,
     showDevotionalContent,
+    riveEntranceAnim,
 
     // Handlers
     handleDevotionalFinishPress,
@@ -253,57 +304,118 @@ export default function HomeScreen() {
     riveKey,
     riveSkinInitialized,
     handleRivePlay,
-    MAX_HEARTS
+    MAX_HEARTS,
   } = useHomeScreen();
 
-  console.log('📍 useHomeScreen hook called successfully');
+  appLog('📍 useHomeScreen hook called successfully');
 
   const [startShareFlow, setStartShareFlow] = useState(false);
 
-  console.log('📍 All local state initialized');
+  appLog('📍 All local state initialized');
 
-  // Add state for path selection modal
-  const [showPathModal, setShowPathModal] = useState(false);
+  // Path selection modal state removed - now navigating directly to map screen
 
-  // Add state for recent devotionals
-  const [recentDevotionals, setRecentDevotionals] = useState<(Devotional | null)[]>([]);
-  console.log("recentDevotionals ==>", recentDevotionals);
+  // Get recent devotionals from global store
+  const recentDevotionals = useDevotionalStore((state) => state.recentDevotionals);
+  const fetchRecentDevotionals = useDevotionalStore((state) => state.fetchRecentDevotionals);
 
   // Debug effect to track nextUnitPreview changes
   useEffect(() => {
-    console.log('🔍 NextUnitPreview debug:', {
+    appLog('🔍 NextUnitPreview debug:', {
       hasNextUnit: !!nextUnitPreview,
       unitId: nextUnitPreview?.id,
       unitTitle: nextUnitPreview?.title,
       readingCompleted,
       prayerCompleted,
-      reflectionCompleted
+      reflectionCompleted,
     });
   }, [nextUnitPreview, readingCompleted, prayerCompleted, reflectionCompleted]);
 
-  // Fetch recent devotionals when all activities are completed
-  useEffect(() => {
-    if (prayerCompleted && readingCompleted && reflectionCompleted) {
-      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
-      fetchRecentDevotionals()
-        .then((devotionals) => {
-          console.log('📚 Fetched recent devotionals:', devotionals.map(d => d?.id));
-          console.log('📚 Devotionals count:', devotionals.length);
-          console.log('📚 Non-null devotionals:', devotionals.filter(Boolean).length);
-          console.log('📚 Devotionals details:', devotionals.map((d, i) => ({
-            index: i,
-            id: d?.id,
-            date: d?.date,
-            bibleReference: d?.bibleReference
-          })));
+  // Get completed map paths from user store
+  const completedMapPaths = useUserStore((state) => state.completedMapPaths);
 
-          setRecentDevotionals(devotionals.slice(0, 2));
-        })
-        .catch((error) => {
-          console.error('❌ Error fetching recent devotionals:', error);
-        });
+  // Debug effect to track completedMapPaths changes
+  useEffect(() => {
+    appLog('🗺️ CompletedMapPaths updated:', {
+      count: completedMapPaths?.length || 0,
+      paths: completedMapPaths,
+    });
+  }, [completedMapPaths]);
+
+  // Refresh recent devotionals when customDevotional changes (when a new custom devotional is created)
+  useEffect(() => {
+    if (customDevotional) {
+      // Force immediate refresh
+      fetchRecentDevotionals().catch((error) => {
+        console.error('❌ Error fetching recent devotionals after custom devotional change:', error);
+      });
+      
+      // Also add the custom devotional directly to recentDevotionals if it's not there
+      const currentRecentDevotionals = useDevotionalStore.getState().recentDevotionals;
+      if (!currentRecentDevotionals.some(d => d?.id === customDevotional.id)) {
+        const updatedDevotionals = [customDevotional, ...currentRecentDevotionals];
+        useDevotionalStore.getState().setRecentDevotionals(updatedDevotionals);
+      }
     }
-  }, [prayerCompleted, readingCompleted, reflectionCompleted]);
+  }, [customDevotional, fetchRecentDevotionals]);
+
+  // Additional fetch after a delay to ensure we get the latest data
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchRecentDevotionals().catch((error) => {
+        console.error('❌ Error fetching recent devotionals after delay:', error);
+      });
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, [fetchRecentDevotionals]);
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+
+      // Refresh user data from Firestore
+      const currentUser = useUserStore.getState();
+      if (currentUser.id) {
+        firestore()
+          .collection('users')
+          .doc(currentUser.id)
+          .get()
+          .then((doc) => {
+            if (doc.exists) {
+              const userData = doc.data();
+              if (userData && userData.completedMapPaths) {
+                appLog('📥 Refreshed completedMapPaths on focus:', userData.completedMapPaths);
+                const syncData = useUserStore.getState().syncFirestoreData;
+                if (syncData) {
+                  syncData(userData as any).catch((error: any) => {
+                    console.error('❌ Error in syncData:', error);
+                  });
+                }
+              }
+            }
+          })
+          .catch((error) => {
+            console.error('❌ Error refreshing data on focus:', error);
+          });
+      }
+
+      // Also refresh recent devotionals when screen comes into focus
+      appLog('🔄 Fetching recent devotionals on focus');
+      fetchRecentDevotionals().catch((error) => {
+        console.error('❌ Error fetching recent devotionals:', error);
+      });
+      
+      // Ensure we have today's daily devotional loaded
+      const fetchTodaysDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
+      appLog('🔄 Fetching today\'s daily devotional on focus');
+      fetchTodaysDevotional().catch((error) => {
+        console.error('❌ Error fetching today\'s devotional:', error);
+      });
+    }, [fetchRecentDevotionals])
+  );
+
+
 
   // Check if there are 2 readings from today
   const getCompletedReadings = useUserStore((state) => state.getCompletedReadings);
@@ -312,10 +424,28 @@ export default function HomeScreen() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const todaysReadings = readings.filter(reading => {
-      const readingDate = reading.date.toDate();
-      readingDate.setHours(0, 0, 0, 0);
-      return readingDate.getTime() === today.getTime();
+    const todaysReadings = readings.filter((reading) => {
+      if (!reading || !reading.date) return false;
+
+      let readingDate;
+      try {
+        // Handle Firestore Timestamp
+        if (reading.date && typeof reading.date.toDate === 'function') {
+          readingDate = reading.date.toDate();
+        } else if (reading.date instanceof Date) {
+          // Handle regular Date object
+          readingDate = reading.date;
+        } else {
+          // Skip invalid dates
+          return false;
+        }
+
+        readingDate.setHours(0, 0, 0, 0);
+        return readingDate.getTime() === today.getTime();
+      } catch (error) {
+        console.error('Error processing reading date:', error);
+        return false;
+      }
     });
 
     return todaysReadings.length;
@@ -324,30 +454,101 @@ export default function HomeScreen() {
   // Determine if next unit button should be marked as completed
   const isNextUnitCompleted = todaysReadingsCount >= 2;
 
+  // Check if a custom path unit was completed today
+  const completedUnitToday = usePathStore((state) => state.completedUnitToday);
+  const checkAndResetDailyCompletion = usePathStore((state) => state.checkAndResetDailyCompletion);
+
+  // Check and reset daily completion on component mount and when focused
+  useEffect(() => {
+    checkAndResetDailyCompletion();
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      checkAndResetDailyCompletion();
+    }, [])
+  );
+
+  // Fix scroll issues when bottom sheet state changes
+  useEffect(() => {
+    if (bottomSheetRef.current && scrollViewRef.current) {
+      // Force re-enable scrolling after state changes
+      const timer = setTimeout(() => {
+        if (scrollViewRef.current) {
+          scrollViewRef.current.scrollTo({ y: scrollOffsetRef.current, animated: false });
+          appLog('Restored scroll position to:', scrollOffsetRef.current);
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showDevotionalContent, showJournalContent, showPrayerContent, prayerCompleted, readingCompleted, reflectionCompleted]);
+
+  const isCustomPathCompletedToday = useMemo(() => {
+    // First check the new completedUnitToday flag
+    if (completedUnitToday) {
+      appLog('🗺️ Custom path completed today (from pathStore):', true);
+      return true;
+    }
+
+    // Fallback to checking completedMapPaths for backward compatibility
+    if (!completedMapPaths || completedMapPaths.length === 0) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Check if any map path was completed today
+    const todaysMapPathCompletions = completedMapPaths.filter((path) => {
+      if (!path || !path.date) return false;
+
+      let completionDate;
+      try {
+        // Handle Firestore Timestamp
+        if (path.date && typeof path.date.toDate === 'function') {
+          completionDate = path.date.toDate();
+        } else if (path.date instanceof Date) {
+          // Handle regular Date object
+          completionDate = path.date;
+        } else if (typeof path.date === 'string' || typeof path.date === 'number') {
+          // Handle string or timestamp number
+          completionDate = new Date(path.date);
+        } else {
+          console.warn('Unknown date format for completedMapPath:', path.date);
+          return false;
+        }
+
+        completionDate.setHours(0, 0, 0, 0);
+        return completionDate.getTime() === today.getTime();
+      } catch (error) {
+        console.error('Error processing map path date:', error);
+        return false;
+      }
+    });
+
+    appLog('🗺️ Custom path completion check (fallback):', {
+      totalCompletedPaths: completedMapPaths.length,
+      todaysCompletions: todaysMapPathCompletions.length,
+      isCompleted: todaysMapPathCompletions.length > 0,
+    });
+
+    return todaysMapPathCompletions.length > 0;
+  }, [completedMapPaths, completedUnitToday]);
+
   // Determine subtitle text based on total readings count
   const totalReadingsCount = getCompletedReadings().length;
-  const nextUnitSubtitle = totalReadingsCount >= 4 ? i18n.t('continue_reading_plan') : i18n.t('start_bible_reading_plan');
-
-  // Handler for path selection
-  const handlePathSelected = (pathObj: any) => {
-    if (!pathObj) return;
-    // Update pathStore
-    if (typeof pathObj === 'object' && pathObj.id) {
-      usePathStore.getState().setSelectedPath(pathObj);
-      // Update userStore as well
-      useUserStore.getState().setUser({ selectedPathId: pathObj.id });
-    }
-    setShowPathModal(false);
-  };
+  const nextUnitSubtitle =
+    totalReadingsCount >= 4 ? i18n.t('continue_reading_plan') : i18n.t('start_bible_reading_plan');
 
   // Get current path from pathStore
   const currentPath = usePathStore((state) => state.currentPath);
 
-  // Load Rive assets
-  const [riveAssets] = useAssets([
-    require('../../assets/riveAnimations/new_shepherd.riv'),
-    require('../../assets/riveAnimations/bg-green.riv'),
-  ]);
+  // Get completed units from pathStore to check if any unit was completed today
+  const completedUnitIds = usePathStore((state) => state.completedUnitIds);
+  // const completedMapPaths = useUserStore((state) => state.completedMapPaths); // Moved up
+
+  // Use preloaded Rive assets from store instead of loading locally
+  const preloadedRiveAssets = useAssetsStore((s) => s.riveAssets);
+  const riveAssetsLoaded = useAssetsStore((s) => s.riveLoaded);
 
   // Add state for asset loading
   const assetsLoaded = useAssetsStore((s) => s.loaded);
@@ -367,6 +568,7 @@ export default function HomeScreen() {
     };
   }, [handleReadPress]);
 
+  // Streak trigger logic will be handled in handleDevotionalClose when user presses "Go Home"
 
   // Set bottomSheetRef in home store so other components can access it
   useEffect(() => {
@@ -375,12 +577,13 @@ export default function HomeScreen() {
   }, [bottomSheetRef]);
 
   // Define riveComponent after state declarations so it can access showJournalContent and showPrayerContent
+  const artboardName = useHomeStore((state) => state.artboardName);
+
   const riveComponent = useMemo(() => {
-    if (!riveAssets || !riveReady) return null;
+    if (!preloadedRiveAssets || !riveReady || !riveAssetsLoaded) return null;
 
     // Always use the main lamb asset (index 0)
     const lambAssetIndex = 0;
-    const useArtboardName = '[Main] Shpeherd';
 
     return (
       <View
@@ -390,16 +593,15 @@ export default function HomeScreen() {
           alignItems: 'center',
           justifyContent: 'center',
           opacity: riveSkinInitialized ? 1 : 0, // Hide until skin is initialized
-
         }}>
-        <TouchableOpacity
+      {riveInitialized?  <TouchableOpacity
           onPress={() => {
-            hapticLight()
+            hapticLight();
             analytics.logEvent('HomeScreen_Tapped_LambName');
           }}
           activeOpacity={0.7}
           style={{
-            top: levelInfo.level < 10 ? RPH(7) : RPH(4.5)
+            top: levelInfo.level < 10 ? RPH(7) : RPH(4.5),
           }}
           className={`bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 px-2 -mt-2`}>
           <Text className="font-feather text-textPrimary text-xs">
@@ -407,22 +609,32 @@ export default function HomeScreen() {
               ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
               : ''}
           </Text>
-        </TouchableOpacity>
-        <View
+        </TouchableOpacity>:null}
+        <Animated.View
           style={{
             width: '100%',
             height: RPH(27),
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 10,
-            marginLeft: RPH(1)
+            marginLeft: RPH(1),
+            opacity: riveEntranceAnim,
+            transform: [
+              {
+                translateY: riveEntranceAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [50, 0], // Start 50px below, animate to original position
+                  extrapolate: 'clamp',
+                }),
+              },
+            ],
           }}>
           {IS_ANDROID ? (
             <Rive
               key={riveKey}
               ref={riveRef}
               resourceName="new_shepherd"
-              artboardName={useArtboardName}
+              artboardName={artboardName}
               stateMachineName="State Machine 1"
               autoplay
               onError={handleRiveAnimationError}
@@ -430,15 +642,15 @@ export default function HomeScreen() {
               style={{
                 width: RPH(30),
                 height: RPH(30),
-                opacity: new Date().getHours() >= 19 ? 0.85 : 1,
+                opacity: riveInitialized ? (new Date().getHours() >= 19 ? 0.85 : 1) : 0,
               }}
             />
           ) : (
             <Rive
               key={riveKey}
               ref={riveRef}
-              url={riveAssets[lambAssetIndex].uri!}
-              artboardName={useArtboardName}
+              resourceName="new_shepherd"
+              artboardName={artboardName}
               onPlay={handleRivePlay}
               stateMachineName="State Machine 1"
               autoplay
@@ -446,19 +658,32 @@ export default function HomeScreen() {
               style={{
                 width: RPH(30),
                 height: RPH(30),
-                opacity: new Date().getHours() >= 19 ? 0.85 : 1,
+                opacity: riveInitialized ? (new Date().getHours() >= 19 ? 0.85 : 1) : 0,
               }}
             />
           )}
-        </View>
+        </Animated.View>
       </View>
     );
-  }, [riveAssets, currentStateInput, riveKey, riveReady, isPro, lambName, isLevelPillExpanded, riveSkinInitialized]);
+  }, [
+    preloadedRiveAssets,
+    riveAssetsLoaded,
+    currentStateInput,
+    riveKey,
+    riveReady,
+    isPro,
+    lambName,
+    isLevelPillExpanded,
+    riveSkinInitialized,
+    riveInitialized,
+    riveEntranceAnim,
+    artboardName,
+  ]);
 
   // Gate of rendering: only render the screen if the assets are ready
-  console.log('🚪 Asset loading check:', { assetsLoaded, hasAssets: !!assets });
-  if (!assetsLoaded || !assets) {
-    console.log('❌ Returning null - assets not ready!');
+  appLog('🚪 Asset loading check:', { assetsLoaded, hasAssets: !!assets, riveAssetsLoaded, hasRiveAssets: !!preloadedRiveAssets });
+  if (!assetsLoaded || !assets || !riveAssetsLoaded || !preloadedRiveAssets) {
+    appLog('❌ Returning null - assets not ready!');
     return null;
   }
 
@@ -502,88 +727,13 @@ export default function HomeScreen() {
 
   // Handler for custom devotional button
   const handleCustomDevotionalPress = async () => {
-    const checkInStore = useCheckInStore.getState();
-    const todaysCheckIn = checkInStore.getTodaysCheckIn();
-    
-    console.log('🔍 [handleCustomDevotionalPress] Check-in store state:', {
-      todaysCheckIn: checkInStore.todaysCheckIn,
-      checkInHistory: checkInStore.checkInHistory,
-      hasCompletedToday: checkInStore.hasCompletedTodaysCheckIn(),
-      todaysCheckInFromGetter: todaysCheckIn
-    });
-    
-    if (todaysCheckIn && (todaysCheckIn.focus !== '' || todaysCheckIn.struggle !== '')) {
-      // User has completed check-in with focus/struggle, generate custom devotional
-      console.log('🎯 Generating custom devotional with check-in data:', todaysCheckIn);
-      
-      // Set flag to indicate this is from check-in flow
-      const devotionalStore = useDevotionalStore.getState();
-      devotionalStore.setIsFromCheckIn(true);
-      
-      // Navigate to devotional loading screen
-      router.push('/devotionalLoading' as any);
-      
-      // Generate custom devotional in background (similar to GlobalCheckIn)
-      try {
-        const currentUser = auth().currentUser;
-        if (!currentUser) {
-          console.error('No authenticated user for custom devotional');
-          handleReadPress(); // Fallback to regular devotional
-          return;
-        }
-        
-        const idToken = await currentUser.getIdToken();
-        const { createDevotionalFromCheckIn } = await import('../api/ai');
-        
-        // Generate the custom devotional
-        const customDevotional = await createDevotionalFromCheckIn(todaysCheckIn, idToken);
-        
-        // Get random background using the proper backgrounds from model
-        const backgroundUrls = Object.values(devotionalBackgrounds);
-        const randomIndex = Math.floor(Math.random() * backgroundUrls.length);
-        const randomBackground = backgroundUrls[randomIndex];
-        console.log('🎨 [Index] Selected background for custom devotional:', {
-          index: randomIndex,
-          url: randomBackground,
-          totalBackgrounds: backgroundUrls.length
-        });
-        
-        // Create full devotional object
-        const fullDevotional: Devotional = {
-          id: 'custom-checkin',
-          title: customDevotional.title,
-          content: customDevotional.context,
-          createdAt: new Date().toISOString(),
-          context: customDevotional.context,
-          bibleReference: customDevotional.bibleReference || '',
-          prayer: customDevotional.prayer,
-          reflectionPrompt: customDevotional.reflectionPrompt,
-          likes: 0,
-          shares: 0,
-          completed: 0,
-          date: new Date().toISOString().split('T')[0],
-          imageURL: randomBackground,
-          verse: customDevotional.verse || ''
-        };
-        
-        devotionalStore.setCustomDevotional(fullDevotional);
-        
-        analytics.logEvent('custom_devotional_generated_from_button', {
-          mood: todaysCheckIn.mood,
-          focus: todaysCheckIn.focus,  
-          struggle: todaysCheckIn.struggle
-        });
-        
-      } catch (error) {
-        console.error('Error generating custom devotional:', error);
-        // Navigate to regular devotional on error
-        router.push('/(tabs)');
-        handleReadPress();
-      }
+    // Simply show the check-in sheet
+    const showCheckIn = (global as any).showCheckIn;
+    if (showCheckIn && typeof showCheckIn === 'function') {
+      showCheckIn();
+      analytics.logEvent('custom_devotional_triggered_checkin');
     } else {
-      // No check-in for today, use regular devotional
-      console.log('📖 No check-in data, using regular devotional');
-      handleReadPress();
+      console.error('[handleCustomDevotionalPress] showCheckIn function not found on global');
     }
   };
 
@@ -594,7 +744,7 @@ export default function HomeScreen() {
         backgroundColor="transparent"
         barStyle={isDarkContant ? 'light-content' : 'dark-content'}
       />
-      <View className='flex-1 bg-[#FDEBB8]'>
+      <View className="flex-1 bg-[#FDEBB8]">
         <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
           {/* Background Layers */}
           <Animated.View
@@ -620,8 +770,7 @@ export default function HomeScreen() {
                 height: '100%',
                 opacity: devotionaleRadingOpacityAnim,
               }}
-              pointerEvents="none"
-            >
+              pointerEvents="none">
               <SpotlightOverlay visible={true} radius={150} centerY={SCREEN_HEIGHT * 0.25} />
             </Animated.View>
           )}
@@ -650,9 +799,9 @@ export default function HomeScreen() {
             ]}>
             {IS_IOS ? (
               showBgRive &&
-              riveAssets && (
+              preloadedRiveAssets && (
                 <Rive
-                  url={riveAssets[1].uri!}
+                 resourceName='bg_green'
                   autoplay={true}
                   style={{ width: '160%', height: '160%', top: -300, left: -128 }}
                 />
@@ -682,7 +831,7 @@ export default function HomeScreen() {
                       textShadowColor: 'rgba(0, 0, 0, 0.2)',
                       textShadowOffset: { width: 0, height: 1 },
                       textShadowRadius: 2,
-                      fontSize: AppFonts[24]
+                      fontSize: AppFonts[24],
                     }}>
                     {showDevotionalContent
                       ? i18n.t('devotional_title')
@@ -698,7 +847,11 @@ export default function HomeScreen() {
                         <View style={{ position: 'relative', zIndex: 2 }}>
                           <ProgressPill
                             value={0}
-                            label={lambHearts >= MAX_HEARTS ? levelInfo.level?.toString?.() : lambHearts?.toString?.()}
+                            label={
+                              lambHearts >= MAX_HEARTS
+                                ? levelInfo.level?.toString?.()
+                                : lambHearts?.toString?.()
+                            }
                             icon={lambHearts >= MAX_HEARTS ? starIcon : heartIcon}
                           />
 
@@ -722,7 +875,6 @@ export default function HomeScreen() {
                                   outputRange: [40, pillExpandedWidth],
                                 }),
                               }}>
-
                               <View className="items-center flex">
                                 <View
                                   style={{
@@ -741,19 +893,20 @@ export default function HomeScreen() {
                                     flexDirection: 'row',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-
                                   }}>
-                                  <Image source={starIcon} tintColor={'#FF8800'} className="w-4 h-4 mr-1" />
+                                  <Image
+                                    source={starIcon}
+                                    tintColor={'#FF8800'}
+                                    className="w-4 h-4 mr-1"
+                                  />
                                   <Text className="font-feather text-textPrimary text-mini w-12">
                                     LVL {levelInfo.level}
                                   </Text>
                                 </View>
-
                               </View>
 
                               <View style={{ width: '80%' }}>
                                 {/* Level Display */}
-
 
                                 <View className="h-2 bg-red/25 rounded-md overflow-hidden">
                                   <View
@@ -781,9 +934,12 @@ export default function HomeScreen() {
                         <TouchableOpacity onPress={onGemsPress}>
                           <ProgressPill value={0} label={gens?.toString?.()} icon={gemIcon} />
                         </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={onStreakPress}>
-                          <ProgressPill value={0} label={streakCount?.toString?.()} icon={flameIcon} />
+                        <TouchableOpacity onPress={onStreakPress}>
+                          <ProgressPill
+                            value={0}
+                            label={streakCount?.toString?.()}
+                            icon={flameIcon}
+                          />
                         </TouchableOpacity>
                       </>
                     </View>
@@ -823,7 +979,7 @@ export default function HomeScreen() {
                 shadowRadius: 15,
                 marginTop: -RPH(4.5),
               }}>
-              <Animated.View className="items-center justify-center" >
+              <Animated.View className="items-center justify-center">
                 {riveError ? (
                   <Text className="text-red-500 p-4 text-center">
                     {i18n.t('error_loading_animation')} {riveError.message} ({riveError.type})
@@ -832,7 +988,7 @@ export default function HomeScreen() {
                   <>
                     <Animated.View
                       onTouchStart={() => {
-                        hapticLight()
+                        hapticLight();
                       }}
                       style={{
                         width: lambSizeAnim,
@@ -874,8 +1030,7 @@ export default function HomeScreen() {
                   paddingVertical: 2,
                   borderRadius: 32,
                   zIndex: 20,
-                }}>
-              </TouchableOpacity>
+                }}></TouchableOpacity>
             )}
 
             {/* Bottom Section - Action Buttons Card or DevotionalReader */}
@@ -910,8 +1065,12 @@ export default function HomeScreen() {
                   android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
                 }),
               }}
-
-              onChange={handleSheetChanges}>
+              onChange={handleSheetChanges}
+              android_keyboardInputMode="adjustResize"
+              keyboardBehavior={Platform.OS === 'ios' ? 'extend' : 'interactive'}
+              keyboardBlurBehavior="restore"
+              enableContentPanningGesture={!(showDevotionalContent || showJournalContent || showPrayerContent)}
+              simultaneousHandlers={[]}>
               <Animated.View style={{ flex: 1, opacity: devotionalCardOpacityAnim }}>
                 {showDevotionalContent ? (
                   <DevotionalReader
@@ -931,8 +1090,7 @@ export default function HomeScreen() {
                     onClose={onCloseJournal}
                     setShowJournalContent={setShowJournalContent}
                   />
-                ) : showPrayerContent ?
-
+                ) : showPrayerContent ? (
                   <PrayerView
                     setIsCompletePrayerDisabled={setIsCompletePrayerDisabled}
                     ref={prayerViewRef}
@@ -943,189 +1101,633 @@ export default function HomeScreen() {
                     onClose={onClosePrayer}
                     setShowPrayerSuccess={setShowPrayerSuccess}
                   />
-                  : (
+                ) : (
+                  <View style={{ flex: 1 }} pointerEvents="box-none">
                     <BottomSheetScrollView
-                      key={`scroll-${prayerCompleted}-${readingCompleted}-${reflectionCompleted}-${!!nextUnitPreview}`}
+                      ref={scrollViewRef}
                       showsVerticalScrollIndicator={false}
-                      contentContainerStyle={{ paddingBottom: RPH(30), paddingHorizontal: 24 }}
+                      contentContainerStyle={{
+                        paddingBottom: 150,
+                        paddingHorizontal: 24,
+                        flexGrow: 1,
+                        minHeight: '100%'
+                      }}
                       bounces={true}
-                      alwaysBounceVertical={false}
+                      alwaysBounceVertical={true}
                       keyboardShouldPersistTaps="handled"
                       nestedScrollEnabled={true}
-                      removeClippedSubviews={false}
+                      removeClippedSubviews={Platform.OS === 'android'}
                       automaticallyAdjustContentInsets={false}
-                      contentInsetAdjustmentBehavior="never">
+                      contentInsetAdjustmentBehavior="never"
 
+                      overScrollMode="always"
+                      onScroll={(event) => {
+                        const offset = event.nativeEvent.contentOffset.y;
+                        scrollOffsetRef.current = offset;
+                      }}
+                      onScrollBeginDrag={() => {
+                        setIsScrolling(true);
+                      }}
+                      onScrollEndDrag={() => {
+                        setIsScrolling(false);
+                      }}
+                      onMomentumScrollBegin={() => {
+                        setIsScrolling(true);
+                      }}
+                      onMomentumScrollEnd={() => {
+                        setIsScrolling(false);
+                      }}
+                      scrollEnabled={true}>
+                      <MemoizedScrollContent>
+                        {/* Next Unit Button - Only show when all activities are completed and there's a next unit */}
 
-                      {/* Next Unit Button - Only show when all activities are completed and there's a next unit */}
-                      {prayerCompleted && readingCompleted && reflectionCompleted && (
-                        <View
-                          className="flex-row items-center justify-between"
-                          style={{ marginTop: responsiveHeight(2) }}>
+                        {readingCompleted && (
+                          <View className="w-full mt-4 mb-8 pr-2  items-center">
+                            {(() => {
+                              // Show at most 2 cards: prioritize custom devotional from today, then daily verse
+                              const devotionalsToShow: Devotional[] = [];
+                              const addedIds = new Set<string>();
+                              
+                              // Check for today's date
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
 
-                          <View
-                            style={{
-                              width: 22,
-                              marginRight: 10,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}>
-                            {isNextUnitCompleted ? (
-                              <Image
-                                source={require('../../assets/icons/checkMini.png')}
-                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                              />
+                              // First, check if there's a custom devotional from today
+                              let todaysCustomDevotional: Devotional | null = null;
+                              
+                              // Check recentDevotionals first
+                              if (recentDevotionals.length > 0) {
+                                const customDevotionalsToday = recentDevotionals.filter((d) => {
+                                  if (!d || !d.id || d.id === 'undefined') return false;
+                                  if (d.id === dailyDevotional?.id) return false; // Skip daily devotional
+                                  
+                                  // Show all custom devotionals
+                                  return d.id.startsWith('custom-') || d.id.startsWith('ai-');
+                                }).sort((a, b) => {
+                                  // Sort by createdAt to get the most recent first
+                                  const dateA = new Date(a.createdAt || a.date).getTime();
+                                  const dateB = new Date(b.createdAt || b.date).getTime();
+                                  return dateB - dateA;
+                                }) as Devotional[];
+                                
+                                if (customDevotionalsToday.length > 0) {
+                                  todaysCustomDevotional = customDevotionalsToday[0];
+                                }
+                              }
+                              
+                              // If no custom devotional found in recentDevotionals, check customDevotional from store
+                              if (!todaysCustomDevotional && customDevotional) {
+                                todaysCustomDevotional = customDevotional;
+                              }
 
-                            ) : (
+                              // If we found a custom devotional from today, add it first
+                              if (todaysCustomDevotional) {
+                                devotionalsToShow.push(todaysCustomDevotional);
+                                addedIds.add(todaysCustomDevotional.id);
+                              }
+
+                              // Then add the daily devotional (verse of the day)
+                              if (
+                                dailyDevotional &&
+                                dailyDevotional.id &&
+                                dailyDevotional.id !== 'undefined' &&
+                                !addedIds.has(dailyDevotional.id)
+                              ) {
+                                devotionalsToShow.push(dailyDevotional);
+                                addedIds.add(dailyDevotional.id);
+                              }
+
+                              // If we don't have any devotionals yet, check current custom devotional
+                              if (
+                                devotionalsToShow.length === 0 &&
+                                customDevotional &&
+                                customDevotional.id &&
+                                customDevotional.id !== 'undefined' &&
+                                !addedIds.has(customDevotional.id)
+                              ) {
+                                devotionalsToShow.push(customDevotional);
+                              }
+
+                              // If still no devotionals, try currentDevotional as fallback
+                              if (
+                                devotionalsToShow.length === 0 &&
+                                currentDevotional &&
+                                currentDevotional.id &&
+                                currentDevotional.id !== 'undefined'
+                              ) {
+                                devotionalsToShow.push(currentDevotional);
+                              }
+
+                              // Ensure maximum 2 cards
+                              const finalDevotionals = devotionalsToShow.slice(0, 2);
+
+                              appLog('📚 Devotionals Debug:', {
+                                recentDevotionalsCount: recentDevotionals.length,
+                                recentDevotionals: recentDevotionals.map(d => ({
+                                  id: d?.id,
+                                  date: d?.date,
+                                  createdAt: d?.createdAt,
+                                  type: d?.id?.startsWith('custom-') || d?.id?.startsWith('ai-') ? 'custom' : 'daily'
+                                })),
+                                todaysCustomDevotional: todaysCustomDevotional ? {
+                                  id: todaysCustomDevotional.id,
+                                  date: todaysCustomDevotional.date,
+                                  createdAt: todaysCustomDevotional.createdAt
+                                } : null,
+                                customDevotionalFromStore: customDevotional ? {
+                                  id: customDevotional.id,
+                                  date: customDevotional.date,
+                                  createdAt: customDevotional.createdAt
+                                } : null,
+                                dailyDevotional: dailyDevotional ? {
+                                  id: dailyDevotional.id,
+                                  date: dailyDevotional.date
+                                } : null,
+                                devotionalsToShow: devotionalsToShow.map(d => ({
+                                  id: d.id,
+                                  date: d.date,
+                                  type: d.id === dailyDevotional?.id ? 'daily' : 'custom'
+                                })),
+                                finalDevotionalsCount: finalDevotionals.length
+                              });
+
+                              if (finalDevotionals.length > 0) {
+                                // If only one devotional, render it directly without CardStack
+                                if (finalDevotionals.length === 1) {
+                                  return (
+                                    <View className="mt-4 mb-8">
+                                      <DailyVerseCard
+                                        devotional={finalDevotionals[0]}
+                                        share={true}
+                                        onPress={() => handleDailyVersePress(finalDevotionals[0])}
+                                        onExpand={() => handleDailyVerseExpand(finalDevotionals[0])}
+                                        onShare={() => handleDailyVerseShare(finalDevotionals[0])}
+                                        showShareButton={true}
+                                        showExpandButton={true}
+                                        height="dynamic"
+                                      />
+                                    </View>
+                                  );
+                                } else {
+                                  // Multiple devotionals, use CardStack
+                                  return (
+                                    <View className="-mt-4">
+                                      <CardStack
+                                        data={finalDevotionals}
+                                        dynamicHeight={true}
+                                        baseHeight={280}
+                                        renderCard={(
+                                          devotional: Devotional,
+                                          index: number,
+                                          onCardTap: () => void
+                                        ) => (
+                                          <DailyVerseCard
+                                            devotional={devotional}
+                                            share={true}
+                                            onPress={onCardTap}
+                                            onExpand={() => handleDailyVerseExpand(devotional)}
+                                            onShare={() => handleDailyVerseShare(devotional)}
+                                            showShareButton={true}
+                                            showExpandButton={true}
+                                            height="dynamic"
+                                          />
+                                        )}
+                                      />
+                                    </View>
+                                  );
+                                }
+                              }
+
+                              // If still no devotionals to show, return null
+                              return null;
+                            })()}
+                          </View>
+                        )}
+
+                        {/* UNCOMPLETED TASKS SECTION - Show first */}
+
+                        {/* Prayer and Journal Buttons - Show only incomplete buttons when reading is completed */}
+                        {readingCompleted && (!prayerCompleted || !reflectionCompleted) && (
+                          <View style={{ marginTop: responsiveHeight(0) }}>
+                            {/* Prayer Button - Only show if not completed */}
+                            {!prayerCompleted && (
                               <View
-                                className="bg-lightBrown/20"
-                                style={{ width: 20, height: 20, borderRadius: 12 }}
-                              />
+                                className="flex-row items-center"
+                                style={{ marginBottom: responsiveHeight(2), marginTop: responsiveHeight(-4) }}>
+                                <View
+                                  style={{
+                                    width: 22,
+                                    marginRight: 10,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    left: -8,
+                                  }}>
+                                  <View
+                                    className="bg-textPrimary/15"
+                                    style={{ width: 20, height: 20, borderRadius: 12 }}
+                                  />
+                                </View>
+                                <View style={{ flex: 1, minWidth: 0 }}>
+                                  <SecondaryButton
+                                    icon={dropIcon}
+                                    title={i18n.t('praying')}
+                                    subtitle={i18n.t('talk_to_god')}
+                                    points={50}
+                                    onPress={handlePrayerPress}
+                                    completed={false}
+                                    disabled={false}
+                                  />
+                                </View>
+                              </View>
                             )}
 
-                          </View>
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <SecondaryButton
-                              icon={require('../../assets/icons/map.png')}
-                              title={i18n.t('your_custom_plan')}
-                              subtitle={nextUnitSubtitle}
-                              points={0}
-                              onPress={() => {
-                                // Check if both nextUnitPreview and currentPath are null
-                                if (!nextUnitPreview && !currentPath) {
-                                  setShowPathModal(true);
-                                } else {
-                                  handleNextUnitPress();
-                                }
-                              }}
-                              completed={isNextUnitCompleted}
-                              disabled={isNextUnitCompleted}
-                            />
-                          </View>
-                        </View>
-                      )}
-                      {prayerCompleted && readingCompleted && reflectionCompleted && recentDevotionals.length > 0 && (
-                        <View className="w-full mb-[50px]">
-                          {(() => {
-                            const filteredDevotionals = recentDevotionals.filter(d => d && d.id && d.id !== 'undefined') as Devotional[];
-                            return (
-                              <CardStack
-                                data={filteredDevotionals}
-                                renderCard={(devotional: Devotional, index: number, onCardTap: () => void) => (
-                                  <DailyVerseCard
-                                    devotional={devotional}
-                                    share={true}
-                                    onPress={onCardTap}
-                                    onExpand={() => handleDailyVerseExpand(devotional)}
-                                    onShare={() => handleDailyVerseShare(devotional)}
-                                    showShareButton={true}
-                                    showExpandButton={true}
-                                    height={40}
+                            {/* Journal Button - Only show if not completed */}
+                            {!reflectionCompleted && (
+                              <View
+                                className="flex-row items-center"
+                                style={{ marginBottom: responsiveHeight(2) }}>
+                                <View
+                                  style={{
+                                    width: 22,
+                                    marginRight: 10,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    left: -8,
+                                  }}>
+                                  <View
+                                    className="bg-textPrimary/15"
+                                    style={{ width: 20, height: 20, borderRadius: 12 }}
                                   />
-                                )}
-                              />
-                            );
-                          })()}
-                        </View>
-                      )}
-                      <View style={{ position: 'relative' }}>
-                        {/* Daily Bread Button */}
-                        <View
-                          className="flex-row items-center justify-between"
-                          style={{ marginTop: responsiveHeight(2) }}>
-                          <View style={{ width: 22, marginRight: 10 }} />
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <SecondaryButton
-                              icon={breadIcon}
-                              title={i18n.t('daily_bread')}
-                              subtitle={i18n.t('feed_soul')}
-                              points={50}
-                              onPress={handleReadPress}
-                              completed={readingCompleted}
-                              disabled={readingCompleted}
-                            />
+                                </View>
+                                <View style={{ flex: 1, minWidth: 0 }}>
+                                  <SecondaryButton
+                                    icon={require('../../assets/icons/journalIcon.png')}
+                                    title={i18n.t('reflecting')}
+                                    subtitle={i18n.t('journal_thoughts')}
+                                    points={25}
+                                    onPress={handleReflectionPress}
+                                    completed={false}
+                                    disabled={false}
+                                  />
+                                </View>
+                              </View>
+                            )}
                           </View>
-                        </View>
-                        
-                        {/* Custom Devotional Button */}
-                        <View
-                          className="flex-row items-center"
-                          style={{ marginTop: responsiveHeight(2) }}>
-                          <View style={{ width: 22, marginRight: 10 }} />
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <SecondaryButton
-                              icon={require('../../assets/icons/customBread.png')}
-                              title={i18n.t('custom_devotional')}
-                              subtitle={i18n.t('your_custom_devotional')}
-                              points={50}
-                              onPress={handleCustomDevotionalPress}
-                              completed={false}
-                              disabled={false}
-                            />
-                          </View>
-                        </View>
-                        
-                        {/* Centered Check Circle - Positioned between both buttons */}
-                        <View
-                          style={{
-                            position: 'absolute',
-                            left: -8,
-                            top: '50%',
-                            transform: [{ translateY: -10, }],
-                            width: 32,
-                            height: 20,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}>
-                          {readingCompleted ? (
-                            <Image
-                              source={require('../../assets/icons/checkMini.png')}
-                              style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                            />
-                          ) : (
-                            <View
-                              className="bg-textPrimary/15"
-                              style={{ width: 20, height: 20, borderRadius: 12 }}
-                            />
-                          )}
-                        </View>
-                      </View>
-                      
-                      {/* Custom Path Button - Hidden when all activities are completed */}
-                      {!(prayerCompleted && readingCompleted && reflectionCompleted) && (
-                        <View
-                          className="flex-row items-center "
-                          style={{ marginTop: responsiveHeight(3) }}>
+                        )}
+
+                        {/* Custom Path Button - Show when reading is completed and not completed today */}
+                        {readingCompleted && !isCustomPathCompletedToday && (
                           <View
+                            className="flex-row items-center "
                             style={{
-                              width: 22,
-                              marginRight: 10,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              left: -8,
+                              marginTop: responsiveHeight(prayerCompleted && reflectionCompleted ? -4 : 0),
+                              marginBottom: responsiveHeight(2),
                             }}>
                             <View
-                              className="bg-textPrimary/15"
-                              style={{ width: 20, height: 20, borderRadius: 12 }}
-                            />
+                              style={{
+                                width: 22,
+                                marginRight: 10,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                left: -8,
+                              }}>
+                              <View
+                                className="bg-textPrimary/15"
+                                style={{ width: 20, height: 20, borderRadius: 12 }}
+                              />
+                            </View>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <SecondaryButton
+                                icon={require('../../assets/icons/map.png')}
+                                title={i18n.t('custom_path')}
+                                subtitle={i18n.t('your_custom_path')}
+                                points={0}
+                                onPress={() => {
+                                  hapticLight();
+                                  router.push({
+                                    pathname: '/components/map',
+                                    params: {
+                                      fromHome: 'true',
+                                    },
+                                  });
+                                }}
+                                completed={false}
+                                disabled={false}
+                              />
+                            </View>
                           </View>
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <SecondaryButton
-                              icon={require('../../assets/icons/map.png')}
-                              title={i18n.t('custom_path')}
-                              subtitle={i18n.t('your_custom_path')}
-                              points={0}
-                              onPress={() => setShowPathModal(true)}
-                              completed={false}
-                              disabled={true}
-                            />
-                          </View>
-                        </View>
-                      )}
-                    
+                        )}
 
-                      {/* {isLoadingDevotional && (
+                        {/* COMPLETED TASKS SECTION - Show after uncompleted tasks */}
+
+                        {/* Show completed tasks when reading is completed */}
+                        {readingCompleted && (
+                          <View style={{ marginTop: responsiveHeight(0) }}>
+                            <View
+                              className="flex-row items-center"
+                              style={{ marginBottom: responsiveHeight(2) }}>
+                              <View
+                                style={{
+                                  width: 22,
+                                  marginRight: 10,
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  left: -8,
+                                }}>
+                                <Image
+                                  source={require('../../assets/icons/checkMini.png')}
+                                  style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                                />
+                              </View>
+                              <View style={{ flex: 1, minWidth: 0 }}>
+                                <SecondaryButton
+                                  icon={breadIcon}
+                                  title={i18n.t('daily_bread')}
+                                  subtitle={i18n.t('feed_soul')}
+                                  points={50}
+                                  onPress={() => { }}
+                                  completed={true}
+                                  disabled={true}
+                                />
+                              </View>
+                            </View>
+
+                            {/* Show completed prayer button */}
+                            {prayerCompleted && (
+                              <View
+                                className="flex-row items-center"
+                                style={{ marginBottom: responsiveHeight(2) }}>
+                                <View
+                                  style={{
+                                    width: 22,
+                                    marginRight: 10,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    left: -8,
+                                  }}>
+                                  <Image
+                                    source={require('../../assets/icons/checkMini.png')}
+                                    style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                                  />
+                                </View>
+                                <View style={{ flex: 1, minWidth: 0 }}>
+                                  <SecondaryButton
+                                    icon={dropIcon}
+                                    title={i18n.t('praying')}
+                                    subtitle={i18n.t('talk_to_god')}
+                                    points={50}
+                                    onPress={() => { }}
+                                    completed={true}
+                                    disabled={true}
+                                  />
+                                </View>
+                              </View>
+                            )}
+
+                            {/* Show completed reflection button */}
+                            {reflectionCompleted && (
+                              <View
+                                className="flex-row items-center"
+                                style={{ marginBottom: responsiveHeight(1) }}>
+                                <View
+                                  style={{
+                                    width: 22,
+                                    marginRight: 10,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    left: -8,
+                                  }}>
+                                  <Image
+                                    source={require('../../assets/icons/checkMini.png')}
+                                    style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                                  />
+                                </View>
+                                <View style={{ flex: 1, minWidth: 0 }}>
+                                  <SecondaryButton
+                                    icon={require('../../assets/icons/journalIcon.png')}
+                                    title={i18n.t('reflecting')}
+                                    subtitle={i18n.t('journal_thoughts')}
+                                    points={25}
+                                    onPress={() => { }}
+                                    completed={true}
+                                    disabled={true}
+                                  />
+                                </View>
+                              </View>
+                            )}
+
+                            {/* Show completed custom path button if it was completed today */}
+                            {isCustomPathCompletedToday && (
+                              <View
+                                className="flex-row items-center"
+                                style={{ marginBottom: responsiveHeight(2) }}>
+                                <View
+                                  style={{
+                                    width: 22,
+                                    marginRight: 10,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    left: -8,
+                                  }}>
+                                  <Image
+                                    source={require('../../assets/icons/checkMini.png')}
+                                    style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                                  />
+                                </View>
+                                <View style={{ flex: 1, minWidth: 0 }}>
+                                  <SecondaryButton
+                                    icon={require('../../assets/icons/map.png')}
+                                    title={i18n.t('custom_path')}
+                                    subtitle={i18n.t('your_custom_path')}
+                                    points={0}
+                                    onPress={() => { }}
+                                    completed={true}
+                                    disabled={true}
+                                  />
+                                </View>
+                              </View>
+                            )}
+
+                            {/* Show completed custom devotional button if it was completed today */}
+                            {(() => {
+                              // Check if there's a custom devotional in recent devotionals from today
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+
+                              const hasCustomDevotionalToday = recentDevotionals.some((devotional) => {
+                                if (!devotional || !devotional.date) return false;
+
+                                let devotionalDate;
+                                try {
+                                  if (devotional.date && typeof devotional.date.toDate === 'function') {
+                                    devotionalDate = devotional.date.toDate();
+                                  } else if (devotional.date instanceof Date) {
+                                    devotionalDate = devotional.date;
+                                  } else {
+                                    return false;
+                                  }
+
+                                  devotionalDate.setHours(0, 0, 0, 0);
+                                  // Check if it's from today and it's NOT the daily devotional
+                                  return devotionalDate.getTime() === today.getTime() &&
+                                    devotional.id !== dailyDevotional?.id;
+                                } catch (error) {
+                                  return false;
+                                }
+                              });
+
+                              if (hasCustomDevotionalToday) {
+                                return (
+                                  <View
+                                    className="flex-row items-center"
+                                    style={{ marginBottom: responsiveHeight(2) }}>
+                                    <View
+                                      style={{
+                                        width: 22,
+                                        marginRight: 10,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        left: -8,
+                                      }}>
+                                      <Image
+                                        source={require('../../assets/icons/checkMini.png')}
+                                        style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                                      />
+                                    </View>
+                                    <View style={{ flex: 1, minWidth: 0 }}>
+                                      <SecondaryButton
+                                        icon={require('../../assets/icons/customBread.png')}
+                                        title={i18n.t('generate_custom_devotional') || 'Generate Custom Devotional'}
+                                        subtitle={i18n.t('create_personalized_devotional') || 'Create a personalized devotional'}
+                                        points={50}
+                                        onPress={() => { }}
+                                        completed={true}
+                                        disabled={true}
+                                      />
+                                    </View>
+                                  </View>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </View>
+                        )}
+                        {!readingCompleted && (
+                          <View style={{ position: 'relative' }}>
+                            {/* Daily Bread Button */}
+                            <View
+                              className="flex-row items-center justify-between"
+                              style={{ marginTop: responsiveHeight(2) }}>
+                              <View style={{ width: 22, marginRight: 10 }} />
+                              <View style={{ flex: 1, minWidth: 0 }}>
+                                <SecondaryButton
+                                  icon={breadIcon}
+                                  title={i18n.t('daily_bread')}
+                                  subtitle={i18n.t('feed_soul')}
+                                  points={50}
+                                  onPress={handleReadPress}
+                                  completed={readingCompleted}
+                                  disabled={readingCompleted}
+                                />
+                              </View>
+                            </View>
+
+                            {/* Custom Devotional Button */}
+                            <View
+                              className="flex-row items-center"
+                              style={{ marginTop: responsiveHeight(2) }}>
+                              <View style={{ width: 22, marginRight: 10 }} />
+                              <View style={{ flex: 1, minWidth: 0 }}>
+                                <SecondaryButton
+                                  icon={require('../../assets/icons/customBread.png')}
+                                  title={i18n.t('generate_custom_devotional') || 'Generate Custom Devotional'}
+                                  subtitle={i18n.t('create_personalized_devotional') || 'Create a personalized devotional'}
+                                  points={50}
+                                  onPress={handleCustomDevotionalPress}
+                                  completed={false}
+                                  disabled={false}
+                                />
+                              </View>
+                            </View>
+
+                            {/* Centered Check Circle - Positioned between both buttons */}
+                            <View
+                              style={{
+                                position: 'absolute',
+                                left: -8,
+                                top: '50%',
+                                transform: [{ translateY: -10 }],
+                                width: 32,
+                                height: 20,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}>
+                              {readingCompleted ? (
+                                <Image
+                                  source={require('../../assets/icons/checkMini.png')}
+                                  style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                                />
+                              ) : (
+                                <View
+                                  className="bg-textPrimary/15"
+                                  style={{ width: 20, height: 20, borderRadius: 12 }}
+                                />
+                              )}
+                            </View>
+                          </View>
+                        )}
+
+
+
+                        {/* Custom Path Button - Show at bottom only when reading is NOT completed */}
+                        {!readingCompleted &&
+                          !(prayerCompleted && readingCompleted && reflectionCompleted) && (
+                            <View
+                              className="flex-row items-center "
+                              style={{ marginTop: responsiveHeight(3) }}>
+                              <View
+                                style={{
+                                  width: 22,
+                                  marginRight: 10,
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  left: -8,
+                                }}>
+                                {isCustomPathCompletedToday ? (
+                                  <Image
+                                    source={require('../../assets/icons/checkMini.png')}
+                                    style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                                  />
+                                ) : (
+                                  <View
+                                    className="bg-textPrimary/15"
+                                    style={{ width: 20, height: 20, borderRadius: 12 }}
+                                  />
+                                )}
+                              </View>
+                              <View style={{ flex: 1, minWidth: 0 }}>
+                                <SecondaryButton
+                                  icon={require('../../assets/icons/map.png')}
+                                  title={i18n.t('custom_path')}
+                                  subtitle={i18n.t('your_custom_path')}
+                                  points={0}
+                                  onPress={() => {
+                                    hapticLight();
+                                    router.push({
+                                      pathname: '/components/map',
+                                      params: {
+                                        fromHome: 'true',
+                                      },
+                                    });
+                                  }}
+                                  completed={isCustomPathCompletedToday}
+                                  disabled={!readingCompleted}
+                                />
+                              </View>
+                            </View>
+                          )}
+
+                        {/* {isLoadingDevotional && (
                         <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
                           <View className="flex-row items-center mb-2">
                             <View className="w-6 h-6 bg-lightGreen rounded-full items-center justify-center mr-2">
@@ -1138,24 +1740,72 @@ export default function HomeScreen() {
                         </View>
                       )} */}
 
-
-                      {devotionalError && !currentDevotional && (
-                        <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
-                          <View className="flex-row items-center mb-2">
-                            <View className="w-6 h-6 bg-red rounded-full items-center justify-center mr-2">
-                              <Text className="text-white text-xs font-feather">⚠️</Text>
+                        {devotionalError && !currentDevotional && (
+                          <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
+                            <View className="flex-row items-center mb-2">
+                              <View className="w-6 h-6 bg-red rounded-full items-center justify-center mr-2">
+                                <Text className="text-white text-xs font-feather">⚠️</Text>
+                              </View>
+                              <Text className="font-feather text-base text-red">
+                                {i18n.t('daily_verse_unavailable')}
+                              </Text>
                             </View>
-                            <Text className="font-feather text-base text-red">
-                              {i18n.t('daily_verse_unavailable')}
+                            <Text className="font-din text-sm text-description">
+                              {i18n.t('check_connection')}
                             </Text>
                           </View>
-                          <Text className="font-din text-sm text-description">
-                            {i18n.t('check_connection')}
-                          </Text>
-                        </View>
-                      )}
+                        )}
+
+                        {/* Generate Custom Devotional Button - Only show when reading is completed and no custom devotional today */}
+                        {readingCompleted && (() => {
+                          // Check if there's a custom devotional in recent devotionals from today
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+
+                          const hasCustomDevotionalToday = recentDevotionals.some((devotional) => {
+                            if (!devotional || !devotional.date) return false;
+
+                            let devotionalDate;
+                            try {
+                              if (devotional.date && typeof devotional.date.toDate === 'function') {
+                                devotionalDate = devotional.date.toDate();
+                              } else if (devotional.date instanceof Date) {
+                                devotionalDate = devotional.date;
+                              } else {
+                                return false;
+                              }
+
+                              devotionalDate.setHours(0, 0, 0, 0);
+                              // Check if it's from today and it's NOT the daily devotional
+                              return devotionalDate.getTime() === today.getTime() &&
+                                devotional.id !== dailyDevotional?.id;
+                            } catch (error) {
+                              return false;
+                            }
+                          });
+
+                          // Only show if custom devotional hasn't been completed today
+                          if (!hasCustomDevotionalToday) {
+                            return (
+                              <View style={{ marginTop: responsiveHeight(3), marginBottom: responsiveHeight(4) }}>
+                                <SecondaryButton
+                                  icon={require('../../assets/icons/customBread.png')}
+                                  title={i18n.t('generate_custom_devotional') || 'Generate Custom Devotional'}
+                                  subtitle={i18n.t('create_personalized_devotional') || 'Create a personalized devotional'}
+                                  points={0}
+                                  onPress={handleCustomDevotionalPress}
+                                  completed={false}
+                                  disabled={false}
+                                />
+                              </View>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </MemoizedScrollContent>
                     </BottomSheetScrollView>
-                  )}
+                  </View>
+                )}
               </Animated.View>
             </BottomSheet>
 
@@ -1178,6 +1828,7 @@ export default function HomeScreen() {
               isCompletePrayerDisabled={isCompletePrayerDisabled}
               showPrayerSuccess={showPrayerSuccess}
               onSharePress={handleCustomDevotionalShare}
+              showDevotionalSuccess={devotionalReaderRef.current?.showSuccess || false}
             />
 
             <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />
@@ -1190,48 +1841,15 @@ export default function HomeScreen() {
               onClose={() => setShowExplainerModal(false)}
             />
           </SafeAreaView>
-        </Animated.View></View>
-
-      {/* Path Selection Modal */}
-      <Modal
-        visible={showPathModal}
-        animationType="slide"
-        transparent={false}
-        onRequestClose={() => setShowPathModal(false)}>
-        <View style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
-          {/* Show X button to close modal */}
-          <TouchableOpacity
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setShowPathModal(false);
-            }}
-            style={{
-              position: 'absolute',
-              top: 48,
-              right: 24,
-              zIndex: 10,
-              backgroundColor: '#fff',
-              borderRadius: 20,
-              padding: 8,
-              shadowColor: '#000',
-              shadowOpacity: 0.08,
-              shadowRadius: 4,
-            }}
-            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
-            <Feather name="x" size={24} color="#3C584A" />
-          </TouchableOpacity>
-          <OnboardingPathScreen
-            onPathSelected={handlePathSelected}
-            hideContinueButton={false}
-            onModalClose={() => setShowPathModal(false)}
-          />
-        </View>
-      </Modal>
+        </Animated.View>
+      </View>
 
       <FullScreenShareCard
         visible={showShareCard}
         onClose={handleFullScreenShareClose}
-        devotionalData={selectedDevotionalForShare || customDevotional || dailyDevotional || devotionalData}
+        devotionalData={
+          selectedDevotionalForShare || customDevotional || dailyDevotional || devotionalData
+        }
         startShareFlow={startShareFlow}
         setStartShareFlow={setStartShareFlow}
       />

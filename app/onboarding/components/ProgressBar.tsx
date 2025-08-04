@@ -7,6 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { appLog } from '~/app/helper/helper';
 
 // Define the screens in order (excluding special screens like auth and LoadingScreen)
 const ORDERED_SCREENS = [
@@ -23,6 +24,7 @@ const ORDERED_SCREENS = [
   '9',
   '10',
   'rating',
+  'streakCommitment',
   '11',
 ];
 
@@ -47,7 +49,7 @@ export default function ProgressBar() {
     const targetProgress = Math.min(((currentIndex + 1) / totalSteps) * 100, 100);
 
     // Debug logging for progress calculation
-    console.log(`[ProgressBar] Screen: ${currentScreen}, Index: ${currentIndex}, Total: ${totalSteps}, Progress: ${targetProgress}%`);
+    appLog(`[ProgressBar] Screen: ${currentScreen}, Index: ${currentIndex}, Total: ${totalSteps}, Progress: ${targetProgress}%`);
 
     // Use faster animation with easing for smoother transition
     progressValue.value = withTiming(targetProgress, {

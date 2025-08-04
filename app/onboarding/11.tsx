@@ -17,6 +17,7 @@ import { AntDesign, FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
+import useSubscriptionStore from '../stores/subscriptionStore';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
@@ -26,7 +27,7 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import analytics from '../../utils/analytics';
+import { trackEvent, identifyUser } from '../../utils/analytics';
 import Rive, { Fit, Alignment } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
 import Toast from 'react-native-toast-message';
@@ -35,13 +36,16 @@ import { adapty } from 'react-native-adapty';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import { UserDoc } from '../models/User';
 import firestore from '@react-native-firebase/firestore';
+import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import PrimaryButton from '../../components/PrimaryButton';
+import BluePrimaryButton from '../../components/Shared/BluePrimaryButton';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
 import i18n from '../utils/i18n';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 import { AppFonts } from '../constants/appFonts';
 import { hapticLight } from '~/utils/haptics';
+import { COVENANT_STATES } from '../hooks/streakHook';
 
 // Add this near the top of the file, after imports
 
@@ -76,6 +80,14 @@ export default function SaveProgressScreen() {
     persistLoginMode();
   }, [params.isLogin]);
 
+  // Log screen load analytics event
+  useEffect(() => {
+    trackEvent('onboarding_screen_11_loaded', {
+      isLoginMode: params.isLogin === 'true',
+      timestamp: new Date().toISOString(),
+    });
+  }, []);
+
   const [loading, setLoading] = useState(false);
   const {
     signInWithApple,
@@ -87,14 +99,15 @@ export default function SaveProgressScreen() {
   // const { showEmailPassword, hideGoogleLogin } = useRemoteConfig();
   const showEmailPassword = (global as any).showEmailPassword;
   const hideGoogleLogin = (global as any).hideGoogleLogin;
-  console.log('hideGoogleLogin ==>', hideGoogleLogin);
-  console.log('showEmailPassword ==>', showEmailPassword);
+  appLog('hideGoogleLogin ==>', hideGoogleLogin);
+  appLog('showEmailPassword ==>', showEmailPassword);
 
-  const { clearResponses, responses, getAllResponses } = useOnboardingStore();
+  const { clearResponses, getAllResponses } = useOnboardingStore();
   const { createUser } = useUserStore();
   const [showNoAccountToast, setShowNoAccountToast] = useState(false);
   const ageRange = useOnboardingStore.getState().getAllResponses().ageRange;
-  const isSmaleAge = ageRange === 'under-18';
+  const isSmallAge = ageRange === 'under-18';
+  const isUnder12 = ageRange === 'under-12';
   // Animation shared values
   const headerOpacity = useSharedValue(0);
   const headerTranslateY = useSharedValue(40);
@@ -106,12 +119,11 @@ export default function SaveProgressScreen() {
   const buttonsTranslateY = useSharedValue(40);
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/home_lamb.riv')]);
 
   // Add new state for email auth
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [showEmailForm, setShowEmailForm] = useState(false);
 
   useEffect(() => {
@@ -186,16 +198,30 @@ export default function SaveProgressScreen() {
         }, 2000);
       }, 400);
     } catch (error) {
-      console.log('Error completing onboarding:', error);
+      appLog('Error completing onboarding:', error);
     }
   };
 
-  async function syncUser(user: UserDoc) {
+  async function syncUser(user: FirebaseAuthTypes.User) {
     const { success, data: firestoreData } = await fetchFromFirestore({
       currentLoggedUser: user,
     });
     if (success && firestoreData) {
-      useUserStore.getState().syncFirestoreData(firestoreData);
+      await useUserStore.getState().syncFirestoreData(firestoreData);
+
+      // Identify the user in analytics after successful login
+      await identifyUser(user.uid);
+      appLog('[syncUser] User identified in analytics:', user.uid);
+
+      // Force refresh pro status to ensure it's properly synced after referral code application
+      try {
+        const { forceRefreshProStatus } = useSubscriptionStore.getState();
+        await forceRefreshProStatus();
+        appLog('[syncUser] Pro status refreshed after user sync');
+      } catch (error) {
+        appLog('[syncUser] Error refreshing pro status:', error);
+      }
+
       const prayerCompleted = useHomeStore.getState().prayerCompleted;
       const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
       const readingCompleted = useHomeStore.getState().readingCompleted;
@@ -250,6 +276,22 @@ export default function SaveProgressScreen() {
           useHomeStore.getState().setReadingCompleted(true);
         }
       }
+
+      // Set user properties in analytics after successful login
+      await identifyUser(user.uid, {
+        name: firestoreData.displayName || 'Anonymous User',
+        spiritual_goal: firestoreData.spiritualGoal,
+        experience_level: firestoreData.experienceLevel,
+        denomination: firestoreData.denomination,
+        age_range: firestoreData.ageRange,
+        notification_enabled: firestoreData.notificationEnabled,
+        notification_time: firestoreData.notificationTime,
+        selected_path: firestoreData.selectedPathId,
+        lamb_level: firestoreData.lamb?.level,
+        lamb_xp: firestoreData.lamb?.xp,
+        lamb_name: firestoreData.lamb?.name,
+      });
+      appLog('[syncUser] User properties set in analytics');
     }
   }
 
@@ -260,7 +302,7 @@ export default function SaveProgressScreen() {
       const isProFromOnboarding = useUserStore.getState().isProFromOnboarding;
       // Get all responses from store to ensure we have latest data
       const allResponses = getAllResponses();
-      console.log('Onboarding responses:', JSON.stringify(allResponses));
+      appLog('Onboarding responses:', JSON.stringify(allResponses));
 
       // Get A/B test value from AsyncStorage (set in onboarding screen 1)
       let abTestValue = 0; // Default value
@@ -268,18 +310,20 @@ export default function SaveProgressScreen() {
         const storedAbTest = await AsyncStorage.getItem('abTest');
         if (storedAbTest !== null) {
           abTestValue = parseInt(storedAbTest, 10);
-          console.log('[OnboardingScreen11] Retrieved A/B test value:', abTestValue);
+          appLog('[OnboardingScreen11] Retrieved A/B test value:', abTestValue);
         } else {
-          console.log('[OnboardingScreen11] No A/B test value found, using default:', abTestValue);
+          appLog('[OnboardingScreen11] No A/B test value found, using default:', abTestValue);
         }
       } catch (abTestError) {
         console.error('[OnboardingScreen11] Error retrieving A/B test value:', abTestError);
       }
 
       const spiritualGoal = allResponses.intent || 'Understand';
+      const now = firestore.Timestamp.now();
       const userData: UserDoc = {
         id: uid,
         displayName,
+        email: '', // Will be set from auth
         spiritualGoal,
         experienceLevel:
           allResponses.bibleFamiliarity === 'never'
@@ -289,13 +333,14 @@ export default function SaveProgressScreen() {
               : allResponses.bibleFamiliarity === 'a-lot'
                 ? 'mature'
                 : 'growing',
+        notificationTime: allResponses.notificationTime || '',
+        notificationEnabled:
+          allResponses.notificationEnabled !== undefined ? allResponses.notificationEnabled : false,
+        setNotificationTime: async () => {}, // Default implementation
         frequencyGoal: allResponses.frequencyGoal || '',
         denomination: allResponses.religiousAffiliation,
         ageRange: allResponses.ageRange || '',
-        notificationEnabled:
-          allResponses.notificationEnabled !== undefined ? allResponses.notificationEnabled : false,
-        notificationTime: allResponses.notificationTime || '',
-        selectedPathId: allResponses.selectedPath || '',
+        username: allResponses.username || '',
         lamb: {
           level: 1,
           xp: 90,
@@ -304,21 +349,78 @@ export default function SaveProgressScreen() {
           name: allResponses.lambName || '',
           skin: 'default',
         },
-        username: allResponses.username || '',
+        selectedPathId: allResponses.selectedPath || '',
+        streakCount: 0,
+        lastActivityDate: now,
+        versesReadTotal: 0,
+        chaptersReadTotal: 0,
+        bibleVersion: 'NIV',
+        proStatus: 'free',
+        createdAt: now,
+        updatedAt: now,
+        gens: 100,
+        lastReadingDate: now,
+        lastPrayerDate: now,
+        lastReflectionDate: now,
+        lastReadingPenaltyDate: now,
+        lastPrayerPenaltyDate: now,
+        lastReflectionPenaltyDate: now,
+        completedReflections: [],
+        completedPrayers: [],
+        completedReadings: [],
+        isProFromOnboarding: false,
+        hasSeenWidgetModal: false,
+        hasSeenBibleReaderTutorial: false,
+        skins: ['default'],
+        checkIns: [],
+        level: 1,
+        xp: 90,
+        streak: 0,
+        isPro: false,
+        isProWithReferral: false,
+        completedMapPaths: [],
+        covenantProgress: allResponses.covenantProgress || {
+          currentStreak: 0,
+          targetDays: 0,
+          progress: 0,
+          state: COVENANT_STATES.NOT_STARTED,
+        },
+        customDevotionals: [],
+        streakFreezes: 0,
+        streakFreezeUsedDates: [],
+        customDevotionalsLeft: 0,
       };
 
-      console.log('Creating user data:', JSON.stringify(userData));
+      appLog('Creating user data:', JSON.stringify(userData));
       // We are checking if user have premium in this mobile also user if purchased before signup from onboarding or user restored from paywall in onboarding before signup.
-      if (isPremium && !isProFromOnboarding) {
+      if (isPremium && isProFromOnboarding) {
         userData.isPro = true;
-        userData.proExpiryDate = null;
+        userData.proExpiryDate = undefined;
         useUserStore.getState().setProStatus('pro');
       }
-      // Identify user in Mixpanel
-      analytics.setUserId(uid);
-      analytics.setUserProperties({
-        ...userData,
-        $name: displayName,
+
+      // Check if user already has pro status from referral code in Firestore
+      // This handles the case where a referral code was applied before user creation
+      try {
+        const existingUserDoc = await firestore().collection('users').doc(uid).get();
+        if (existingUserDoc.exists) {
+          const existingUserData = existingUserDoc.data();
+          if (existingUserData && (existingUserData.isPro || existingUserData.isProWithReferral)) {
+            appLog(
+              '[createUserFromResponses] User already has pro status from referral, updating user data'
+            );
+            userData.isPro = true;
+            userData.isProWithReferral = existingUserData.isProWithReferral || false;
+            userData.proExpiryDate = existingUserData.userProExpiryDate;
+            useUserStore.getState().setProStatus('pro');
+          }
+        }
+      } catch (error) {
+        appLog('[createUserFromResponses] Error checking existing pro status:', error);
+      }
+      // Identify user in analytics
+      await identifyUser(uid, {
+        name: displayName,
         spiritual_goal: spiritualGoal,
         experience_level: userData.experienceLevel,
         denomination: userData.denomination,
@@ -348,17 +450,17 @@ export default function SaveProgressScreen() {
         console.error('Error identifying user in Adapty:', adaptyError);
       }
 
-      analytics.logEvent('OnboardingSignUp_Completed');
+      trackEvent('OnboardingSignUp_Completed');
 
       // Create user in Firestore
       const success = await createUser(uid, userData);
-      console.log('uid, userData =>', { uid, userData });
+      appLog('uid, userData =>', { uid, userData });
 
       if (!success) {
         throw new Error('Failed to create user document');
       }
     } catch (error) {
-      console.log('Error creating user:', error);
+      appLog('Error creating user:', error);
       throw error;
     }
   };
@@ -366,23 +468,23 @@ export default function SaveProgressScreen() {
   // Handle sign in with Apple
   const handleAppleSignIn = async () => {
     const eventName = isLoginMode ? 'Login_Tapped_Apple' : 'OnboardingSignUp_Tapped_Apple';
-    analytics.logEvent(eventName);
+    trackEvent(eventName);
 
     try {
       hapticLight();
       setLoading(true);
-      console.log('Starting Apple sign in process...');
+      appLog('Starting Apple sign in process...');
 
       // Pass the isLoginMode flag to the signInWithApple method
       const user = await signInWithApple(isLoginMode);
 
       if (user) {
-        console.log('Apple sign in successful');
+        appLog('Apple sign in successful');
 
         if (isLoginMode) {
           const isPremium = await checkPremiumStatus();
           const isProFromOnboarding = useUserStore.getState().isProFromOnboarding;
-          if (isPremium && !isProFromOnboarding) {
+          if (isPremium && isProFromOnboarding) {
             useUserStore.getState().setProStatus('pro');
             await firestore().collection('users').doc(user.uid).set(
               {
@@ -414,15 +516,15 @@ export default function SaveProgressScreen() {
           }
         } else {
           // In onboarding mode, create new user from responses
-          console.log('Creating user...');
+          appLog('Creating user...');
           await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
-          console.log('User created from responses');
+          appLog('User created from responses');
           await completeOnboarding();
-          console.log('Onboarding completed');
+          appLog('Onboarding completed');
         }
       }
     } catch (error: any) {
-      console.log('Apple sign in error:', error);
+      appLog('Apple sign in error:', error);
 
       // Provide more specific feedback based on the error
       let errorMessage = 'There was a problem signing in with Apple.';
@@ -462,7 +564,7 @@ export default function SaveProgressScreen() {
       const analyticsEventName = isLoginMode
         ? 'Login_Failed_Apple'
         : 'OnboardingSignUp_Failed_Apple';
-      analytics.logEvent(analyticsEventName, {
+      trackEvent(analyticsEventName, {
         error: error.message,
       });
 
@@ -481,24 +583,24 @@ export default function SaveProgressScreen() {
   // Handle sign in with Google
   const handleGoogleSignIn = async () => {
     const eventName = isLoginMode ? 'Login_Tapped_Google' : 'OnboardingSignUp_Tapped_Google';
-    analytics.logEvent(eventName);
+    trackEvent(eventName);
 
     try {
       hapticLight();
       setLoading(true);
-      console.log('Starting Google sign in process...');
+      appLog('Starting Google sign in process...');
 
       // Pass the isLoginMode flag to the signInWithGoogle method
       const user = await signInWithGoogle(isLoginMode);
-      console.log('user ==>', user);
+      appLog('user ==>', user);
 
       if (user) {
-        console.log('Google sign in successful');
+        appLog('Google sign in successful');
 
         if (isLoginMode) {
           const isPremium = await checkPremiumStatus();
           const isProFromOnboarding = useUserStore.getState().isProFromOnboarding;
-          if (isPremium && !isProFromOnboarding) {
+          if (isPremium && isProFromOnboarding) {
             useUserStore.getState().setProStatus('pro');
           }
           // User exists and data has been fetched in the auth hook
@@ -520,15 +622,15 @@ export default function SaveProgressScreen() {
           }
         } else {
           // In onboarding mode, create new user from responses
-          console.log('Creating user...');
+          appLog('Creating user...');
           await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
-          console.log('User created from responses');
+          appLog('User created from responses');
           await completeOnboarding();
-          console.log('Onboarding completed');
+          appLog('Onboarding completed');
         }
       }
     } catch (error: any) {
-      console.log('Google sign in error:', error);
+      appLog('Google sign in error:', error);
 
       // Provide more specific feedback based on the error
       let errorMessage = 'There was a problem signing in with Google.';
@@ -564,7 +666,7 @@ export default function SaveProgressScreen() {
       const analyticsEventName = isLoginMode
         ? 'Login_Failed_Google'
         : 'OnboardingSignUp_Failed_Google';
-      analytics.logEvent(analyticsEventName, {
+      trackEvent(analyticsEventName, {
         error: error.message,
       });
 
@@ -612,7 +714,7 @@ export default function SaveProgressScreen() {
       if (isLoginMode) {
         try {
           user = await signInWithEmailPassword(email, password, true);
-          analytics.logEvent('Login_Success_Email');
+          trackEvent('Login_Success_Email');
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
           await syncUser(user);
 
@@ -620,7 +722,7 @@ export default function SaveProgressScreen() {
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
           router.replace('/(tabs)');
         } catch (loginError: any) {
-          console.log('Login error:', loginError.message);
+          appLog('Login error:', loginError.message);
           let errorMessage = 'Unable to sign in. Please try again.';
 
           if (loginError.code === 'auth/user-not-found') {
@@ -644,7 +746,7 @@ export default function SaveProgressScreen() {
             },
           ]);
 
-          analytics.logEvent('Login_Failed_Email', {
+          trackEvent('Login_Failed_Email', {
             error: loginError.code || loginError.message,
           });
           return;
@@ -655,16 +757,16 @@ export default function SaveProgressScreen() {
           const allResponses = getAllResponses();
           const displayName = allResponses.username || 'Anonymous User';
 
-          console.log("CALLED API");
+          appLog('CALLED API');
           user = await signUpWithEmailPassword(email, password, displayName);
-          console.log("user ====>", user);
+          appLog('user ====>', user);
 
-          analytics.logEvent('OnboardingSignUp_Success_Email');
+          trackEvent('OnboardingSignUp_Success_Email');
 
           await createUserFromResponses(user.uid, displayName);
           await completeOnboarding();
         } catch (signupError: any) {
-          console.log('Signup error:', signupError.message);
+          appLog('Signup error:', signupError.message);
           let errorMessage = 'Unable to create account. Please try again.';
 
           if (signupError.message?.includes('Would you like to login instead?')) {
@@ -698,21 +800,21 @@ export default function SaveProgressScreen() {
             },
           ]);
 
-          analytics.logEvent('OnboardingSignUp_Failed_Email', {
+          trackEvent('OnboardingSignUp_Failed_Email', {
             error: signupError.code || signupError.message,
           });
           return;
         }
       }
     } catch (error: any) {
-      console.log('General auth error:', error.message);
+      appLog('General auth error:', error.message);
       Alert.alert(
         isLoginMode ? 'Sign In Failed' : 'Sign Up Failed',
         'An unexpected error occurred. Please try again later.',
         [{ text: 'OK' }]
       );
 
-      analytics.logEvent(isLoginMode ? 'Login_Failed_Email' : 'OnboardingSignUp_Failed_Email', {
+      trackEvent(isLoginMode ? 'Login_Failed_Email' : 'OnboardingSignUp_Failed_Email', {
         error: error.message,
       });
     } finally {
@@ -725,7 +827,7 @@ export default function SaveProgressScreen() {
     if (isLoginMode) return; // Don't allow anonymous login in login mode
 
     hapticLight();
-    analytics.logEvent('OnboardingSignUp_Tapped_Skip');
+    trackEvent('OnboardingSignUp_Tapped_Skip');
     if (showConfirmation) {
       Alert.alert(
         'Skip Sign In?',
@@ -748,13 +850,55 @@ export default function SaveProgressScreen() {
   const createAnonymousAccount = async () => {
     try {
       setLoading(true);
+
       const user = await signInAnonymously();
       if (user) {
+        // Identify the anonymous user in analytics
+        appLog('[createAnonymousAccount] Firebase anonymous UID:', user.uid);
+        await identifyUser(user.uid);
+
         await createUserFromResponses(user.uid, 'Anonymous User');
+
+        // After creating the user, check and sync pro status from Firestore
+        // This ensures that if a referral code was applied before skipping, the pro status is properly reflected
+        try {
+          const userDoc = await firestore().collection('users').doc(user.uid).get();
+          const userData = userDoc.data();
+
+          if (userData) {
+            appLog('[createAnonymousAccount] Checking pro status from Firestore:', {
+              isPro: userData.isPro,
+              isProWithReferral: userData.isProWithReferral,
+              userProExpiryDate: userData.userProExpiryDate,
+            });
+
+            // Check if user has pro status from referral code
+            if (userData.isPro || userData.isProWithReferral) {
+              appLog('[createAnonymousAccount] User has pro status from referral, updating stores');
+
+              // Update user store
+              useUserStore.getState().setProStatus('pro');
+
+              // Update subscription store
+              const { forceRefreshProStatus } = useSubscriptionStore.getState();
+              await forceRefreshProStatus();
+
+              // Update analytics
+              await identifyUser(user.uid, {
+                isPro: true,
+                proStatus: 'pro',
+                subscriptionType: 'referral_code',
+              });
+            }
+          }
+        } catch (syncError) {
+          appLog('[createAnonymousAccount] Error syncing pro status:', syncError);
+        }
+
         await completeOnboarding();
       }
     } catch (error) {
-      console.log('Anonymous sign in error:', error);
+      appLog('Anonymous sign in error:', error);
       Alert.alert('Error', 'There was a problem creating anonymous account. Please try again.', [
         { text: 'OK' },
       ]);
@@ -778,7 +922,7 @@ export default function SaveProgressScreen() {
 
           {/* Header */}
           <Animated.View style={headerStyle} className="items-center mt-16 mb-8">
-            <Text className="font-feather text-h1 text-center text-textPrimary mb-3">
+            <Text className="font-feather text-h1 text-center text-textPrimary mb-3 mt-8">
               {isLoginMode ? i18n.t('onboarding_welcome_back') : i18n.t('onboarding_save_progress')}
             </Text>
             <Text className="font-din text-body text-center text-description mb-6">
@@ -788,7 +932,9 @@ export default function SaveProgressScreen() {
             </Text>
 
             {/* Icon */}
-            <View style={{ width: RPH(27), height: RPH(25) }} className="mb-8 overflow-hidden  items-center justify-center">
+            <View
+              style={{ width: RPH(27), height: RPH(25) }}
+              className="mb-8 overflow-hidden  items-center justify-center">
               {riveAssets && riveAssets[0]?.uri && (
                 <>
                   {IS_ANDROID ? (
@@ -802,7 +948,7 @@ export default function SaveProgressScreen() {
                     />
                   ) : (
                     <Rive
-                      url={riveAssets[0].uri!}
+                      resourceName="home_lamb"
                       artboardName={'lamb-workout'}
                       autoplay={true}
                       fit={Fit.Contain}
@@ -851,15 +997,13 @@ export default function SaveProgressScreen() {
           {isLoginMode && (
             <Animated.View style={benefitsStyle} className="mb-8">
               <Text className="font-din text-body text-center text-description mb-2">
-                {IS_IOS
-                  ? i18n.t('onboarding_sign_in_apple')
-                  : i18n.t('onboarding_sign_in_google')}
+                {IS_IOS ? i18n.t('onboarding_sign_in_apple') : i18n.t('onboarding_sign_in_google')}
               </Text>
             </Animated.View>
           )}
 
-          {/* Email/Password Form - Always Visible */}
-          {showEmailPassword && IS_ANDROID && (
+          {/* Email/Password Form - Only show after clicking email button */}
+          {showEmailForm && showEmailPassword && (
             <Animated.View style={buttonsStyle} className="mb-6">
               <View className="w-full mb-4">
                 <TextInput
@@ -881,7 +1025,13 @@ export default function SaveProgressScreen() {
                 />
                 <View className="mt-4">
                   <PrimaryButton
-                    title={loading ? i18n.t('onboarding_please_wait') : isLoginMode ? i18n.t('onboarding_sign_in') : i18n.t('onboarding_sign_up')}
+                    title={
+                      loading
+                        ? i18n.t('onboarding_please_wait')
+                        : isLoginMode
+                          ? i18n.t('onboarding_sign_in')
+                          : i18n.t('onboarding_sign_up')
+                    }
                     onPress={handleEmailAuth}
                     disabled={loading}
                     buttonType="default"
@@ -889,48 +1039,17 @@ export default function SaveProgressScreen() {
                   />
                 </View>
               </View>
-              {isLoginMode && IS_ANDROID && hideGoogleLogin && (
-                <TouchableOpacity
-                  onPress={() => {
-                    if (showNoAccountToast) {
-                      Toast.show({
-                        type: 'error',
-                        text1: i18n.t('please_go_through_onboarding'),
-                        position: 'top',
-                        visibilityTime: 3000,
-                      });
-                      setShowNoAccountToast(false);
-                    }
-                    router.replace('/(auth)');
-                  }}
-                  className="items-center mt-3"
-                  disabled={loading}>
-                  <Text className="font-din text-description underline text-[16px]">
-                    {loading ? i18n.t('onboarding_please_wait') : i18n.t('onboarding_back_to_home')}
-                  </Text>
-                </TouchableOpacity>
-              )}
             </Animated.View>
           )}
 
           {!hideGoogleLogin || IS_IOS ? (
             <>
-              {/* OR Separator */}
-              {showEmailPassword && IS_ANDROID ? (
-                <Animated.View
-                  style={buttonsStyle}
-                  className="flex-row items-center justify-center mb-6">
-                  <View className="flex-1 h-[1px] bg-gray-300" />
-                  <Text className="font-din text-description mx-4">{i18n.t('or')}</Text>
-                  <View className="flex-1 h-[1px] bg-gray-300" />
-                </Animated.View>
-              ) : null}
-
               {/* Social Sign In Buttons */}
               <Animated.View style={buttonsStyle}>
-                {isSmaleAge && Platform.OS === 'android' ? null : (
+                {isSmallAge && Platform.OS === 'android' && !isUnder12 ? null : (
                   <View className="items-center mb-4">
-                    {Platform.OS === 'ios' ? (
+                    {/* Platform-specific primary button */}
+                    {(Platform.OS === 'ios' && !isUnder12) ? (
                       <TouchableOpacity
                         style={{ height: RPH(6) }}
                         className="flex-row items-center justify-center bg-black w-full  px-6 rounded-[16px] mb-4 shadow-appleShadow"
@@ -950,11 +1069,15 @@ export default function SaveProgressScreen() {
                             style={{ marginRight: 10 }}
                           />
                         )}
-                        <Text style={{ fontSize: AppFonts[14] }} className="font-din text-white  font-bold">
-                          {loading ? i18n.t('onboarding_signing_in') : i18n.t('onboarding_continue_with_apple')}
+                        <Text
+                          style={{ fontSize: AppFonts[14] }}
+                          className="font-din text-white  font-bold">
+                          {loading
+                            ? i18n.t('onboarding_signing_in')
+                            : i18n.t('onboarding_continue_with_apple')}
                         </Text>
                       </TouchableOpacity>
-                    ) : (
+                    ) : (Platform.OS === 'android' || isUnder12) ? (
                       <TouchableOpacity
                         className="flex-row items-center justify-center bg-white w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow border-2 border-gray-200"
                         onPress={handleGoogleSignIn}
@@ -973,10 +1096,29 @@ export default function SaveProgressScreen() {
                             style={{ marginRight: 10 }}
                           />
                         )}
-                        <Text style={{ fontSize: AppFonts[14] }} className="font-din text-[#4285F4]  font-bold">
-                          {loading ? i18n.t('onboarding_signing_in') : i18n.t('onboarding_continue_with_google')}
+                        <Text
+                          style={{ fontSize: AppFonts[14] }}
+                          className="font-din text-[#4285F4]  font-bold">
+                          {loading
+                            ? i18n.t('onboarding_signing_in')
+                            : i18n.t('onboarding_continue_with_google')}
                         </Text>
                       </TouchableOpacity>
+                    ) : null}
+
+                    {/* Email/Password button - only show in login mode */}
+                    {isLoginMode && showEmailPassword && !showEmailForm && (
+                      <View className="w-full mt-4">
+                        <BluePrimaryButton
+                          title={'Sign in with Email'}
+                          onPress={() => {
+                            setShowEmailForm(true);
+                            trackEvent('Login_Tapped_EmailOption');
+                          }}
+                          disabled={loading}
+                          style="mx-0"
+                        />
+                      </View>
                     )}
                   </View>
                 )}
@@ -988,13 +1130,15 @@ export default function SaveProgressScreen() {
                     className="items-center"
                     style={{
                       marginTop:
-                        isSmaleAge && Platform.OS === 'android'
+                        isSmallAge && Platform.OS === 'android' && !isUnder12
                           ? Dimensions.get('window').height * 0.05
                           : 0,
                     }}
                     disabled={loading}>
                     <Text className="font-din text-description underline text-[16px]">
-                      {loading ? i18n.t('onboarding_please_wait') : i18n.t('onboarding_skip_for_now')}
+                      {loading
+                        ? i18n.t('onboarding_please_wait')
+                        : i18n.t('onboarding_skip_for_now')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -1016,8 +1160,10 @@ export default function SaveProgressScreen() {
                     }}
                     className="items-center"
                     disabled={loading}>
-                    <Text className="font-din text-description underline text-[16px]">
-                      {loading ? i18n.t('onboarding_please_wait') : i18n.t('onboarding_back_to_home')}
+                    <Text className="font-din text-description underline text-[16px] mt-4">
+                      {loading
+                        ? i18n.t('onboarding_please_wait')
+                        : i18n.t('onboarding_back_to_home')}
                     </Text>
                   </TouchableOpacity>
                 )}

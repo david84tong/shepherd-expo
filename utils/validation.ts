@@ -40,4 +40,37 @@ export const validateName = (input: string): { isValid: boolean; error?: string 
   }
 
   return { isValid: true };
+};
+
+/**
+ * Validates a username with uniqueness checking
+ * @param input The input string to validate
+ * @param isUnique Whether the username is unique (from Firestore check)
+ * @returns An object containing validation result and error message if any
+ */
+export const validateUsername = (
+  input: string, 
+  isUnique: boolean = true
+): { isValid: boolean; error?: string } => {
+  // Import i18n dynamically to avoid circular dependencies
+  const i18n = require('../app/utils/i18n').default;
+  
+  console.log('🔍 validateUsername called with:', { input, isUnique });
+  
+  // First check basic validation
+  const basicValidation = validateName(input);
+  console.log('🔍 Basic validation result:', basicValidation);
+  
+  if (!basicValidation.isValid) {
+    return basicValidation;
+  }
+
+  // Check if username is unique
+  if (!isUnique) {
+    console.log('❌ Username is not unique, returning taken error');
+    return { isValid: false, error: i18n.t('validation_username_taken') };
+  }
+
+  console.log('✅ Username is valid and unique');
+  return { isValid: true };
 }; 

@@ -8,6 +8,7 @@ import { Unit, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS } from '../app/models/Path'; /
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore'; // Import useUserStore
 import analytics from '../utils/analytics';
+import { appLog } from '~/app/helper/helper';
 
 interface BiblePreviewProps {
   /** Whether the preview overlay should be shown. */
@@ -56,11 +57,11 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   // Find the next uncompleted unit from the ordered paths
   const nextUnit = useMemo(() => {
     let nextUnitToComplete: Unit | null = null;
-    console.log('Finding next uncompleted unit. Completed:', completedUnitIds);
+    appLog('Finding next uncompleted unit. Completed:', completedUnitIds);
     for (const path of orderedPaths) {
       for (const unit of path.units) {
         if (!completedUnitIds.includes(unit.id)) {
-          console.log(
+          appLog(
             `[BiblePreviewComponent] Found next uncompleted unit: ${unit.title} in path ${path.id}`
           );
           nextUnitToComplete = unit;
@@ -70,7 +71,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
       if (nextUnitToComplete) break;
     }
     if (!nextUnitToComplete && orderedPaths.length > 0 && orderedPaths[0].units.length > 0) {
-      console.log('[BiblePreviewComponent] No uncompleted units found, defaulting to first unit');
+      appLog('[BiblePreviewComponent] No uncompleted units found, defaulting to first unit');
       nextUnitToComplete = orderedPaths[0].units[0];
     }
     return nextUnitToComplete;
@@ -128,15 +129,15 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const scrollViewRef = useRef(null);
 
   // Prepare for future Rive usage
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/home_lamb.riv')]);
 
   // Add state to track if component has been focused after navigation
   const [hasReturnedFromNavigation, setHasReturnedFromNavigation] = useState(false);
 
   useEffect(() => {
     if (visible) {
-      console.log('📱 BiblePreviewComponent is now visible');
-      console.log('📱 Component mounted with visible=true');
+      appLog('📱 BiblePreviewComponent is now visible');
+      appLog('📱 Component mounted with visible=true');
 
       // Reset the navigation return flag
       setHasReturnedFromNavigation(true);
@@ -177,7 +178,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         ]).start();
       }, 200);
     } else {
-      console.log('📱 BiblePreviewComponent is now hidden');
+      appLog('📱 BiblePreviewComponent is now hidden');
       // Reset animations when component is hidden
       containerOpacity.setValue(0); // Reset container opacity
       cardAnim.setValue(-100);
@@ -192,7 +193,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active' && visible) {
-        console.log('📱 App became active while BiblePreview is visible');
+        appLog('📱 App became active while BiblePreview is visible');
         setHasReturnedFromNavigation(true);
       }
     };
@@ -205,10 +206,10 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   if (!visible) return null;
 
   const handleBack = () => {
-    console.log('🔙 BiblePreview handleBack called');
-    console.log('🔙 hasReturnedFromNavigation:', hasReturnedFromNavigation);
-    console.log('🔙 visible:', visible);
-    console.log('🔙 mode prop:', visible ? 'PREVIEW' : 'NOT PREVIEW');
+    appLog('🔙 BiblePreview handleBack called');
+    appLog('🔙 hasReturnedFromNavigation:', hasReturnedFromNavigation);
+    appLog('🔙 visible:', visible);
+    appLog('🔙 mode prop:', visible ? 'PREVIEW' : 'NOT PREVIEW');
     setPathInProgress(false);
     onClose();
   };

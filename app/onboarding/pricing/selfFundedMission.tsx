@@ -16,7 +16,7 @@ import Animated, {
   withSpring,
   useSharedValue,
 } from 'react-native-reanimated';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
 
 export default function SelfFundedMissionScreen() {
@@ -38,7 +38,7 @@ export default function SelfFundedMissionScreen() {
   const charactersScale = useSharedValue(0.8);
 
   useEffect(() => {
-    console.log('SelfFundedMissionScreen');
+    appLog('SelfFundedMissionScreen');
     // Analytics for screen view
     analytics.logEvent('SelfFundedMission_ScreenLoad', {
       timestamp: new Date().toISOString(),
@@ -86,10 +86,10 @@ export default function SelfFundedMissionScreen() {
     try {
       // Get the weekly product and make direct purchase
       const paywall = await adapty.getPaywall('noFreeTrial');
-      console.log('Fetched paywall ID:', paywall.placementId);
+      appLog('Fetched paywall ID:', paywall.placementId);
 
       const products = await adapty.getPaywallProducts(paywall);
-      console.log('Available products:', products.map(p => ({
+      appLog('Available products:', products.map(p => ({
         vendorProductId: p.vendorProductId,
         localizedTitle: p.localizedTitle,
         price: p.price
@@ -102,11 +102,11 @@ export default function SelfFundedMissionScreen() {
           product.vendorProductId === 'second.round.shepherd.Weekly' ||
           product.vendorProductId === 'second.round.shepherd';
 
-        console.log(`Checking product ${product.vendorProductId}: isWeekly=${isWeekly}`);
+        appLog(`Checking product ${product.vendorProductId}: isWeekly=${isWeekly}`);
         return isWeekly;
       });
 
-      console.log('Looking for weekly product, found:', weeklyProduct?.vendorProductId);
+      appLog('Looking for weekly product, found:', weeklyProduct?.vendorProductId);
 
       if (weeklyProduct) {
         analytics.logEvent('SelfFundedMission_Purchase_Started', {
@@ -163,9 +163,9 @@ export default function SelfFundedMissionScreen() {
     if (riveRef.current && riveRef.current.setInputState) {
       try {
         riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
-        console.log(`Set skin to ${skinNumber} (one time)`);
+        appLog(`Set skin to ${skinNumber} (one time)`);
       } catch (error) {
-        console.log('Error setting skin:', error);
+        appLog('Error setting skin:', error);
       }
     }
   };
@@ -232,7 +232,7 @@ export default function SelfFundedMissionScreen() {
                         riveAssets && (
                           <Rive
                             ref={armorRiveRef}
-                            url={riveAssets[0].uri!}
+                            resourceName='new_shepherd'
                             artboardName="[Main] Shpeherd"
                             stateMachineName="State Machine 1"
                             autoplay
@@ -259,7 +259,7 @@ export default function SelfFundedMissionScreen() {
                         riveAssets && (
                           <Rive
                             ref={whaleRiveRef}
-                            url={riveAssets[0].uri!}
+                            resourceName='new_shepherd'
                             artboardName="[Main] Shpeherd"
                             stateMachineName="State Machine 1"
                             autoplay

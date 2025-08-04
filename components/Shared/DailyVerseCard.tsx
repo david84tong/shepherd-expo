@@ -7,7 +7,7 @@ import PrimaryButton from '../PrimaryButton';
 import { Devotional } from '~/app/models/Devotional';
 import { ImageBackground } from 'expo-image';
 import i18n from '../../app/utils/i18n';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import { AppFonts } from '~/app/constants/appFonts';
 import firestore from '@react-native-firebase/firestore';
 import { useUserStore } from '~/app/stores/userStore';
@@ -24,7 +24,7 @@ interface DailyVerseCardProps {
   showShareButton?: boolean;
   showExpandButton?: boolean;
   share?: boolean; // New prop to determine if this is a share card or regular card
-  height?: number; // Height in RPH units, defaults to 23
+  height?: number | 'dynamic'; // Height in RPH units, defaults to 23, or 'dynamic' for auto-sizing
 }
 
 const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
@@ -39,14 +39,14 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 }) => {
   // Debug logging
   useEffect(() => {
-    console.log('🎨 [DailyVerseCard] Received devotional:', {
+    appLog('🎨 [DailyVerseCard] Received devotional:', {
       id: devotional?.id,
       title: devotional?.title,
       imageURL: devotional?.imageURL,
       imageURLLength: devotional?.imageURL?.length
     });
   }, [devotional]);
-  
+
   const currentUser = useUserStore.getState();
 
   // Get current devotional from store (for real-time updates)
@@ -61,18 +61,44 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
         ? dailyDevotional
         : devotional;
 
+  // Subscribe to store changes for this specific devotional
+  const storeLikedBy = useDevotionalStore((state) => {
+    if (currentDevotional?.id === devotional.id) {
+      return currentDevotional.likedBy;
+    }
+    if (dailyDevotional?.id === devotional.id) {
+      return dailyDevotional.likedBy;
+    }
+    return devotional.likedBy;
+  });
+
   const [isLiked, setIsLiked] = useState(false);
-  const likeCount = storeDevotional.likes || 0;
-  const shareCount = storeDevotional.shares || 0;
+  const likeCount = storeDevotional?.likes || 0;
+  const shareCount = storeDevotional?.shares || 0;
 
   // A devotional is only "real" (and thus likeable/shareable) if it's not a locally generated one.
-  const isRealDevotional = !devotional.id.startsWith('quick-') && !devotional.id.startsWith('ai-');
+  // Custom devotionals (custom-*) and AI devotionals (ai-*) are real and can be liked
+  const isRealDevotional = !devotional.id.startsWith('quick-');
+
+  // Check if this is a custom devotional
+  const isCustomDevotional = devotional.id.startsWith('custom-') || devotional.id.startsWith('ai-');
+
+  // Format date for custom devotionals
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  };
 
   useEffect(() => {
-    if (currentUser?.id && storeDevotional.likedBy && isRealDevotional) {
-      setIsLiked(storeDevotional.likedBy.includes(currentUser.id));
+    if (currentUser?.id && storeLikedBy && isRealDevotional) {
+      const newLikedState = storeLikedBy.includes(currentUser.id);
+      setIsLiked(newLikedState);
+    } else {
+      // Reset like state if conditions are not met
+      setIsLiked(false);
     }
-  }, [storeDevotional, currentUser, isRealDevotional]);
+  }, [storeLikedBy, currentUser?.id, isRealDevotional, devotional?.id]);
 
   const handleLikePress = async () => {
     if (!isRealDevotional || !currentUser?.id || !devotional.id) return;
@@ -89,18 +115,53 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
     const devotionalRef = firestore().collection(collectionName).doc(devotional.id);
 
     try {
+      // Update likes in the original collection
       await devotionalRef.update({
         likes: firestore.FieldValue.increment(newLikedState ? 1 : -1),
         likedBy: newLikedState
           ? firestore.FieldValue.arrayUnion(currentUser.id)
           : firestore.FieldValue.arrayRemove(currentUser.id),
       });
+
+      // Save or remove from savedDevotionals collection
+      const savedDevotionalId = `${currentUser.id}_${devotional.id}`;
+
+      if (newLikedState) {
+        // Save devotional to savedDevotionals collection
+        const savedDevotionalData = {
+          ...devotional,
+          savedAt: new Date().toISOString(),
+          userId: currentUser.id,
+          originalCollection: collectionName,
+          originalId: devotional.id,
+        };
+
+        appLog('🔍 Saving devotional to savedDevotionals:', {
+          id: savedDevotionalId,
+          devotionalId: devotional.id,
+          userId: currentUser.id
+        });
+
+        await firestore().collection('savedDevotionals').doc(savedDevotionalId).set(savedDevotionalData);
+      } else {
+        // Remove devotional from savedDevotionals collection
+        appLog('🔍 Removing devotional from savedDevotionals:', {
+          id: savedDevotionalId,
+          devotionalId: devotional.id,
+          userId: currentUser.id
+        });
+
+        await firestore().collection('savedDevotionals').doc(savedDevotionalId).delete();
+      }
+
       analytics.logEvent('DailyVerseCard_Tapped_Like', {
         bibleReference: devotional.bibleReference,
         liked: newLikedState,
         devotionalType: isCustomDevotional ? 'custom' : 'daily',
       });
-      useDevotionalStore.getState().updateLikeStatus(devotional.id, newLikedState);
+      if(!isCustomDevotional){
+        useDevotionalStore.getState().updateLikeStatus(devotional.id, newLikedState);
+      }
     } catch (error) {
       console.error('Error updating likes:', error);
       // Revert state on error
@@ -125,16 +186,16 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
     try {
       // 1. Download the image to a temporary local file
-      const localUri = FileSystem.cacheDirectory + 'share_image.jpg';
-      await FileSystem.downloadAsync(devotional.imageURL, localUri);
+      const uri = FileSystem.cacheDirectory + 'share_image.jpg';
+      await FileSystem.downloadAsync(devotional.imageURL, uri);
 
       const message = `"${devotional.verse}" - ${devotional.bibleReference}`;
 
       // 2. Use RN's Share API with the local file URI
       const result = await Share.share({
         title: 'Share Daily Verse',
-        message: Platform.OS === 'android' ? `${message}\n${localUri}` : message,
-        url: localUri,
+        message: Platform.OS === 'android' ? `${message}\n${uri}` : message,
+        url: uri,
       });
 
       // 3. Only increment if the share was successful
@@ -241,14 +302,22 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
     return null;
   }
 
+  // Calculate the actual height to use
+  const isDynamicHeight = height === 'dynamic';
+  const actualHeight = isDynamicHeight ? 23 : height; // Use 23 as minimum height for dynamic
+
   // Always use poster-style background, but conditionally show buttons based on props
   return (
     <Pressable
       onPress={handleCardPress}
-      className="bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card">
+      className={`bg-surfaceCream rounded-3xl overflow-hidden mb-4 border ${isCustomDevotional ? '' : '  '}  border-2 shadow-card border-border`}>
       <ImageBackground
         source={{ uri: devotional.imageURL }}
-        style={{ width: '100%', minHeight: RPH(height) }}
+        style={{ 
+          width: '100%', 
+          minHeight: RPH(actualHeight),
+          ...(isDynamicHeight && { height: 'auto' })
+        }}
         resizeMode="cover"
         onError={(error) => {
           console.error('🚨 [DailyVerseCard] Image load error:', {
@@ -257,7 +326,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
           });
         }}
         onLoad={() => {
-          console.log('✅ [DailyVerseCard] Image loaded successfully:', devotional.imageURL);
+          appLog('✅ [DailyVerseCard] Image loaded successfully:', devotional.imageURL);
         }}>
         {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
         <LinearGradient
@@ -272,8 +341,22 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
           }}
         />
 
+        {/* Custom badge for custom devotionals */}
+        {/* {isCustomDevotional && (
+          <View className="absolute top-4 right-14">
+            <View className="bg-yellow-500 px-3 py-1 rounded-full">
+              <Text className="text-white font-feather text-xs uppercase">Custom ✨</Text>
+            </View>
+          </View>
+        )} */}
+
         {/* Content */}
-        <View style={{ padding: RPH(2), minHeight: RPH(height) }} className="pb-4 justify-between">
+        <View 
+          style={{ 
+            padding: RPH(2), 
+            ...(isDynamicHeight ? { minHeight: RPH(actualHeight) } : { minHeight: RPH(actualHeight) })
+          }} 
+          className="pb-4 justify-between">
           <View>
             <Text
               style={{ fontSize: AppFonts[17], marginBottom: RPH(0.3) }}
@@ -283,7 +366,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
             <Text
               style={{ fontSize: AppFonts[17], marginBottom: RPH(2) }}
               className="font-nunito-mediumItalic text-white shadow-lg  leading-[26px]">
-              {i18n.t('verse_of_the_day')}
+              {isCustomDevotional && devotional.createdAt ? `${formatDate(devotional.createdAt)} • Custom` : i18n.t('verse_of_the_day')}
             </Text>
             <Text
               style={{ fontSize: AppFonts[17] }}
@@ -302,14 +385,14 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
                     size={RPH(2.2)}
                     color={isLiked && isRealDevotional ? '#FF8800' : 'white'}
                   />
-                  <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>
+                  {!isCustomDevotional && <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>}
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleSharePress}
                   disabled={!isRealDevotional}
                   className="flex-row items-center">
                   <FontAwesome5 name="share-alt" size={RPH(1.8)} color="white" />
-                  <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>
+                  {!isCustomDevotional && <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>}
                 </TouchableOpacity>
               </View>
             ) : null}

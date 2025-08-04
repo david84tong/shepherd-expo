@@ -25,7 +25,7 @@ import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
 import { getLevelData } from '../../utils/levelUtils';
-import { isSignedInWithGoogle, isSignedInWithApple, RPH } from '../helper/helper';
+import { isSignedInWithGoogle, isSignedInWithApple, RPH, appLog } from '../helper/helper';
 import auth from '@react-native-firebase/auth';
 import { useAssets } from 'expo-asset';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -98,6 +98,8 @@ export default function ProfileScreen() {
   const completedReflections = getCompletedReflections();
   const user = getUser();
   const userId = user?.id || null;
+
+
   
   // Get check-in history from store
   const { checkInHistory } = useCheckInStore();
@@ -116,7 +118,7 @@ export default function ProfileScreen() {
     // Optional: Add listener for app state changes to refresh customer info
     // when app comes to foreground
   }, [getCustomerInfo]);
-
+  
   useEffect(() => {
     const checkDismissalStatus = async () => {
       try {
@@ -222,7 +224,7 @@ export default function ProfileScreen() {
         date: reflection.date,
         data: reflection,
         icon: quillIcon,
-        title: 'Quiet Time',
+        title: reflection.reflectionPrompt || 'Quiet Time',
         content: reflection.content,
       })) || [];
 
@@ -334,7 +336,7 @@ export default function ProfileScreen() {
 
   // Handle sign in based on platform
   const handleSignIn = async () => {
-    console.log('[Profile] Starting sign in process...');
+    appLog('[Profile] Starting sign in process...');
     setSignInError(null);
     setSignInLoading(true);
     try {
@@ -342,7 +344,7 @@ export default function ProfileScreen() {
         const currentUser = auth().currentUser;
         if (currentUser?.isAnonymous) {
           // Use the new upgrade function for anonymous users
-          console.log('[Profile] Current user is anonymous, using upgrade flow');
+          appLog('[Profile] Current user is anonymous, using upgrade flow');
           await upgradeAnonymousToApple();
         } else {
           // Use regular sign in for non-anonymous users
@@ -352,7 +354,7 @@ export default function ProfileScreen() {
         await signInWithGoogle(false);
       }
     } catch (error: any) {
-      console.log('[Profile] Sign in error:', error);
+      appLog('[Profile] Sign in error:', error);
       let errorMessage =
         Platform.OS === 'ios'
           ? 'There was a problem signing in with Apple.'
@@ -360,7 +362,7 @@ export default function ProfileScreen() {
 
       if (error.code === 'auth/credential-already-in-use') {
         // This should be handled automatically now
-        console.log('[Profile] Credential already in use - should be handled automatically');
+        appLog('[Profile] Credential already in use - should be handled automatically');
       } else if (error.message?.includes('already linked')) {
         errorMessage = error.message;
       } else if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
@@ -373,7 +375,7 @@ export default function ProfileScreen() {
         errorMessage = 'Sign in process was interrupted. Please try again.';
       } else if (error.message?.includes('not anonymous')) {
         // Don't show this error to the user, just log it
-        console.log('[Profile] User is not anonymous, using regular sign in flow');
+        appLog('[Profile] User is not anonymous, using regular sign in flow');
         return;
       }
       setSignInError(errorMessage);
@@ -416,7 +418,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (!riveRef.current || !riveLoaded) return;
     const skinValue = SKIN_MAP[riveSkin];
-    console.log('Setting Skin-Number to', skinValue);
+    appLog('Setting Skin-Number to', skinValue);
     riveRef.current?.setInputState(STATE_MACHINE, 'Skin-Number', skinValue);
   }, [riveSkin, riveLoaded]);
 
@@ -424,19 +426,19 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (!riveRef.current || !riveLoaded) return;
     const actionValue = ACTION_MAP[riveAction];
-    console.log('Setting Action-Number to', actionValue);
+    appLog('Setting Action-Number to', actionValue);
     riveRef.current?.setInputState(STATE_MACHINE, 'Action-Number', actionValue);
   }, [riveAction, riveLoaded]);
 
   // Debug Rive assets loading
   useEffect(() => {
-    console.log('Rive assets loaded:', riveAssets);
+    appLog('Rive assets loaded:', riveAssets);
     if (riveAssets && riveAssets[0]) {
-      console.log('Rive asset URI:', riveAssets[0].uri);
+      appLog('Rive asset URI:', riveAssets[0].uri);
       // Set riveLoaded after a short delay as fallback
       setTimeout(() => {
         setRiveLoaded(true);
-        console.log('Rive loaded via timeout');
+        appLog('Rive loaded via timeout');
       }, 500);
     }
   }, [riveAssets]);
@@ -718,35 +720,35 @@ export default function ProfileScreen() {
           )}
 
           {/* Selected Path Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <View className="flex-row justify-between items-center">
-              <Text className="font-feather text-heading text-textPrimary ">Selected Path</Text>
-              <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
-                <Text className="font-din text-description underline text-accentGold font-bold">
-                  {selectedPath?.title || 'No path selected'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* XP Bar */}
-
-            <View className="flex-row justify-between align-center mb-2 mt-6 border-t border-t-gray-200 pt-6">
-
-              <Text className="font-nunito-bold text-blue">{i18n.t('level')} {levelData.level}</Text>
-
-              <View className="h-3 mt-1.5 w-[55%] bg-black/10 rounded-full overflow-hidden">
-                <View
-                  className="h-full bg-blue rounded-full"
-                  style={{ width: `${levelData.progress}%` }}
-                />
+            <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+              <View className="flex-row justify-between items-center">
+                <Text className="font-feather text-heading text-textPrimary ">Selected Path</Text>
+                <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
+                  <Text className="font-din text-description underline font-bold">
+                    {selectedPath?.title || 'No path selected'}
+                  </Text>
+                </TouchableOpacity>
               </View>
 
-              <Text className="font-nunito-bold text-blue">
-                {levelData.xpCurrent}/{levelData.xpForNextLevel} {i18n.t('xp')}
-              </Text>
+              {/* XP Bar */}
 
+              <View className="flex-row justify-between align-center mb-2 mt-6 border-t border-t-gray-200 pt-6">
+
+                <Text className="font-nunito-bold text-blue">{i18n.t('level')} {levelData.level}</Text>
+
+                <View className="h-3 mt-1.5 w-[35%] bg-black/10 rounded-full overflow-hidden">
+                  <View
+                    className="h-full bg-blue rounded-full"
+                    style={{ width: `${levelData.progress}%` }}
+                  />
+                </View>
+
+                <Text className="font-nunito-bold text-blue">
+                  {levelData.xpCurrent}/{levelData.xpForNextLevel} {i18n.t('xp')}
+                </Text>
+
+              </View>
             </View>
-          </View>
 
 
 
@@ -873,7 +875,7 @@ export default function ProfileScreen() {
                         analytics.logEvent('Profile_Upgrade_Success', {
                           fromScreen: 'profile'
                         });
-                        console.log('✅ Successfully upgraded to pro from profile');
+                        appLog('✅ Successfully upgraded to pro from profile');
                       }
                     } catch (error) {
                       console.error('❌ Error presenting paywall from profile:', error);
@@ -936,20 +938,20 @@ export default function ProfileScreen() {
                         {/* Content */}
                         <View className="flex-1 flex-row justify-between bg-surfaceCream px-4 py-3 rounded-md items-center">
                           <View className="flex-1 mr-2">
-                            <Text className="font-feather text-body text-textPrimary flex-wrap">
+                            <Text className="text-sm text-body text-textPrimary flex-wrap" numberOfLines={2}>
                               {activity.title}
                             </Text>
                             {/* Display prayer topic or reflection content if available */}
                             {activity.type === 'prayer' &&
                               activity.data.topic &&
                               activity.title !== `Prayed for ${activity.data.topic}` && (
-                                <Text className="font-din text-sm text-description mt-1">
+                                <Text className="font-feather text-sm text-textPrimary mt-1">
                                   {i18n.t('topic')}: {activity.data.topic}
                                 </Text>
                               )}
                             {activity.type === 'reflection' && activity.content && (
                               <Text
-                                className="font-din text-sm text-description mt-1"
+                                className="font-feather text-sm text-textPrimary mt-1"
                                 numberOfLines={1}
                                 ellipsizeMode="tail">
                                 {activity.content}
@@ -958,7 +960,7 @@ export default function ProfileScreen() {
                             {/* Display check-in content (mood, focus, struggle) */}
                             {activity.type === 'checkin' && activity.content && (
                               <Text
-                                className="font-din text-sm text-description mt-1"
+                                className="font-feather text-sm text-textPrimary mt-1"
                                 numberOfLines={2}
                                 ellipsizeMode="tail">
                                 {activity.content}

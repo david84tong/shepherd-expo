@@ -33,6 +33,7 @@ import { useLanguageStore } from '../app/stores/languageStore';
 import { SupportedLanguage } from '../app/utils/i18n';
 import i18n from '../app/utils/i18n';
 import LanguageSelectionModal from './LanguageSelectionModal';
+import { appLog } from '~/app/helper/helper';
 
 interface Message {
   id: string;
@@ -136,18 +137,18 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         const storedLanguage = await AsyncStorage.getItem(CHAT_LANGUAGE_KEY);
         const languageSet = await AsyncStorage.getItem(CHAT_LANGUAGE_SET_KEY);
 
-        console.log(`[VerseChatView] App language: ${language}, Stored chat language: ${storedLanguage}, Language set: ${languageSet}`);
+        appLog(`[VerseChatView] App language: ${language}, Stored chat language: ${storedLanguage}, Language set: ${languageSet}`);
 
         if (storedLanguage && languageSet === 'true') {
           // User has explicitly set a chat language preference
           setChatLanguage(storedLanguage as SupportedLanguage);
           setHasSetLanguage(true);
-          console.log(`[VerseChatView] Using explicit chat language: ${storedLanguage}`);
+          appLog(`[VerseChatView] Using explicit chat language: ${storedLanguage}`);
         } else {
           // User hasn't explicitly set chat language, so sync with app language
           setChatLanguage(language as SupportedLanguage);
           await AsyncStorage.setItem(CHAT_LANGUAGE_KEY, language);
-          console.log(`[VerseChatView] Synced chat language with app language: ${language}`);
+          appLog(`[VerseChatView] Synced chat language with app language: ${language}`);
         }
       } catch (error) {
         console.error('Error handling chat language logic:', error);
@@ -196,14 +197,14 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       try {
         const hasUsed = await AsyncStorage.getItem(CHAT_USED_KEY);
         setHasUsedFreeMessage(hasUsed === 'true');
-        console.log("[VerseChatView] Free message already used:", hasUsed === 'true');
+        appLog("[VerseChatView] Free message already used:", hasUsed === 'true');
 
         // Load global message count
         const messageCountStr = await AsyncStorage.getItem(CHAT_MESSAGE_COUNT_KEY);
         const messageCount = messageCountStr ? parseInt(messageCountStr, 10) : 0;
         setGlobalMessageCount(messageCount);
-        console.log("[VerseChatView] Global message count:", messageCount);
-        console.log("[VerseChatView] Pro member status:", isProMember);
+        appLog("[VerseChatView] Global message count:", messageCount);
+        appLog("[VerseChatView] Pro member status:", isProMember);
 
         // Track chat view opened
         analytics.logEvent("Bible_Chat_Opened", {
@@ -235,7 +236,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
 
     // Try to present the main paywall first, if it fails, show free trial
     const result = await presentFreeTrialPaywall();
-    console.log("[VerseChatView] presentPaywall result:", result);
+    appLog("[VerseChatView] presentPaywall result:", result);
 
     return result;
   }
@@ -271,7 +272,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     setTimeout(() => {
       // Pro members always get the normal welcome message
       if (isProMember) {
-        console.log("[VerseChatView] Setting up welcome message for pro member");
+        appLog("[VerseChatView] Setting up welcome message for pro member");
         const initialMessage = i18n.t('bible_chat_welcome', {
           bookName,
           chapter,
@@ -286,7 +287,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         }]);
       } else if (globalMessageCount >= 3) {
         // Non-pro users who have used all messages get upgrade message
-        console.log("[VerseChatView] Setting up upgrade message for user who has used all messages");
+        appLog("[VerseChatView] Setting up upgrade message for user who has used all messages");
         const upgradeMessage = {
           id: Date.now().toString(),
           text: i18n.t('bible_chat_upgrade_message'),
@@ -296,7 +297,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         setMessages([upgradeMessage]);
       } else {
         // Non-pro users with remaining messages get normal welcome
-        console.log("[VerseChatView] Setting up welcome message for non-pro user with remaining messages");
+        appLog("[VerseChatView] Setting up welcome message for non-pro user with remaining messages");
         const initialMessage = i18n.t('bible_chat_welcome', {
           bookName,
           chapter,
@@ -316,7 +317,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
   const handleSend = async () => {
     if (inputMessage.trim() === '') return;
 
-    console.log("[VerseChatView] handleSend called", {
+    appLog("[VerseChatView] handleSend called", {
       isProMember,
       hasUsedFreeMessage,
       globalMessageCount,
@@ -336,14 +337,14 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
 
     // Pro members can always send messages with AI response
     if (isProMember) {
-      console.log("[VerseChatView] Pro member - sending message with AI response");
+      appLog("[VerseChatView] Pro member - sending message with AI response");
       sendMessage(true);
       return;
     }
 
     // For non-pro members, check their message count
     if (globalMessageCount >= 3) {
-      console.log("[VerseChatView] User has sent 3 messages - showing paywall on 4th attempt");
+      appLog("[VerseChatView] User has sent 3 messages - showing paywall on 4th attempt");
 
       // Track paywall trigger
       analytics.logEvent("Bible_Chat_PaywallTriggered", {
@@ -361,11 +362,11 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     // User can send this message
     if (globalMessageCount < 2) {
       // First or second message - send with AI response
-      console.log(`[VerseChatView] Allowing message ${globalMessageCount + 1} with AI response`);
+      appLog(`[VerseChatView] Allowing message ${globalMessageCount + 1} with AI response`);
       sendMessage(true); // true = get AI response
     } else {
       // Third message - send but no AI response, then add upgrade message
-      console.log(`[VerseChatView] Allowing message ${globalMessageCount + 1} but no AI response, then adding upgrade message`);
+      appLog(`[VerseChatView] Allowing message ${globalMessageCount + 1} but no AI response, then adding upgrade message`);
 
       // Track final free message
       analytics.logEvent("Bible_Chat_FinalFreeMessage", {
@@ -450,7 +451,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
 
         try {
           await AsyncStorage.setItem(CHAT_MESSAGE_COUNT_KEY, newMessageCount.toString());
-          console.log(`[VerseChatView] Saved global message count: ${newMessageCount}`);
+          appLog(`[VerseChatView] Saved global message count: ${newMessageCount}`);
         } catch (error) {
           console.error('Error saving global message count:', error);
         }
@@ -460,7 +461,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           try {
             await AsyncStorage.setItem(CHAT_USED_KEY, 'true');
             setHasUsedFreeMessage(true);
-            console.log("[VerseChatView] Marked free message as used permanently");
+            appLog("[VerseChatView] Marked free message as used permanently");
 
             // Notify parent component that message was sent
             onMessageSent?.();
@@ -490,7 +491,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
 
     // Only make API call if we should get AI response
     if (!getAIResponse) {
-      console.log("[VerseChatView] Skipping AI response for 3rd message");
+      appLog("[VerseChatView] Skipping AI response for 3rd message");
       return;
     }
 
@@ -717,7 +718,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       <StatusBar barStyle="dark-content" backgroundColor="#FFF4DC" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.container, { marginBottom: Math.max(insets.bottom + TAB_BAR_HEIGHT - 10, 16) }]}
+        style={[styles.container, { marginBottom: SCREEN_HEIGHT <= 667 ? 60 : Math.max(insets.bottom + TAB_BAR_HEIGHT - 10, 16), }]}
         keyboardVerticalOffset={0}
       >
         <Reanimated.View
@@ -850,7 +851,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           try {
             await AsyncStorage.setItem(CHAT_LANGUAGE_KEY, language);
             await AsyncStorage.setItem(CHAT_LANGUAGE_SET_KEY, 'true');
-            console.log(`[VerseChatView] Saved current app language as chat language on dismiss: ${language}`);
+            appLog(`[VerseChatView] Saved current app language as chat language on dismiss: ${language}`);
           } catch (error) {
             console.error('Error saving current language on modal dismiss:', error);
           }

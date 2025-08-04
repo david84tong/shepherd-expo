@@ -15,7 +15,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import skins from '../../assets/onboarding/skins.png';
 import { IS_ANDROID } from '../utils/utils';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 import { hapticLight } from '~/utils/haptics';
 
 export default function OnboardingExplainerScreen({ onContinue }: { onContinue?: () => void }) {
@@ -83,7 +83,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
         try {
           riveRef1.current.setInputState('State Machine 1', 'Level-Number', 1);
         } catch (e) {
-          console.log('Error setting Level-Number for LVL 1:', e);
+          appLog('Error setting Level-Number for LVL 1:', e);
         }
       }
 
@@ -92,7 +92,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
         try {
           riveRef10.current.setInputState('State Machine 1', 'Level-Number', 0);
         } catch (e) {
-          console.log('Error setting Level-Number for LVL 10:', e);
+          appLog('Error setting Level-Number for LVL 10:', e);
         }
       }
 
@@ -101,7 +101,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
         try {
           riveRef20.current.setInputState('State Machine 1', 'Level-Number', 0);
         } catch (e) {
-          console.log('Error setting Level-Number for LVL 20:', e);
+          appLog('Error setting Level-Number for LVL 20:', e);
         }
       }
 
@@ -111,7 +111,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
           riveRef33.current.setInputState('State Machine 1', 'Level-Number', 0);
           riveRef33.current.setInputState('State Machine 1', 'Wings ON/OFF', 1);
         } catch (e) {
-          console.log('Error setting Wings ON/OFF for LVL 33:', e);
+          appLog('Error setting Wings ON/OFF for LVL 33:', e);
         }
       }
     }, 100); // Wait 1 second for Rive components to be ready
@@ -125,7 +125,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
     try {
       hapticLight();
     } catch (error) {
-      console.log('Haptics not available');
+      appLog('Haptics not available');
     }
 
     // Log continue button press
@@ -217,7 +217,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
                   ) : (
                     <Rive
                       ref={riveRef1}
-                      url={riveAssets[0].uri!}
+                      resourceName='new_shepherd'
                       artboardName="[Main] Shpeherd"
                       stateMachineName="State Machine 1"
                       style={{ width: '100%', height: '100%' }}
@@ -254,7 +254,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
                   ) : (
                     <Rive
                       ref={riveRef10}
-                      url={riveAssets[0].uri!}
+                      resourceName='new_shepherd'
                       artboardName="[Main] Shpeherd"
                       stateMachineName="State Machine 1"
                       style={{ width: '100%', height: '100%' }}
@@ -297,7 +297,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
                     ) : (
                       <Rive
                         ref={riveRef20}
-                        url={riveAssets[0].uri!}
+                        resourceName='new_shepherd'
                         artboardName="[Main] Shpeherd"
                         stateMachineName="State Machine 1"
                         style={{ width: '100%', height: '100%' }}
@@ -331,7 +331,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
                   ) : (
                     <Rive
                       ref={riveRef33}
-                      url={riveAssets[0].uri!}
+                      resourceName='new_shepherd'
                       artboardName="[Main] Shpeherd"
                       stateMachineName="State Machine 1"
                       style={{ width: '100%', height: '100%' }}

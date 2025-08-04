@@ -15,9 +15,10 @@ interface EmptyModalProps {
   visible: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  height?: number | `${number}%` | 'auto';
 }
 
-export default function EmptyModal({ visible, onClose, children }: EmptyModalProps) {
+export default function EmptyModal({ visible, onClose, children, height }: EmptyModalProps) {
   const insets = useSafeAreaInsets();
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -75,6 +76,7 @@ export default function EmptyModal({ visible, onClose, children }: EmptyModalPro
             {
               paddingBottom: insets.bottom,
               transform: [{ translateY: translateY }],
+              height: height? height: null
             },
           ]}
         >

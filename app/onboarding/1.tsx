@@ -15,13 +15,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOnboardingStore } from '../stores/onboardingStore';
-import { useAnalytics } from '../hooks/useAnalytics';
 import PrimaryButton from '../../components/PrimaryButton';
 import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
+import { AccessibilityInfo } from 'react-native';
 
-import analytics from '../../utils/analytics';
+import { trackEvent } from '../../utils/analytics';
 import { IS_ANDROID } from '../utils/utils';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 import { hapticHeavy, hapticLight, hapticRigid } from '~/utils/haptics';
 
 const FIRST_WELCOME_TEXT = 'Every Shepherd starts with one lost lamb...';
@@ -40,7 +40,7 @@ const triggerTypeHaptic = () => {
     hapticRigid();
   } catch (error) {
     // Safely ignore haptic errors
-    console.log('Haptics not available');
+    appLog('Haptics not available');
   }
 };
 
@@ -48,9 +48,9 @@ export default function OnboardingWelcomeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
   const insets = useSafeAreaInsets();
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
 
-  // Initialize analytics
-  const { logScreenView, logButtonPress, logEvent, AnalyticsEvent, EventCategory } = useAnalytics();
+  // Initialize analytics - removed useAnalytics hook
 
   // A/B Test assignment function
   const assignABTest = async () => {
@@ -65,15 +65,15 @@ export default function OnboardingWelcomeScreen() {
         // Save to AsyncStorage
         await AsyncStorage.setItem(AB_TEST_KEY, abTestValue.toString());
 
-        console.log('[OnboardingScreen1] Assigned new A/B test value:', abTestValue);
+        appLog('[OnboardingScreen1] Assigned new A/B test value:', abTestValue);
 
         // Log analytics event for A/B test assignment
-        analytics.logEvent('ABTest_Assigned', {
+        trackEvent('ABTest_Assigned', {
           abTestGroup: abTestValue,
           screenName: 'OnboardingWelcomeScreen',
         });
       } else {
-        console.log('[OnboardingScreen1] Existing A/B test value found:', existingAbTest);
+        appLog('[OnboardingScreen1] Existing A/B test value found:', existingAbTest);
       }
     } catch (error) {
       console.error('[OnboardingScreen1] Error handling A/B test assignment:', error);
@@ -82,13 +82,24 @@ export default function OnboardingWelcomeScreen() {
 
   // Log screen view when component mounts
   useEffect(() => {
-    // Assign A/B test first
-    assignABTest();
+    // Check reduce motion setting
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotionEnabled);
 
-    analytics.logEvent('LambLostScreenViewed', {
-      screenName: 'OnboardingWelcomeScreen',
-      step: 1,
-    });
+    // Initialize analytics first before logging any events
+    const initializeAnalytics = async () => {
+      // Analytics initialization is handled automatically in the new implementation
+
+      // Assign A/B test after analytics is ready
+      await assignABTest();
+
+      // Now log the screen view event
+      trackEvent('LambLostScreenViewed', {
+        screenName: 'OnboardingWelcomeScreen',
+        step: 1,
+      });
+    };
+
+    initializeAnalytics();
 
     // Start entrance animation
     const startEntranceAnimation = () => {
@@ -303,7 +314,7 @@ export default function OnboardingWelcomeScreen() {
 
   // Handle tapping the lamb in the second stage
   const handleLambTap = () => {
-    console.log('handleLambTap2');
+    appLog('handleLambTap2');
     // Set the tap input to true to trigger the state machine
 
     hapticHeavy();
@@ -311,7 +322,7 @@ export default function OnboardingWelcomeScreen() {
     if (!secondStageActive || isLambTapped) return;
 
     // Log the lamb tap interaction
-    logEvent('lamb_tap', EventCategory.USER_ACTION, {
+    trackEvent('lamb_tap', {
       step: 1,
       screenName: 'Welcome',
       stage: 'second_stage',
@@ -329,6 +340,19 @@ export default function OnboardingWelcomeScreen() {
   // Handle the transition to the next screen with animation
   const handleTransitionToNextScreen = () => {
     setIsTransitioning(true);
+
+    // If reduce motion is enabled, navigate immediately
+    if (reduceMotionEnabled) {
+      router.push({
+        pathname: '/onboarding/2',
+        params: {
+          animated: true,
+          animation: 'fade',
+          immediate: true, // Set immediate to true for reduce motion
+        },
+      } as any);
+      return;
+    }
 
     // Create a smoother and faster fade out effect with scale
     Animated.parallel([
@@ -363,7 +387,7 @@ export default function OnboardingWelcomeScreen() {
 
     if (textPhase === 2) {
       // Log button press for starting journey
-      analytics.logEvent('Onboarding_Tapped_StartJourney', {
+      trackEvent('Onboarding_Tapped_StartJourney', {
         step: 1,
         screenName: 'Welcome',
         textPhase: textPhase,
@@ -374,7 +398,7 @@ export default function OnboardingWelcomeScreen() {
       startZoomAndTransition();
     } else if (isLambTapped) {
       // Log button press for claiming lamb
-      analytics.logEvent('Onboarding_Tapped_ClaimLostLamb', {
+      trackEvent('Onboarding_Tapped_ClaimLostLamb', {
         step: 1,
         screenName: 'Welcome',
         textPhase: textPhase,
@@ -386,7 +410,7 @@ export default function OnboardingWelcomeScreen() {
   };
 
   // Load the Rive asset - Moved after all other hooks
-  const [assets] = useAssets([require('../../assets/riveAnimations/babyLambWaking.riv')]);
+  const [assets] = useAssets([require('../../assets/riveAnimations/baby_lamb_waking.riv')]);
 
   // Show loading indicator while assets are loading
   if (!assets) {
@@ -437,7 +461,7 @@ export default function OnboardingWelcomeScreen() {
           <Pressable
             onPress={() => {
               hapticLight();
-              analytics.logEvent('Onboarding_Tapped_Back', {
+              trackEvent('Onboarding_Tapped_Back', {
                 step: 1,
                 screenName: 'Welcome',
                 action: 'Back to Auth',
@@ -500,7 +524,7 @@ export default function OnboardingWelcomeScreen() {
                       ref={riveRef}
                       // resourceName={assets[0].uri}
                       onError={(error) => {
-                        console.log('------>', error);
+                        appLog('------>', error);
                       }}
                       resourceName={'baby_lamb_waking'}
                       // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
@@ -513,11 +537,10 @@ export default function OnboardingWelcomeScreen() {
                   ) : (
                     <Rive
                       ref={riveRef}
-                      // resourceName={assets[0].uri}
                       onError={(error) => {
-                        console.log('------>', error);
+                        appLog('------>', error);
                       }}
-                      url={assets[0].uri!} // Use url prop with localUri
+                      resourceName="baby_lamb_waking"
                       // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
                       stateMachineName="Baby"
                       artboardName={'Baby-Spepherd 2'}

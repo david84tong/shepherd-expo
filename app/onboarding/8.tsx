@@ -18,6 +18,7 @@ import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 import i18n from '../utils/i18n';
 import { hapticLight } from '~/utils/haptics';
+import { appLog } from '../helper/helper';
 
 interface OnboardingPathScreenProps {
   onPathSelected?: (pathObj: any) => void;
@@ -88,7 +89,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
     try {
       await hapticLight();
     } catch (error) {
-      console.log('Haptics not available');
+      appLog('Haptics not available');
     }
 
     analytics.logEvent("OnboardingPathScreen_Tapped_Option", {
@@ -114,7 +115,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
         onPathSelected(selectedPathObj);
       }
     } else {
-      console.log('❌ [OnboardingPathScreen] Path object not found for ID:', pathId);
+      appLog('❌ [OnboardingPathScreen] Path object not found for ID:', pathId);
     }
   };
 
@@ -126,7 +127,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
       });
       
       setUser({ selectedPathId: selectedPathId });
-      console.log(selectedPathId, "selectedPathId");
+      appLog(selectedPathId, "selectedPathId");
       
       // IMPORTANT: If this is during onboarding (no onPathSelected callback), 
       // we need to save the path to the pathStore as well
@@ -149,7 +150,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
         router.push('/onboarding/explainerHearts' as any);
       }
     } else {
-      console.log('❌ [OnboardingPathScreen] No selectedPathId, cannot continue');
+      appLog('❌ [OnboardingPathScreen] No selectedPathId, cannot continue');
     }
   }, [selectedPathId, setUser, router, onModalClose, onPathSelected, setSelectedPath]);
 
@@ -196,7 +197,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
 
                   {/* Path Text Content */}
                   <View className="p-3">
-                    <Text className="font-feather text-h3 text-textPrimary mb-1 text-center">
+                    <Text className="font-feather text-body text-textPrimary mb-1 text-center">
                       {path.title}
                     </Text>
                     <Text className="font-din text-md text-description text-center">

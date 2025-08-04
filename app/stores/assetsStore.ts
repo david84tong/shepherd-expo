@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { useAssets } from 'expo-asset';
 import { useEffect } from 'react';
+import { appLog } from '../helper/helper';
 
 // List of assets used in the app (copied from HomeScreen)
 const imageAssets = [
@@ -18,21 +19,35 @@ const imageAssets = [
   require('../../assets/backgrounds/defaultBackgroundDark.png'),
 ];
 
+// List of Rive assets used in the app
+const riveAssetList = [
+  require('../../assets/riveAnimations/new_shepherd.riv'),
+  require('../../assets/riveAnimations/bg_green.riv'),
+];
+
 type AssetsState = {
   loaded: boolean;
   assets: any[] | null;
+  riveAssets: any[] | null;
+  riveLoaded: boolean;
   error: any;
   setLoaded: (loaded: boolean) => void;
   setAssets: (assets: any[] | null) => void;
+  setRiveAssets: (assets: any[] | null) => void;
+  setRiveLoaded: (loaded: boolean) => void;
   setError: (error: any) => void;
 };
 
 export const useAssetsStore = create<AssetsState>((set) => ({
   loaded: false,
   assets: null,
+  riveAssets: null,
+  riveLoaded: false,
   error: null,
   setLoaded: (loaded) => set({ loaded }),
   setAssets: (assets) => set({ assets }),
+  setRiveAssets: (assets) => set({ riveAssets: assets }),
+  setRiveLoaded: (loaded) => set({ riveLoaded: loaded }),
   setError: (error) => set({ error }),
 }));
 
@@ -54,7 +69,27 @@ export function usePreloadAssets() {
   }, [assets, error]);
 }
 
-export { imageAssets };
+// Hook to load Rive assets once
+export function usePreloadRiveAssets() {
+  const [riveAssets, error] = useAssets(riveAssetList);
+  const setRiveAssets = useAssetsStore((s) => s.setRiveAssets);
+  const setRiveLoaded = useAssetsStore((s) => s.setRiveLoaded);
+  const setError = useAssetsStore((s) => s.setError);
+
+  useEffect(() => {
+    if (riveAssets) {
+      setRiveAssets(riveAssets);
+      setRiveLoaded(true);
+      appLog('🎬 Rive assets preloaded successfully');
+    }
+    if (error) {
+      setError(error);
+      console.error('❌ Error preloading Rive assets:', error);
+    }
+  }, [riveAssets, error]);
+}
+
+export { imageAssets, riveAssetList as riveAssets };
 
 // Default export for Expo Router compatibility
 export default {}

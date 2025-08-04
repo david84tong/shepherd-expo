@@ -3,10 +3,10 @@ export interface Devotional {
   title: string;
   content: string;
   createdAt: string;
-  context: string; // 4-5 sentences about the bible verse
+  context: string | { en: string , es: string , fr: string }; // 4-5 sentences about the bible verse
   bibleReference: string;
-  prayer: string | { en: string };
-  reflectionPrompt: string | { en: string };
+  prayer: string | { en: string , es: string, fr: string };
+  reflectionPrompt: string | { en: string , es: string, fr: string };
   likes: number;
   shares: number;
   completed: number;
@@ -43,7 +43,9 @@ export const devotionalBackgrounds = {
   orangeSunset: 'https://firebasestorage.googleapis.com/v0/b/shepherd-c74ad.firebasestorage.app/o/shepBG-orangeSunset.png?alt=media&token=979d2916-49c0-48d7-8553-1f7fdea53007',
   darkRedSunset: 'https://firebasestorage.googleapis.com/v0/b/shepherd-c74ad.firebasestorage.app/o/shepBG-redSunset.png?alt=media&token=1450f378-63c5-4b0f-9b3a-f1f3848a052d',
   riverForest: 'https://firebasestorage.googleapis.com/v0/b/shepherd-c74ad.firebasestorage.app/o/shepBG-riverForest.png?alt=media&token=b440cb4c-a238-4350-a4a1-03b004b9f3c8',
-  oceanCloudsBg: 'https://firebasestorage.googleapis.com/v0/b/shepherd-c74ad.firebasestorage.app/o/waterBackground.png?alt=media&token=b0266692-ada8-4ec9-98ce-a1e0a242186d'
+  oceanCloudsBg: 'https://firebasestorage.googleapis.com/v0/b/shepherd-c74ad.firebasestorage.app/o/waterBackground.png?alt=media&token=b0266692-ada8-4ec9-98ce-a1e0a242186d',
+  riverForest2: 'https://firebasestorage.googleapis.com/v0/b/shepherd-c74ad.firebasestorage.app/o/shepBG-river2.png?alt=media&token=ec7fd99c-d247-4525-9c7c-17c1100ff11e',
+  cliff: 'https://firebasestorage.googleapis.com/v0/b/shepherd-c74ad.firebasestorage.app/o/shepBG-cliff.png?alt=media&token=bf75df92-4373-41f3-b8da-bf5e3616842d',
 };
 
 // free users can get generated devotional from the api + context? => but cant chat + we need

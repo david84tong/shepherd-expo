@@ -1,13 +1,22 @@
 import { useAssets } from 'expo-asset';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { View, Text, Animated, ScrollView, ImageBackground, SafeAreaView, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  Animated,
+  ScrollView,
+  ImageBackground,
+  SafeAreaView,
+  StatusBar,
+} from 'react-native';
 import BackButton from '../components/BackButton';
 import PrimaryButton from '../components/PrimaryButton';
 import { Unit, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS } from './models/Path';
 import { usePathStore } from './stores/pathStore';
 import { useUserStore } from './stores/userStore';
 import analytics from '../utils/analytics';
+import { appLog } from './helper/helper';
 
 export default function BiblePreviewScreen() {
   const params = useLocalSearchParams();
@@ -45,20 +54,36 @@ export default function BiblePreviewScreen() {
 
   // Find the next uncompleted unit from the ordered paths
   const nextUnit = useMemo(() => {
+    // Debug logging
+    appLog('[BiblePreview] Finding unit - currentPath:', currentPath);
+    appLog('[BiblePreview] completedUnitIds:', completedUnitIds);
+
     // If we have a current path set from the map, use that unit
     if (currentPath) {
+      appLog('[BiblePreview] Using unit from currentPath:', currentPath.unitId);
       for (const path of orderedPaths) {
-        const unit = path.units.find(u => u.id === currentPath.unitId);
-        if (unit) return unit;
+        const unit = path.units.find((u) => u.id === currentPath.unitId);
+        if (unit) {
+          appLog(
+            '[BiblePreview] Found unit:',
+            unit.id,
+            unit.title,
+            'chapters:',
+            unit.reference
+          );
+          return unit;
+        }
       }
     }
-    
+
     // Otherwise find the next uncompleted unit
+    appLog('[BiblePreview] No currentPath, finding next uncompleted unit');
     let nextUnitToComplete: Unit | null = null;
     for (const path of orderedPaths) {
       for (const unit of path.units) {
         if (!completedUnitIds.includes(unit.id)) {
           nextUnitToComplete = unit;
+          appLog('[BiblePreview] Found uncompleted unit:', unit.id, unit.title);
           break;
         }
       }
@@ -66,6 +91,7 @@ export default function BiblePreviewScreen() {
     }
     if (!nextUnitToComplete && orderedPaths.length > 0 && orderedPaths[0].units.length > 0) {
       nextUnitToComplete = orderedPaths[0].units[0];
+      appLog('[BiblePreview] Fallback to first unit:', nextUnitToComplete.id);
     }
     return nextUnitToComplete;
   }, [completedUnitIds, orderedPaths, currentPath]);
@@ -79,7 +105,7 @@ export default function BiblePreviewScreen() {
     if (nextUnit) {
       const ref = getFirstReference(nextUnit.reference);
       const chapters = ref.chapters;
-      
+
       // If there's only one chapter, show single chapter format
       if (chapters.length === 1) {
         return `Next: ${ref.bookName} ${chapters[0]}`;
@@ -109,7 +135,7 @@ export default function BiblePreviewScreen() {
   const scrollViewRef = useRef(null);
 
   // Prepare for future Rive usage
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/home_lamb.riv')]);
 
   useEffect(() => {
     // Animate the container opacity and card entry
@@ -155,6 +181,9 @@ export default function BiblePreviewScreen() {
 
   const handleStart = () => {
     if (nextUnit) {
+      appLog('[BiblePreview handleStart] Starting with unit:', nextUnit.id, nextUnit.title);
+      appLog('[BiblePreview handleStart] Unit reference:', nextUnit.reference);
+
       // Find the path that contains this unit
       let pathId = '';
       let pathTitle = '';
@@ -167,6 +196,9 @@ export default function BiblePreviewScreen() {
       }
 
       const ref = getFirstReference(nextUnit.reference);
+      appLog('[BiblePreview handleStart] Using reference:', ref);
+      appLog('[BiblePreview handleStart] Chapters:', ref.chapters);
+
       const startChapter = ref.chapters[0];
       const endChapter = ref.chapters[ref.chapters.length - 1];
 
@@ -181,6 +213,12 @@ export default function BiblePreviewScreen() {
         endChapter,
         prayer: nextUnit.prayer,
         reflection: nextUnit.reflectionPrompt,
+      });
+
+      appLog('[BiblePreview handleStart] Navigating to bibleReader with:', {
+        bookId: ref.bookId,
+        chapters: ref.chapters.join(','),
+        title: nextUnit.title,
       });
 
       router.push({
@@ -242,16 +280,10 @@ export default function BiblePreviewScreen() {
       resizeMode="cover">
       <SafeAreaView className="flex-1">
         <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-        
-        <Animated.View
-          className="flex-1"
-          style={{ opacity: containerOpacity }}>
-          
+
+        <Animated.View className="flex-1" style={{ opacity: containerOpacity }}>
           {/* Back Button - Same position as map.tsx */}
-          <BackButton
-            onPress={handleBack}
-            containerClassName="absolute -top-20 left-0 z-50"
-          />
+          <BackButton onPress={handleBack} containerClassName="absolute -top-20 left-0 z-50" />
 
           {/* Content Area */}
           <ScrollView
@@ -265,12 +297,11 @@ export default function BiblePreviewScreen() {
             }}
             className="w-full flex-1"
             showsVerticalScrollIndicator={false}>
-            
             {/* Animated Card Preview */}
             <Animated.View
               className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center border-4 border-border mb-6 -mt-8"
-              style={{ 
-                opacity: cardOpacity, 
+              style={{
+                opacity: cardOpacity,
                 transform: [{ translateY: cardAnim }],
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 4 },
@@ -304,11 +335,11 @@ export default function BiblePreviewScreen() {
                 });
                 handleStart();
               }}
+              buttonType="blue"
             />
-      
           </Animated.View>
         </Animated.View>
       </SafeAreaView>
     </ImageBackground>
   );
-} 
+}

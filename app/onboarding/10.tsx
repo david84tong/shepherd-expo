@@ -14,7 +14,7 @@ import * as Notifications from 'expo-notifications';
 import analytics from '../../utils/analytics';
 import { useNotificationStore, NotificationTimeOption } from '../stores/notificationStore';
 import i18n from '../utils/i18n';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 import { hapticLight } from '~/utils/haptics';
 
 export default function OnboardingReminderTimeScreen() {
@@ -101,7 +101,7 @@ export default function OnboardingReminderTimeScreen() {
     try {
       hapticLight();
     } catch (error) {
-      console.log('Haptics not available');
+      appLog('Haptics not available');
     }
 
     // Track analytics event
@@ -120,21 +120,21 @@ export default function OnboardingReminderTimeScreen() {
     const isNotificationsEnabled = time !== 'none';
 
     if (isNotificationsEnabled) {
-      console.log('📱 Onboarding: User wants notifications, checking permissions');
+      appLog('📱 Onboarding: User wants notifications, checking permissions');
 
       // Check for notification permissions
       const { status } = await Notifications.getPermissionsAsync();
-      console.log(`📱 Current notification permission status: ${status}`);
+      appLog(`📱 Current notification permission status: ${status}`);
 
       if (status !== 'granted') {
         // Request permission if not already granted
-        console.log('📱 Onboarding: Requesting notification permissions');
+        appLog('📱 Onboarding: Requesting notification permissions');
         const { status: newStatus } = await Notifications.requestPermissionsAsync();
-        console.log(`📱 New notification permission status: ${newStatus}`);
+        appLog(`📱 New notification permission status: ${newStatus}`);
 
         if (newStatus !== 'granted') {
           // Alert user that notifications won't work without permission
-          console.log('📱 Onboarding: Notification permission denied');
+          appLog('📱 Onboarding: Notification permission denied');
           Alert.alert(
             i18n.t('onboarding_reminder_time_permission_title'),
             i18n.t('onboarding_reminder_time_permission_desc'),
@@ -159,7 +159,7 @@ export default function OnboardingReminderTimeScreen() {
         }
       }
 
-      console.log('📱 Onboarding: Scheduling both daily reminder and streak notifications');
+      appLog('📱 Onboarding: Scheduling both daily reminder and streak notifications');
 
       // Enable notifications in the store
       setNotificationsEnabled(true);
@@ -170,29 +170,29 @@ export default function OnboardingReminderTimeScreen() {
       // Schedule the daily reminder notification using the notificationStore
       try {
         await scheduleDailyReminder(time as NotificationTimeOption);
-        console.log(`📱 Onboarding: Successfully scheduled daily reminder for ${time}`);
+        appLog(`📱 Onboarding: Successfully scheduled daily reminder for ${time}`);
       } catch (error) {
-        console.log('📱 Onboarding: Error scheduling daily reminder:', error);
+        appLog('📱 Onboarding: Error scheduling daily reminder:', error);
       }
 
       // Also schedule streak warning notifications
       try {
         await scheduleStreakReminders();
-        console.log('📱 Onboarding: Successfully scheduled streak notifications');
+        appLog('📱 Onboarding: Successfully scheduled streak notifications');
       } catch (error) {
-        console.log('📱 Onboarding: Error scheduling streak notifications:', error);
+        appLog('📱 Onboarding: Error scheduling streak notifications:', error);
       }
 
       // List all scheduled notifications for debugging
       await listScheduledNotifications();
     } else {
-      console.log('📱 Onboarding: User opted out of notifications');
+      appLog('📱 Onboarding: User opted out of notifications');
       // Disable notifications in the store
       setNotificationsEnabled(false);
     }
 
     // Navigate to the next screen
-    router.push('/onboarding/LoadingScreen');
+    router.push('/onboarding/rating');
   };
 
   const options = [

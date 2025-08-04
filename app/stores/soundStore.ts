@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio, AVPlaybackStatus } from 'expo-av';
+import { appLog } from '../helper/helper';
 
 interface SoundState {
   backgroundMusicEnabled: boolean;
@@ -23,6 +24,7 @@ interface SoundState {
   playJournalingSuccessSound: () => Promise<void>;
   playTrifectaCompleteSound: () => Promise<void>;
   playFlameSound: () => Promise<void>;
+  playChestOpeningSound: () => Promise<void>;
 }
 
 export const useSoundStore = create<SoundState>()(
@@ -56,7 +58,7 @@ export const useSoundStore = create<SoundState>()(
       },
 
       playBackgroundMusic: async () => {
-        console.log("START PLAYING MUSIC ======>")
+        appLog("START PLAYING MUSIC ======>")
         try {
           // Configure audio if not already configured
           if (!get().isAudioConfigured) {
@@ -79,7 +81,7 @@ export const useSoundStore = create<SoundState>()(
             require('../../assets/sounds/Shepherd_Background_Sound.m4a'),
             { 
               isLooping: true, 
-              volume: 0.5,
+              volume: 0.25,
               progressUpdateIntervalMillis: 100,
               shouldPlay: true,
               androidImplementation: 'MediaPlayer',
@@ -88,7 +90,7 @@ export const useSoundStore = create<SoundState>()(
           set({ backgroundSound: sound });
           await sound.playAsync();
         } catch (error) {
-          console.log('Error playing background music:', error);
+          appLog('Error playing background music:', error);
         }
       },
 
@@ -102,7 +104,7 @@ export const useSoundStore = create<SoundState>()(
             set({ backgroundSound: null });
           }
         } catch (error) {
-          console.log('Error stopping background music:', error);
+          appLog('Error stopping background music:', error);
         }
       },
 
@@ -131,14 +133,14 @@ export const useSoundStore = create<SoundState>()(
             require('../../assets/sounds/Bread_Eating.m4a'),
             { 
               isLooping: true,
-              // volume: 0.6,
+              volume: 0.3,
               androidImplementation: 'MediaPlayer',
             }
           );
           set({ breadEatingSound: sound });
           await sound.playAsync();
         } catch (error) {
-          console.log('Error playing bread eating sound:', error);
+          appLog('Error playing bread eating sound:', error);
         }
       },
 
@@ -151,7 +153,7 @@ export const useSoundStore = create<SoundState>()(
             set({ breadEatingSound: null });
           }
         } catch (error) {
-          console.log('Error stopping bread eating sound:', error);
+          appLog('Error stopping bread eating sound:', error);
         }
       },
 
@@ -172,7 +174,7 @@ export const useSoundStore = create<SoundState>()(
           const { sound } = await Audio.Sound.createAsync(
             require('../../assets/sounds/Shepherd_Button_Sound.m4a'),
             { 
-              volume: 0.7,
+              volume: 0.5,
               androidImplementation: 'MediaPlayer',
             }
           );
@@ -184,7 +186,7 @@ export const useSoundStore = create<SoundState>()(
             }
           });
         } catch (error) {
-          console.log('Error playing button sound:', error);
+          appLog('Error playing button sound:', error);
         }
       },
 
@@ -217,7 +219,7 @@ export const useSoundStore = create<SoundState>()(
             }
           });
         } catch (error) {
-          console.log('Error playing disabled sound:', error);
+          appLog('Error playing disabled sound:', error);
         }
       },
 
@@ -238,7 +240,7 @@ export const useSoundStore = create<SoundState>()(
           const { sound } = await Audio.Sound.createAsync(
             require('../../assets/sounds/Prayer_Success.m4a'),
             { 
-              volume: 0.7,
+              volume: 0.25,
               androidImplementation: 'MediaPlayer',
             }
           );
@@ -250,7 +252,7 @@ export const useSoundStore = create<SoundState>()(
             }
           });
         } catch (error) {
-          console.log('Error playing prayer success sound:', error);
+          appLog('Error playing prayer success sound:', error);
         }
       },
 
@@ -271,7 +273,7 @@ export const useSoundStore = create<SoundState>()(
           const { sound } = await Audio.Sound.createAsync(
             require('../../assets/sounds/Journaling_Success.m4a'),
             { 
-              volume: 0.7,
+              volume: 0.25,
               androidImplementation: 'MediaPlayer',
             }
           );
@@ -283,7 +285,7 @@ export const useSoundStore = create<SoundState>()(
             }
           });
         } catch (error) {
-          console.log('Error playing journaling success sound:', error);
+          appLog('Error playing journaling success sound:', error);
         }
       },
 
@@ -304,7 +306,7 @@ export const useSoundStore = create<SoundState>()(
           const { sound } = await Audio.Sound.createAsync(
             require('../../assets/sounds/Chest_Opening.m4a'),
             { 
-              volume: 0.7,
+              volume: 0.25,
               androidImplementation: 'MediaPlayer',
             }
           );
@@ -316,7 +318,7 @@ export const useSoundStore = create<SoundState>()(
             }
           });
         } catch (error) {
-          console.log('Error playing trifecta complete sound:', error);
+          appLog('Error playing trifecta complete sound:', error);
         }
       },
 
@@ -348,7 +350,40 @@ export const useSoundStore = create<SoundState>()(
             }
           });
         } catch (error) {
-          console.log('Error playing flame sound:', error);
+          appLog('Error playing flame sound:', error);
+        }
+      },
+
+      playChestOpeningSound: async () => {
+        if (!get().soundEffectsEnabled) return;
+        try {
+          // Configure audio if not already configured
+          if (!get().isAudioConfigured) {
+            await Audio.setAudioModeAsync({
+              playsInSilentModeIOS: true,
+              staysActiveInBackground: true,
+              shouldDuckAndroid: true,
+              playThroughEarpieceAndroid: false,
+            });
+            set({ isAudioConfigured: true });
+          }
+
+          const { sound } = await Audio.Sound.createAsync(
+            require('../../assets/sounds/Chest_Opening.m4a'),
+            { 
+              volume: 0.25,
+              androidImplementation: 'MediaPlayer',
+            }
+          );
+          await sound.playAsync();
+          sound.setOnPlaybackStatusUpdate(async (status: AVPlaybackStatus) => {
+            if (!status.isLoaded) return;
+            if (status.didJustFinish) {
+              await sound.unloadAsync();
+            }
+          });
+        } catch (error) {
+          appLog('Error playing chest opening sound:', error);
         }
       },
     }),

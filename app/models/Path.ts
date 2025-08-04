@@ -3,6 +3,7 @@
 // revert too this later
 
 import { ImageSourcePropType } from 'react-native';
+import { appLog } from '../helper/helper';
 
 // Represents a range of chapters within a specific book
 export interface BibleReference {
@@ -211,7 +212,7 @@ export const BIBLE_PATHS: Path[] = [
     description:
       'Travel from the dawn of creation to the death of Joseph. These origin stories lay the foundation for every major theme that follows in Scripture.',
     image: require('../../assets/icons/noahsArc.png'),
-    riveName: 'homeLamb',
+    riveName: 'home_lamb',
     artboardName: 'lamb-reading',
     units: [
       {
@@ -337,7 +338,7 @@ export const BIBLE_PATHS: Path[] = [
     description:
       "Witness God break Israel's chains and forge a nation by covenant at Sinai. Liberation is not merely freedom from Pharaoh but freedom for worship and holy living.",
     image: require('../../assets/icons/pyramids.png'),
-    riveName: 'homeLamb',
+    riveName: 'home_lamb',
     artboardName: 'lamb-idle',
     units: [
       /* 1 ─ Bondage & Moses’ Birth ─ Ex 1‑4  (unchanged) */
@@ -459,7 +460,7 @@ export const BIBLE_PATHS: Path[] = [
     description:
       'Leviticus instructs a redeemed people how to live with a holy God, while Numbers and Deuteronomy chronicle forty years of wandering discipline. These books prove that grace precedes law and that hearts, not geography, determine readiness for promise.',
     image: require('../../assets/icons/wilderness.png'),
-    riveName: 'homeLamb',
+    riveName: 'home_lamb',
     artboardName: 'lamb-eating',
     units: [
       /* 1 ─ Offerings & Consecration ─ Lev 1‑5 */
@@ -701,7 +702,7 @@ export const BIBLE_PATHS: Path[] = [
     description:
       "From conquest to exile, Israel's monarchy rises, fractures, and falls while prophets call kings back to covenant loyalty. These narratives show that political power without spiritual fidelity ends in ruin.",
     image: require('../../assets/icons/castle.png'),
-    riveName: 'homeLamb',
+    riveName: 'home_lamb',
     artboardName: 'lamb-drinking',
     units: [
       {
@@ -876,7 +877,7 @@ export const BIBLE_PATHS: Path[] = [
     icon: 'bulb',
     description: `Eight wisdom-psalm clusters that sharpen discernment, sustain trust, and ignite lifelong delight in God's Word.`,
     image: require('../../assets/icons/owlIcon.png'),
-    riveName: 'homeLamb',
+    riveName: 'home_lamb',
     artboardName: 'lamb-reading',
     units: [
       {
@@ -1001,7 +1002,7 @@ export const BIBLE_PATHS: Path[] = [
     description:
       'Isaiah, Jeremiah, Ezekiel, and Daniel thunder judgment yet spotlight hope in a coming Messiah and restored creation. Their visions stretch from their own troubled century to the very end of days.',
     image: require('../../assets/icons/oracle.png'),
-    riveName: 'homeLamb',
+    riveName: 'home_lamb',
     artboardName: 'lamb-sleepy',
     units: [
       {
@@ -1117,7 +1118,7 @@ export const BIBLE_PATHS: Path[] = [
     description:
       'Twelve shorter books amplify covenant themes of justice, mercy, and eschatological hope. Though "minor" in length, their messages are major in urgency.',
     image: require('../../assets/icons/scale.png'),
-    riveName: 'successLamb',
+    riveName: 'success_lamb',
     artboardName: 'heart-hold',
     units: [
       {
@@ -1222,7 +1223,7 @@ export const BIBLE_PATHS: Path[] = [
     description:
       "Four complementary portraits unveil Jesus' birth, ministry, sacrifice, and resurrection. Reading them side-by-side highlights both unique emphases and a united proclamation: the kingdom has come.",
     image: require('../../assets/icons/jesus.png'),
-    riveName: 'successLamb',
+    riveName: 'success_lamb',
     artboardName: 'success-stars',
     units: [
       {
@@ -1377,7 +1378,7 @@ export const BIBLE_PATHS: Path[] = [
     description:
       "Luke's sequel chronicles how the risen Christ continues His work through the Spirit-empowered church. Geographic and ethnic barriers crumble as the gospel races from Jerusalem to Rome.",
     image: require('../../assets/icons/church.png'),
-    riveName: 'successLamb',
+    riveName: 'success_lamb',
     artboardName: 'lamb-eyes',
     units: [
       {
@@ -1485,7 +1486,7 @@ export const BIBLE_PATHS: Path[] = [
     description:
       "These epistles apply Christ's gospel to doctrine, discipleship, and daily life. Written to diverse churches and leaders, they trace a roadmap from sin to glory and from chaos to order.",
     image: require('../../assets/icons/apostlePaul.png'),
-    riveName: 'successLamb',
+    riveName: 'success_lamb',
     artboardName: 'success-hearts',
     units: [
       {
@@ -1680,7 +1681,7 @@ export const BIBLE_PATHS: Path[] = [
     description:
       'Written by several authors, these letters emphasize authentic faith expressed in love and endurance. They broaden the pastoral voice beyond Paul and anchor believers amid trials and heresies.',
     image: require('../../assets/icons/epistles.png'),
-    riveName: 'successLamb',
+    riveName: 'success_lamb',
     artboardName: 'chest',
     units: [
       {
@@ -1785,7 +1786,7 @@ export const BIBLE_PATHS: Path[] = [
     description:
       "John's apocalypse peels back the curtain on cosmic conflict and ultimate victory. Symbolic visions strengthen saints to conquer by the Lamb's blood and faithful testimony.",
     image: require('../../assets/icons/hell.png'),
-    riveName: 'homeLamb',
+    riveName: 'home_lamb',
     artboardName: 'lamb-angry',
     units: [
       {
@@ -2007,10 +2008,54 @@ const chunk = <T,>(arr: T[], size: number): T[][] => {
  * suffix added to the title & id.
  */
 const splitUnit = (unit: Unit, chaptersPerUnit = 2): Unit[] => {
-  // Only handle simple single-book references for now; if an array or multi-book
-  // reference comes in we leave it unchanged.
-  console.log("splitting unit", unit);
-  if (Array.isArray(unit.reference)) return [unit];
+  appLog("splitting unit", unit.id, "with chaptersPerUnit:", chaptersPerUnit);
+  
+  // Handle array of references
+  if (Array.isArray(unit.reference)) {
+    // For array references, split each reference individually
+    const splitReferences: BibleReference[] = [];
+    
+    unit.reference.forEach(ref => {
+      if (ref.chapters.length <= chaptersPerUnit) {
+        splitReferences.push(ref);
+      } else {
+        // Split this reference into chunks
+        const chapterChunks = chunk(ref.chapters, chaptersPerUnit);
+        chapterChunks.forEach(chapArr => {
+          splitReferences.push({
+            ...ref,
+            chapters: chapArr
+          });
+        });
+      }
+    });
+    
+    // If we have multiple split references, create separate units
+    if (splitReferences.length > 1) {
+      return splitReferences.map((ref, idx) => {
+        const part = idx + 1;
+        return {
+          ...unit,
+          id: `${unit.id}-p${part}`,
+          title: `${unit.title} (Part ${part})`,
+          description: `Part ${part} of ${splitReferences.length}: ${unit.description}`,
+          reference: ref,
+        } as Unit;
+      });
+    } else {
+      // Single reference after splitting
+      return [{
+        ...unit,
+        reference: splitReferences[0]
+      }];
+    }
+  }
+
+  // Handle single reference
+  if (!unit.reference || !unit.reference.chapters) {
+    console.warn(`Unit ${unit.id} has invalid reference structure:`, unit.reference);
+    return [unit];
+  }
 
   const { chapters } = unit.reference;
   if (chapters.length <= chaptersPerUnit) {
@@ -2019,6 +2064,7 @@ const splitUnit = (unit: Unit, chaptersPerUnit = 2): Unit[] => {
 
   const chapterChunks = chunk(chapters, chaptersPerUnit);
   const totalParts = chapterChunks.length;
+  
   return chapterChunks.map((chapArr, idx) => {
     const part = idx + 1;
     return {
@@ -2039,9 +2085,20 @@ export const generateShorterBiblePaths = (
   paths: Path[],
   chaptersPerUnit = 2
 ): Path[] => {
-  console.log('generating shorter bible paths', paths);
+  appLog('generating shorter bible paths with chaptersPerUnit:', chaptersPerUnit);
+  
   return paths.map((p) => {
-    const newUnits: Unit[] = p.units.flatMap((u) => splitUnit(u, chaptersPerUnit));
+    appLog(`Processing path: ${p.id} with ${p.units.length} units`);
+    
+    const newUnits: Unit[] = p.units.flatMap((u) => {
+      const splitUnits = splitUnit(u, chaptersPerUnit);
+      if (splitUnits.length > 1) {
+        appLog(`Split unit ${u.id} into ${splitUnits.length} parts`);
+      }
+      return splitUnits;
+    });
+    
+    appLog(`Path ${p.id}: ${p.units.length} original units → ${newUnits.length} new units`);
     return { ...p, units: newUnits };
   });
 };

@@ -13,6 +13,7 @@ import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import { appLog } from '../app/helper/helper';
 import { BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from '../app/models/Path';
 import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
@@ -78,7 +79,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       const bookId = bookChapterSelectorParams.initialBookId || 1;
       const chapter = bookChapterSelectorParams.initialChapter || 1;
 
-      console.log(
+      appLog(
         `📖 [GlobalBookChapterSelector] Sheet opened with bookId: ${bookId}, chapter: ${chapter}`
       );
 
@@ -102,7 +103,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       if (isSelecting) return; // Prevent multiple selections
 
       setIsSelecting(true);
-      console.log(
+      appLog(
         `📖 [GlobalBookChapterSelector] Selected chapter: ${chapter} for book: ${selectedBookId}`
       );
 
@@ -110,7 +111,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
         // Save to pathStore as the last read chapter/verse
         const bookName = bookNames[selectedBookId] || 'Unknown';
         setSavedReading(bookName, selectedBookId, chapter);
-        console.log(
+        appLog(
           `💾 [GlobalBookChapterSelector] Saved to pathStore: ${bookName} (${selectedBookId}) Chapter ${chapter}`
         );
 
@@ -132,7 +133,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
     (bookId: number) => {
       if (bookId === selectedBookId || isSelecting) return; // Prevent unnecessary updates
 
-      console.log(`📖 [GlobalBookChapterSelector] Selected book: ${bookId}`);
+      appLog(`📖 [GlobalBookChapterSelector] Selected book: ${bookId}`);
       setSelectedBookId(bookId);
       setSelectedChapter(1); // Reset to chapter 1 when switching books
       hapticLight();
@@ -141,9 +142,32 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   );
 
   // Close handler
-  const handleClose = useCallback(() => {
-    bottomSheetRef.current?.close();
-  }, []);
+  const handleClose = useCallback(async () => {
+    if (isSelecting) return; // Prevent multiple selections
+
+    setIsSelecting(true);
+    appLog(
+      `📖 [GlobalBookChapterSelector] Done button pressed - saving book: ${selectedBookId}, chapter: ${selectedChapter}`
+    );
+
+    try {
+      // Save to pathStore as the last read chapter/verse
+      const bookName = bookNames[selectedBookId] || 'Unknown';
+      setSavedReading(bookName, selectedBookId, selectedChapter);
+      appLog(
+        `💾 [GlobalBookChapterSelector] Saved to pathStore: ${bookName} (${selectedBookId}) Chapter ${selectedChapter}`
+      );
+
+      if (bookChapterSelectorParams.onSelect) {
+        await bookChapterSelectorParams.onSelect(selectedBookId, selectedChapter);
+      }
+
+      bottomSheetRef.current?.close();
+      hapticLight();
+    } finally {
+      setIsSelecting(false);
+    }
+  }, [selectedBookId, selectedChapter, bookChapterSelectorParams.onSelect, bookNames, setSavedReading, isSelecting]);
 
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
@@ -161,7 +185,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
     if (!bookScrollViewRef.current || !bookItemRefs.current[selectedBookId]) return;
 
     bookItemRefs.current[selectedBookId]?.measureLayout(
-      // @ts-ignore - Known React Native typing issue
+      // @ts-expect-error - Known React Native typing issue
       bookScrollViewRef.current,
       (x: number) => {
         bookScrollViewRef.current?.scrollTo({
@@ -182,7 +206,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   }, [isBookChapterSelectorVisible, selectedBookId, scrollToSelectedBook]);
 
   // Debug logging
-  console.log(
+  appLog(
     `📖 [GlobalBookChapterSelector] Rendering - selectedBookId: ${selectedBookId}, selectedChapter: ${selectedChapter}`
   );
 
@@ -355,9 +379,9 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   closeButtonText: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
     color: '#F7B500', // darkYellow
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
     fontWeight: '600',
   },
   contentContainer: {
@@ -383,9 +407,9 @@ const styles = StyleSheet.create({
     fontSize: 18, // textPrimary
   },
   listTitle: {
-    fontSize: 14,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
     color: '#B89B4C', // description
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
     marginBottom: 8,
     marginLeft: 20,
     textTransform: 'uppercase',

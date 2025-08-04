@@ -132,7 +132,7 @@ const PrayerSettingsModal: React.FC<SettingsModalProps> = ({
             </View>
 
             {/* Guided Prayer Row */}
-            {/* <View style={{
+            <View style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -151,7 +151,7 @@ const PrayerSettingsModal: React.FC<SettingsModalProps> = ({
                 trackColor={{ false: '#E9E2C7', true: '#FF8800' }}
                 thumbColor={guidedPrayerEnabled ? '#FFFFFF' : '#FFFFFF'}
               />
-            </View> */}
+            </View>
 
             {/* Close Button */}
             <TouchableOpacity

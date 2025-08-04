@@ -8,6 +8,7 @@ import pt from '../../locales/pt.json';
 import nl from '../../locales/nl.json';
 import fr from '../../locales/fr.json';
 import de from '../../locales/de.json';
+import { appLog } from '../helper/helper';
 
 // Define supported languages with their display names
 export const SUPPORTED_LANGUAGES = {
@@ -31,22 +32,22 @@ i18n.defaultLocale = 'en';
  */
 export const detectDeviceLanguage = (): { language: SupportedLanguage; isSupported: boolean } => {
   const deviceLocale = Localization.locale;
-  console.log("deviceLocale ===>",deviceLocale);
+  appLog("deviceLocale ===>",deviceLocale);
   
   const baseLocale = deviceLocale.split('-')[0];
-  console.log("baseLocale ==>",baseLocale);
+  appLog("baseLocale ==>",baseLocale);
   
   
   // Check if full locale is supported (e.g., "en-US")
   if (i18n.translations[deviceLocale]) {
-    console.log("i18n.translations[deviceLocale] ==>",i18n.translations[deviceLocale]);
+    appLog("i18n.translations[deviceLocale] ==>",i18n.translations[deviceLocale]);
     
     return { language: deviceLocale as SupportedLanguage, isSupported: true };
   }
   
   // Check if base locale is supported (e.g., "en")
   if (i18n.translations[baseLocale]) {
-    console.log("i18n.translations[baseLocale] ==>",i18n.translations[baseLocale]);
+    appLog("i18n.translations[baseLocale] ==>",i18n.translations[baseLocale]);
     
     return { language: baseLocale as SupportedLanguage, isSupported: true };
   }
@@ -74,7 +75,7 @@ export const getSupportedLanguagesList = () => {
 
 // Initialize language from storage or device locale
 export const initializeLanguage = async () => {
-  console.log("initializeLanguage called====>");
+  appLog("initializeLanguage called====>");
   
   try {
     // Try to get language from storage first
@@ -90,7 +91,7 @@ export const initializeLanguage = async () => {
 
     // Fall back to device locale detection
     const { language } = detectDeviceLanguage();
-    console.log("language =====>",language);
+    appLog("language =====>",language);
     
     i18n.locale = language;
     

@@ -22,7 +22,6 @@ const AnalyticsExampleComponent = () => {
     logScreenView('ExampleScreen', {
       customParam: 'custom value'
     });
-
     // Handle any errors during component initialization
     try {
       // Initialization code...
@@ -41,13 +40,11 @@ const AnalyticsExampleComponent = () => {
     logButtonPress('startReading', 'ExampleScreen', {
       buttonLabel: 'Start Reading'
     });
-
     // Log the spiritual activity
     logSpiritualActivity(AnalyticsEvent.BIBLE_READING_STARTED, {
       bookName: 'Genesis',
       chapter: 1
     });
-
     // Continue with actual functionality...
   };
 

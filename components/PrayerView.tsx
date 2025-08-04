@@ -38,6 +38,7 @@ import i18n from '../app/utils/i18n';
 import { getLevelData } from '~/utils/levelUtils';
 import SuccessMessage from './SuccessMessage';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
+import { appLog } from '~/app/helper/helper';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -106,7 +107,7 @@ const BreatheText: React.FC<{ breathingProgress: Reanimated.SharedValue<number> 
   const textOpacity = useSharedValue(1);
 
   const cycleToNextWord = useCallback(() => {
-    console.log('Cycling to next word');
+    appLog('Cycling to next word');
     setCurrentWordIndex((prevIndex) => (prevIndex + 1) % words.length);
   }, [words.length]);
 
@@ -135,14 +136,14 @@ const BreatheText: React.FC<{ breathingProgress: Reanimated.SharedValue<number> 
     // Detect when we reach the peak (inhale complete)
     if (progress > 0.95 && !hasReachedPeak.current) {
       hasReachedPeak.current = true;
-      console.log('Reached peak - inhale complete');
+      appLog('Reached peak - inhale complete');
     }
 
     // Detect when we return to the bottom after reaching peak (full cycle complete)
     if (hasReachedPeak.current && progress < 0.05 && lastValue > 0.05) {
       hasReachedPeak.current = false;
       cycleCount.current += 1;
-      console.log('Full cycle completed, count:', cycleCount.current);
+      appLog('Full cycle completed, count:', cycleCount.current);
       runOnJS(cycleToNextWord)();
     }
 
@@ -514,7 +515,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
           setGuidedPrayerEnabled(savedGuidedMode === 'true');
         }
 
-        console.log('🙏 Loaded prayer settings from AsyncStorage');
+        appLog('🙏 Loaded prayer settings from AsyncStorage');
       } catch (error) {
         console.error('🙏 Error loading prayer settings:', error);
       }
@@ -528,23 +529,23 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   // Split prayer into sentences when component loads
   useEffect(() => {
-    console.log('🙏 Processing prayer content');
-    console.log('🙏 Current devotional:', currentDevotional?.id, currentDevotional?.bibleReference);
-    console.log('🙏 Devotional prayer available:', !!currentDevotional?.prayer);
-    console.log('🙏 Prayer structure:', typeof currentDevotional?.prayer, currentDevotional?.prayer);
+    appLog('🙏 Processing prayer content');
+    appLog('🙏 Current devotional:', currentDevotional?.id, currentDevotional?.bibleReference);
+    appLog('🙏 Devotional prayer available:', !!currentDevotional?.prayer);
+    appLog('🙏 Prayer structure:', typeof currentDevotional?.prayer, currentDevotional?.prayer);
 
     const prayerText = generatePrayerContent();
-    console.log('🙏 Generated prayer text:', prayerText);
+    appLog('🙏 Generated prayer text:', prayerText);
 
     if (prayerText.trim().length > 0) {
       // Split by periods followed by space or end of string, keeping the period
       const sentences = prayerText
         .split(/(?<=[.!?])\s+/)
         .filter(s => s.trim().length > 0);
-      console.log('🙏 Split into sentences:', sentences);
+      appLog('🙏 Split into sentences:', sentences);
       setPrayerSentences(sentences);
     } else {
-      console.log('🙏 No valid prayer text, setting empty array');
+      appLog('🙏 No valid prayer text, setting empty array');
       setPrayerSentences([]);
     }
   }, [generatePrayerContent]);
@@ -575,7 +576,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   // Debug modal visibility changes
   useEffect(() => {
-    console.log('🔍 showSettingsModal changed to:', showSettingsModal);
+    appLog('🔍 showSettingsModal changed to:', showSettingsModal);
   }, [showSettingsModal]);
 
   // Cleanup timeout on unmount
@@ -755,7 +756,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     try {
       await AsyncStorage.setItem(PRAYER_HAPTICS_KEY, enabled.toString());
       setHapticsEnabled(enabled);
-      console.log('🙏 Saved haptics setting:', enabled);
+      appLog('🙏 Saved haptics setting:', enabled);
     } catch (error) {
       console.error('🙏 Error saving haptics setting:', error);
     }
@@ -763,10 +764,10 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   const saveGuidedPrayerEnabled = useCallback(async (enabled: boolean) => {
     try {
-      console.log('🙏 Saving guided prayer setting:', enabled, 'Modal should stay open');
+      appLog('🙏 Saving guided prayer setting:', enabled, 'Modal should stay open');
       await AsyncStorage.setItem(PRAYER_GUIDED_MODE_KEY, enabled.toString());
       setGuidedPrayerEnabled(enabled);
-      console.log('🙏 Saved guided prayer setting:', enabled, 'Modal should still be open');
+      appLog('🙏 Saved guided prayer setting:', enabled, 'Modal should still be open');
     } catch (error) {
       console.error('🙏 Error saving guided prayer setting:', error);
     }
@@ -813,7 +814,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   // Function to show control row with auto-hide
   const toggleControlRow = useCallback(() => {
-    console.log('🎯 toggleControlRow called! showControlRow:', showControlRow);
+    appLog('🎯 toggleControlRow called! showControlRow:', showControlRow);
 
     // Haptic feedback for every tap
     if (hapticsEnabled) {
@@ -918,7 +919,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       setLastPrayerDate(now);
     },
     handleSettings: () => {
-      console.log('⚙️ Settings button pressed');
+      appLog('⚙️ Settings button pressed');
       // Clear any hide timers when opening settings
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current);
@@ -933,9 +934,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   // Prepare cards to show (up to current index)
   const cardsToShow = [];
 
-  console.log('📋 Preparing prayer cards to show. Current index:', currentIndex);
-  console.log('📋 Total prayer sentences:', prayerSentences.length);
-  console.log('📋 Prayer sentences:', prayerSentences);
+  appLog('📋 Preparing prayer cards to show. Current index:', currentIndex);
+  appLog('📋 Total prayer sentences:', prayerSentences.length);
+  appLog('📋 Prayer sentences:', prayerSentences);
 
   // Add prayer sentences based on current index
   for (let i = 0; i <= currentIndex && i < prayerSentences.length; i++) {
@@ -945,7 +946,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     });
   }
 
-  console.log('📋 Prayer cards to show:', cardsToShow.length, cardsToShow);
+  appLog('📋 Prayer cards to show:', cardsToShow.length, cardsToShow);
 
   // Settings Modal Component - Memoized to prevent re-renders
   const SettingsModal = () => (
@@ -1040,7 +1041,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
           {/* Close Button */}
           <TouchableOpacity
             onPress={() => {
-              console.log('✅ Done button pressed, closing modal');
+              appLog('✅ Done button pressed, closing modal');
               setShowSettingsModal(false);
             }}
             style={{
@@ -1070,6 +1071,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       {showSuccess ? (
         <View style={{ marginHorizontal: 24, flex: 1, marginTop: 24 }}>
           <SuccessMessage
+            screenType="prayer"
             title={i18n.t('prayer_complete')}
             description={i18n.t('prayer_complete_desc')}
             level={levelInfo.level}
@@ -1110,6 +1112,29 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                 }
                 onClose({});
               }
+              // Check streak trigger conditions when user presses "Go Home" from prayer success
+              const homeStore = useHomeStore.getState();
+              const { readingCompleted, sawStreakToday } = homeStore;
+
+              // Only trigger if reading is completed and streak hasn't been shown today
+              if (readingCompleted && !sawStreakToday) {
+
+                // Mark that we've shown the streak screen today
+                homeStore.setSawStreakToday(true);
+
+                // Navigate to streak screen
+               
+                router.push('/streak');
+
+                analytics.logEvent('PrayerView_StreakTriggered_FromGoHome', {
+                  readingCompleted,
+                  sawStreakToday: false,
+                  timestamp: new Date().toISOString()
+                });
+
+                return; // Exit early to prevent further processing
+              }
+
             }}
             onPray={() => {
               // Update lastActivityDate to prevent completion states from being reset
@@ -1147,10 +1172,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
                 // Navigate to bonus screen
                 router.push({
-                  pathname: '/success',
-                  params: {
-                    showStreakScreen: 'true'
-                  }
+                  pathname: '/success'
                 });
 
                 // Reset Rive animation to appropriate state after navigation
@@ -1171,9 +1193,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                       };
                       const targetStateInput = moodToStateInput[currentMood] || 0;
                       riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-                      console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
+                      appLog(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
                     } catch (error) {
-                      console.log('Could not reset Rive state after navigation:', error);
+                      appLog('Could not reset Rive state after navigation:', error);
                     }
                   }
                 }, 1000);
@@ -1276,7 +1298,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                     ) : (
                       <>
                         {cardsToShow.map((card, index) => {
-                          console.log('🎨 Rendering prayer card:', index, card.type, card.content.substring(0, 50));
+                          appLog('🎨 Rendering prayer card:', index, card.type, card.content.substring(0, 50));
                           return (
                             <PrayerCard
                               key={index}

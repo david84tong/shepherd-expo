@@ -1,7 +1,7 @@
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
-  BottomSheetView,
+  BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import React, {
   useCallback,
@@ -100,9 +100,12 @@ const StatsSheet: React.FC<StatsSheetProps> = ({ statsSheetRef }) => {
             opacity: 0.3,
           }}
           backdropComponent={renderBackdrop}>
-          <BottomSheetView style={{ flex: 1 }}>
+          <BottomSheetScrollView
+            style={{ flex: 1 }}
+            bounces={false}
+          >
             <StatsScreen onClose={handleClose} />
-          </BottomSheetView>
+          </BottomSheetScrollView>
         </BottomSheet>
       ) : null}
     </>

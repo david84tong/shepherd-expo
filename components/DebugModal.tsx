@@ -4,11 +4,13 @@ import { useRouter, usePathname } from 'expo-router';
 import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert, TextInput, NativeModules } from 'react-native';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
+import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { useUserStore } from '../app/stores/userStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useDevotionalStore } from '../app/stores/devotionalStore';
+import { useNotificationStore } from '../app/stores/notificationStore';
 import { useAuth, isSignedIn } from '../app/hooks/authHook';
 import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
@@ -17,6 +19,9 @@ import { calculateExpForLevel } from '../utils/levelUtils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import WidgetHowToSheet from './WidgetHowToSheet';
 import { useCheckInStore } from '~/app/stores/checkInStore';
+import dayjs from 'dayjs';
+import { appLog } from '~/app/helper/helper';
+import EvolutionScreen from './EvolutionScreen';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -36,6 +41,7 @@ const ONBOARDING_SCREENS: DebugScreen[] = [
   { name: 'Onboarding 7 - Notifications', route: '/onboarding/7' },
   { name: 'Onboarding 9 - Notification Permission', route: '/onboarding/9' },
   { name: 'Onboarding 10 - Reminder Time', route: '/onboarding/10' },
+  { name: 'Onboarding 11 - Streak Commitment', route: '/onboarding/streakCommitment' },
   { name: 'Loading Screen', route: '/onboarding/LoadingScreen' },
   { name: 'Lamb Growth Explainer', route: '/onboarding/explainer' },
 ];
@@ -76,6 +82,8 @@ export function DebugButton() {
   const [isDebugButtonVisible, setIsDebugButtonVisible] = useState(true);
   const [devotionalUploadModalVisible, setDevotionalUploadModalVisible] = useState(false);
   const [devotionalJsonInput, setDevotionalJsonInput] = useState('');
+  const [evolutionModalVisible, setEvolutionModalVisible] = useState(false);
+  const [evolutionLevel, setEvolutionLevel] = useState(1);
   const { signOut } = useAuth();
 
   // Reference to the success bottom sheet modal
@@ -89,7 +97,7 @@ export function DebugButton() {
 
   // Helper function to safely set Rive skin
   const setRiveSkin = useCallback((skinNumber: number, actionNumber: number = 0) => {
-    console.log('🔍 Debug setRiveSkin called:', {
+    appLog('🔍 Debug setRiveSkin called:', {
       skinNumber,
       actionNumber,
       riveRef: !!riveRef,
@@ -99,17 +107,17 @@ export function DebugButton() {
 
     // Special logging for armor skin
     if (skinNumber === 9) {
-      console.log('🛡️ ARMOR SKIN DEBUG: Attempting to set armor skin (9)');
+      appLog('🛡️ ARMOR SKIN DEBUG: Attempting to set armor skin (9)');
     }
 
     // Update homeStore currentSkin to prevent handleRivePlay from overriding our debug change
     const setCurrentSkin = useHomeStore.getState().setCurrentSkin;
     setCurrentSkin(skinNumber.toString());
-    console.log(`🏠 Updated homeStore currentSkin to: ${skinNumber}`);
+    appLog(`🏠 Updated homeStore currentSkin to: ${skinNumber}`);
 
     if (riveRef && riveRef.current && riveRef.current.setInputState) {
       try {
-        console.log('🎯 Setting Rive skin:', skinNumber, 'action:', actionNumber);
+        appLog('🎯 Setting Rive skin:', skinNumber, 'action:', actionNumber);
 
         // Set action first, then skin
         riveRef.current.setInputState('State Machine 1', 'Action-Number', actionNumber);
@@ -117,11 +125,11 @@ export function DebugButton() {
 
         // Special logging for armor skin
         if (skinNumber === 9) {
-          console.log('🛡️ ARMOR SKIN DEBUG: Successfully called setInputState for skin 9');
+          appLog('🛡️ ARMOR SKIN DEBUG: Successfully called setInputState for skin 9');
 
           // Try to read back the current state if possible
           setTimeout(() => {
-            console.log('🛡️ ARMOR SKIN DEBUG: Checking if skin 9 was applied...');
+            appLog('🛡️ ARMOR SKIN DEBUG: Checking if skin 9 was applied...');
           }, 500);
         }
 
@@ -133,11 +141,11 @@ export function DebugButton() {
           visibilityTime: 2000,
         });
       } catch (error) {
-        console.log(`❌ Error setting skin ${skinNumber}:`, error);
+        appLog(`❌ Error setting skin ${skinNumber}:`, error);
 
         // Special error logging for armor skin
         if (skinNumber === 9) {
-          console.log('🛡️ ARMOR SKIN DEBUG: Failed to set armor skin!', error);
+          appLog('🛡️ ARMOR SKIN DEBUG: Failed to set armor skin!', error);
         }
 
         Toast.show({
@@ -154,11 +162,11 @@ export function DebugButton() {
       if (!riveRef?.current) reasons.push('riveRef.current is null');
       if (!riveRef?.current?.setInputState) reasons.push('setInputState not available');
 
-      console.log('❌ Rive ref not available:', reasons.join(', '));
+      appLog('❌ Rive ref not available:', reasons.join(', '));
 
       // Special logging for armor skin
       if (skinNumber === 9) {
-        console.log('🛡️ ARMOR SKIN DEBUG: Cannot set armor skin - Rive not ready!', reasons);
+        appLog('🛡️ ARMOR SKIN DEBUG: Cannot set armor skin - Rive not ready!', reasons);
       }
 
       Toast.show({
@@ -173,7 +181,7 @@ export function DebugButton() {
 
   // Helper function to safely set Rive action
   const setRiveAction = useCallback((actionNumber: number) => {
-    console.log('🔍 Debug setRiveAction called:', {
+    appLog('🔍 Debug setRiveAction called:', {
       actionNumber,
       riveRef: !!riveRef,
       riveRefCurrent: !!riveRef?.current,
@@ -182,7 +190,7 @@ export function DebugButton() {
 
     if (riveRef && riveRef.current && riveRef.current.setInputState) {
       try {
-        console.log('🎯 Setting Rive action:', actionNumber);
+        appLog('🎯 Setting Rive action:', actionNumber);
         riveRef.current.setInputState('State Machine 1', 'Action-Number', actionNumber);
         Toast.show({
           type: 'success',
@@ -192,7 +200,7 @@ export function DebugButton() {
           visibilityTime: 2000,
         });
       } catch (error) {
-        console.log(`❌ Error setting action ${actionNumber}:`, error);
+        appLog(`❌ Error setting action ${actionNumber}:`, error);
         Toast.show({
           type: 'error',
           text1: `Failed to set action ${actionNumber}`,
@@ -207,7 +215,7 @@ export function DebugButton() {
       if (!riveRef?.current) reasons.push('riveRef.current is null');
       if (!riveRef?.current?.setInputState) reasons.push('setInputState not available');
 
-      console.log('❌ Rive ref not available:', reasons.join(', '));
+      appLog('❌ Rive ref not available:', reasons.join(', '));
       Toast.show({
         type: 'info',
         text1: 'Rive not ready',
@@ -248,7 +256,7 @@ export function DebugButton() {
     if (typeof global !== 'undefined' && (global as any).showHalfModal) {
       (global as any).showHalfModal(params);
     } else {
-      console.log('showHalfModal not available on global object');
+      appLog('showHalfModal not available on global object');
     }
   }, []);
 
@@ -348,8 +356,59 @@ export function DebugButton() {
 
   // Handler to set lamb hearts to a specific value
   const setLambHearts = useCallback((hearts: number) => {
-    useUserStore.getState().setLambHearts(hearts);
-    Alert.alert('Set Hearts', `Lamb hearts set to ${hearts}`);
+    const userStore = useUserStore.getState();
+    userStore.setLambHearts(hearts);
+    
+    // Update lamb mood based on new heart value
+    const getLambMoodByHearts = (hearts: number) => {
+      if (hearts <= 10) return 'lamb-skinny dying';
+      if (hearts <= 20) return 'lamb-angry';
+      if (hearts <= 40) return 'lamb-sleepy';
+      if (hearts <= 80) return 'lamb-idle';
+      return 'lamb-full';
+    };
+    
+    const newMood = getLambMoodByHearts(hearts);
+    userStore.setLambMood(newMood);
+    
+    // Force sync to Firestore
+    syncWithFirestore();
+    
+    // Trigger a re-render of the Rive animation with new mood
+    const homeStore = useHomeStore.getState();
+    const riveRef = homeStore.riveRef;
+    
+    if (riveRef && riveRef.current && riveRef.current.setInputState) {
+      try {
+        // Get the state input for the new mood
+        const moodToStateInput: Record<string, number> = {
+          'lamb-idle': 0,
+          'lamb-sleepy': 4,
+          'lamb-angry': 5,
+          'lamb-chubby dying': 6,
+          'lamb-skinny dying': 7,
+          'smoking': 8,
+          'lamb-full': 3,
+        };
+        
+        const targetStateInput = moodToStateInput[newMood] || 0;
+        riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+        
+        appLog(`Updated lamb hearts to ${hearts}, mood to ${newMood}, Rive state to ${targetStateInput}`);
+        
+        Toast.show({
+          type: 'success',
+          text1: `Hearts set to ${hearts}!`,
+          text2: `Lamb mood: ${newMood}`,
+          position: 'top',
+          visibilityTime: 2000,
+        });
+      } catch (error) {
+        appLog('Error updating Rive state after heart change:', error);
+      }
+    }
+    
+    Alert.alert('Set Hearts', `Lamb hearts set to ${hearts}\nMood: ${newMood}`);
   }, []);
 
   // Sync activity dates with penalty dates
@@ -383,6 +442,7 @@ export function DebugButton() {
             homeStore.setMode('DEFAULT');
             homeStore.setSuccessType(null);
             homeStore.setSawDailyBonus(false); // Reset collected bonus state
+            homeStore.setSawStreakToday(false); // Reset streak shown today flag
 
             // Clear completedReadings, completedPrayers, and completedReflections from userStore
             const userStore = useUserStore.getState();
@@ -397,7 +457,7 @@ export function DebugButton() {
             // Sync with Firestore to save changes
             syncWithFirestore();
 
-            Alert.alert('Reset Complete', 'HomeStore data, collected bonus, and completed readings have been reset.');
+            Alert.alert('Reset Complete', 'HomeStore data, collected bonus, streak flag, and completed readings have been reset.');
           },
         },
       ]
@@ -417,7 +477,7 @@ export function DebugButton() {
           onPress: async () => {
             try {
               // Clear AsyncStorage first to ensure clean slate
-              console.log('Clearing all AsyncStorage data...');
+              appLog('Clearing all AsyncStorage data...');
               await AsyncStorage.clear();
 
               // Reset home store
@@ -452,7 +512,7 @@ export function DebugButton() {
                 visibilityTime: 4000,
               });
             } catch (error) {
-              console.log('Failed to delete all data:', error);
+              appLog('Failed to delete all data:', error);
               Toast.show({
                 type: 'error',
                 text1: 'Failed to delete all data',
@@ -507,7 +567,7 @@ export function DebugButton() {
       if (typeof global !== 'undefined' && (global as any).showPrayerModal) {
         (global as any).showPrayerModal();
       } else {
-        console.log('showPrayerModal not available on global object');
+        appLog('showPrayerModal not available on global object');
       }
     }, 300);
   }, []);
@@ -534,7 +594,7 @@ export function DebugButton() {
               visibilityTime: 3000,
             });
           } catch (error) {
-            console.log('Error signing out:', error);
+            appLog('Error signing out:', error);
             Toast.show({
               type: 'error',
               text1: 'Sign out failed',
@@ -640,9 +700,9 @@ export function DebugButton() {
             // Override any existing document with the same bible reference (document ID)
             shouldOverride = true;
             overriddenCount++;
-            console.log(`Overriding devotional with document ID: ${documentId}`);
-            console.log(`  Existing: ID=${existingId}, Date=${existingDate}`);
-            console.log(`  New: ID=${newId}, Date=${newDate}`);
+            appLog(`Overriding devotional with document ID: ${documentId}`);
+            appLog(`  Existing: ID=${existingId}, Date=${existingDate}`);
+            appLog(`  New: ID=${newId}, Date=${newDate}`);
           } else {
             newCount++;
           }
@@ -653,7 +713,7 @@ export function DebugButton() {
             title: devotional.title || '',
             content: devotional.content || '',
             createdAt: devotional.createdAt || new Date().toISOString(),
-            context: typeof devotional.context === 'object' ? devotional.context.en : devotional.context || '',
+            context: typeof devotional.context === 'object' ? devotional.context : devotional.context || '',
             bibleReference: devotional.verse || devotional.bibleReference || '',
             prayer: typeof devotional.prayer === 'object' ? devotional.prayer : { en: devotional.prayer || '' },
             reflectionPrompt: typeof devotional.reflection === 'object' ? devotional.reflection : { en: devotional.reflection || devotional.reflectionPrompt || '' },
@@ -667,7 +727,7 @@ export function DebugButton() {
 
           // Upload to Firestore (this will override if document exists)
           await docRef.set(formattedDevotional);
-          console.log(`Successfully ${shouldOverride ? 'overrode' : 'uploaded'} devotional with document ID: ${documentId} (Original ID: ${devotional.id})`);
+          appLog(`Successfully ${shouldOverride ? 'overrode' : 'uploaded'} devotional with document ID: ${documentId} (Original ID: ${devotional.id})`);
         } catch (error) {
           errorCount++;
           console.error(`Error uploading devotional ${devotional.id}:`, error);
@@ -707,6 +767,104 @@ export function DebugButton() {
     }
   }, [devotionalJsonInput]);
 
+  const handleSyncFirestoreData = async () => {
+    try {
+      // Get current user ID from Zustand store
+      const userId = useUserStore.getState().id;
+      if (!userId) {
+        Alert.alert('No user ID', 'User ID not found in store.');
+        return;
+      }
+      // Fetch user doc from Firestore
+      const doc = await firestore().collection('users').doc(userId).get();
+      if (!doc.exists) {
+        Alert.alert('Not found', 'No Firestore user document found.');
+        return;
+      }
+      // Call syncFirestoreData with Firestore data
+      const data = doc.data();
+      if (!data) {
+        Alert.alert('No data', 'Firestore document has no data.');
+        return;
+      }
+      await useUserStore.getState().syncFirestoreData(data as any); // Type assertion for UserDoc
+      Toast.show({ type: 'success', text1: 'Synced Firestore data to store!' });
+    } catch (err) {
+      console.error('Sync Firestore error', err);
+      Alert.alert('Sync error', String(err));
+    }
+  };
+
+  // Test custom devotional creation and refresh
+  const handleTestCustomDevotional = async () => {
+    try {
+      appLog('🧪 Testing custom devotional creation...');
+      
+      // Create a test custom devotional
+      const testDevotional = {
+        id: 'test-custom',
+        title: 'Test Custom Devotional',
+        content: 'This is a test custom devotional for debugging.',
+        createdAt: new Date().toISOString(),
+        context: 'This is a test context for debugging purposes.',
+        bibleReference: 'John 3:16',
+        prayer: 'Thank you for this test devotional.',
+        reflectionPrompt: 'What does this test devotional mean to you?',
+        likes: 0,
+        shares: 0,
+        completed: 0,
+        date: dayjs().format('YYYY-MM-DD'),
+        imageURL: 'https://example.com/test.jpg',
+        verse: 'For God so loved the world...'
+      };
+
+      // Use the devotional store to create it
+      await useDevotionalStore.getState().createCustomDevotionalFromCheckIn(testDevotional);
+      
+      Toast.show({ 
+        type: 'success', 
+        text1: 'Test custom devotional created!',
+        text2: 'Check console for details'
+      });
+      
+      appLog('✅ Test custom devotional created successfully');
+    } catch (error) {
+      console.error('❌ Error creating test custom devotional:', error);
+      Toast.show({ 
+        type: 'error', 
+        text1: 'Failed to create test devotional',
+        text2: String(error)
+      });
+    }
+  };
+
+  // Test recent devotionals refresh
+  const handleTestRefreshDevotionals = async () => {
+    try {
+      appLog('🔄 Testing recent devotionals refresh...');
+      
+      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+      if (fetchRecentDevotionals) {
+        await fetchRecentDevotionals();
+        Toast.show({ 
+          type: 'success', 
+          text1: 'Recent devotionals refreshed!',
+          text2: 'Check console for details'
+        });
+        appLog('✅ Recent devotionals refreshed successfully');
+      } else {
+        throw new Error('fetchRecentDevotionals function not available');
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing recent devotionals:', error);
+      Toast.show({ 
+        type: 'error', 
+        text1: 'Failed to refresh devotionals',
+        text2: String(error)
+      });
+    }
+  };
+
   return (
     <>
       {/* Floating Debug Button */}
@@ -736,6 +894,36 @@ export function DebugButton() {
             </View>
 
             <ScrollView className="p-4">
+                {/* Sync Firestore Data Button */}
+                <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">Sync Firestore Data</Text>
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={handleSyncFirestoreData}
+                >
+                  <Text className="font-feather text-base text-textPrimary">Sync Firestore → Store</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">Call syncFirestoreData with Firestore user doc</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Custom Devotional Testing Section */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">Custom Devotional Testing</Text>
+                <TouchableOpacity
+                  className="bg-[#FFE6E6] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
+                  onPress={handleTestCustomDevotional}
+                >
+                  <Text className="font-feather text-base text-textPrimary">Create Test Custom Devotional</Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">Create a test custom devotional for debugging</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-[#E6F3FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={handleTestRefreshDevotionals}
+                >
+                  <Text className="font-feather text-base text-textPrimary">Refresh Recent Devotionals</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">Manually refresh recent devotionals</Text>
+                </TouchableOpacity>
+              </View>
               {/* Toast Message Section */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">Toast Messages</Text>
@@ -758,6 +946,129 @@ export function DebugButton() {
                     <Text className="font-din text-sm text-textPrimary">Info Toast</Text>
                   </TouchableOpacity>
                 </View>
+              </View>
+
+              {/* Notification Testing Section */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">📱 Notification Testing</Text>
+                
+                {/* Notification Permission & Status */}
+                <TouchableOpacity
+                  className="bg-[#F0E6FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
+                  onPress={async () => {
+                    try {
+                      const { status } = await Notifications.getPermissionsAsync();
+                      const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+                      
+                      appLog('📱 Notification Status:', {
+                        permission: status,
+                        scheduledCount: scheduledNotifications.length,
+                        scheduled: scheduledNotifications.map(n => ({
+                          id: n.identifier,
+                          title: n.content.title,
+                          body: n.content.body,
+                          trigger: n.trigger
+                        }))
+                      });
+                      
+                      Alert.alert(
+                        'Notification Status',
+                        `Permission: ${status}\n` +
+                        `Scheduled: ${scheduledNotifications.length} notifications\n\n` +
+                        `Check console for detailed list`
+                      );
+                    } catch (error) {
+                      appLog('Error checking notification status:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Error checking notifications',
+                        text2: String(error),
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Check Notification Status</Text>
+                  <Text className="font-din text-sm text-[#7C6F94] mt-1">
+                    Check permissions & list scheduled notifications
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Immediate Notification */}
+                <TouchableOpacity
+                  className="bg-[#E8F3E0] p-4 rounded-xl my-1.5 border-l-4 border-l-[#A0D468]"
+                  onPress={async () => {
+                    try {
+                      await Notifications.scheduleNotificationAsync({
+                        content: {
+                          title: 'Test Notification 🧪',
+                          body: 'This is a test notification from debug menu',
+                          sound: true,
+                          data: { type: 'test' },
+                        },
+                        trigger: {
+                          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+                          seconds: 3,
+                        },
+                        identifier: 'debug-test-notification',
+                      });
+                      
+                      Toast.show({
+                        type: 'success',
+                        text1: 'Test Notification Scheduled! 📱',
+                        text2: 'Will appear in 3 seconds',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    } catch (error) {
+                      appLog('Error scheduling test notification:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Failed to schedule test notification',
+                        text2: String(error),
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Test Immediate Notification</Text>
+                  <Text className="font-din text-sm text-[#7C927E] mt-1">
+                    Schedule test notification in 3 seconds
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Clear All Notifications */}
+                <TouchableOpacity
+                  className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
+                  onPress={async () => {
+                    try {
+                      await Notifications.cancelAllScheduledNotificationsAsync();
+                      
+                      Toast.show({
+                        type: 'success',
+                        text1: 'All Notifications Cleared! 🗑️',
+                        text2: 'All scheduled notifications have been cancelled',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                      
+                      appLog('📱 All scheduled notifications cleared');
+                    } catch (error) {
+                      appLog('Error clearing notifications:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Failed to clear notifications',
+                        text2: String(error),
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Clear All Notifications</Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">
+                    Cancel all scheduled notifications
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               <View className="mb-4">
@@ -808,7 +1119,7 @@ export function DebugButton() {
                       if (typeof global !== 'undefined' && (global as any).showCheckIn) {
                         (global as any).showCheckIn();
                       } else {
-                        console.log('showCheckIn not available on global object');
+                        appLog('showCheckIn not available on global object');
                       }
                     }, 300);
                   }}>
@@ -925,7 +1236,43 @@ export function DebugButton() {
                       <TouchableOpacity
                         key={hearts}
                         className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
-                        onPress={() => setLambHearts(hearts)}>
+                        onPress={() => {
+                          if (hearts === 0) {
+                            // Special handling for 0 hearts - set to dead state
+                            const userStore = useUserStore.getState();
+                            userStore.setLambHearts(0);
+                            userStore.setLambMood('dead');
+                            
+                            // Force sync to Firestore
+                            syncWithFirestore();
+                            
+                            // Set Rive animation to dead state (8)
+                            const homeStore = useHomeStore.getState();
+                            const riveRef = homeStore.riveRef;
+                            
+                            if (riveRef && riveRef.current && riveRef.current.setInputState) {
+                              try {
+                                riveRef.current.setInputState('State Machine 1', 'Action-Number', 8);
+                                appLog('Set lamb to dead state (0 hearts, Action-Number: 8)');
+                                
+                                Toast.show({
+                                  type: 'info',
+                                  text1: '💀 Lamb is dead!',
+                                  text2: 'Hearts set to 0, animation set to dead state',
+                                  position: 'top',
+                                  visibilityTime: 3000,
+                                });
+                              } catch (error) {
+                                appLog('Error setting Rive to dead state:', error);
+                              }
+                            }
+                            
+                            Alert.alert('💀 Dead', 'Lamb hearts set to 0\nState: Dead');
+                          } else {
+                            // Normal heart setting for other values
+                            setLambHearts(hearts);
+                          }
+                        }}>
                         <Text className="font-din text-sm text-textPrimary">{`${hearts} ❤️`}</Text>
                       </TouchableOpacity>
                     ))}
@@ -962,11 +1309,11 @@ export function DebugButton() {
 
                           // Try to refresh the UI state by updating key properties
                           const updatedLamb = userStore.getLamb();
-                          console.log(`Debug: Set lamb to level ${level} (${newXp} XP)`);
-                          console.log(
+                          appLog(`Debug: Set lamb to level ${level} (${newXp} XP)`);
+                          appLog(
                             `Debug: Level ${level} requires ${xpForLevel} XP, next level needs ${xpForNextLevel} XP`
                           );
-                          console.log(`Debug: Updated lamb: ${JSON.stringify(updatedLamb)}`);
+                          appLog(`Debug: Updated lamb: ${JSON.stringify(updatedLamb)}`);
 
                           Alert.alert(
                             'Level Set',
@@ -984,7 +1331,8 @@ export function DebugButton() {
                   <Text className="font-feather text-base text-textPrimary mb-2">
                     Set Gems
                   </Text>
-                  <TouchableOpacity
+                <View className="flex-row flex-wrap gap-2">
+                <TouchableOpacity
                     className="bg-[#E0FFE0] px-4 py-3 rounded-lg border border-[#4FD675] mb-1 w-32"
                     onPress={() => {
                       const userStore = useUserStore.getState();
@@ -993,7 +1341,7 @@ export function DebugButton() {
                       // Force sync to Firestore
                       syncWithFirestore();
 
-                      console.log('Debug: Set gems to 1000');
+                      appLog('Debug: Set gems to 1000');
 
                       Toast.show({
                         type: 'success',
@@ -1005,6 +1353,28 @@ export function DebugButton() {
                     }}>
                     <Text className="font-din text-sm text-textPrimary text-center">{`10000 💎`}</Text>
                   </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#E0FFE0] px-4 py-3 rounded-lg border border-[#4FD675] mb-1 w-32"
+                    onPress={() => {
+                      const userStore = useUserStore.getState();
+                      userStore.setGens(80);
+
+                      // Force sync to Firestore
+                      syncWithFirestore();
+
+                      appLog('Debug: Set gems to 1000');
+
+                      Toast.show({
+                        type: 'success',
+                        text1: 'Gems Set!',
+                        text2: 'You now have 1000 gems 💎',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary text-center">{`80 💎`}</Text>
+                  </TouchableOpacity>
+                </View>
                 </View>
 
                 {/* Set Streak Count Buttons */}
@@ -1024,7 +1394,7 @@ export function DebugButton() {
                           // Force sync to Firestore
                           syncWithFirestore();
 
-                          console.log(`Debug: Set streak count to ${streak}`);
+                          appLog(`Debug: Set streak count to ${streak}`);
 
                           Toast.show({
                             type: 'success',
@@ -1035,6 +1405,70 @@ export function DebugButton() {
                           });
                         }}>
                         <Text className="font-din text-sm text-textPrimary">{`${streak} 🔥`}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Set Streak Freezes Buttons */}
+                <View className="mb-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    Set Streak Freezes
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {[0, 1, 2, 3, 5].map((freezes) => (
+                      <TouchableOpacity
+                        key={freezes}
+                        className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
+                        onPress={() => {
+                          const userStore = useUserStore.getState();
+                          userStore.setStreakFreezes(freezes);
+
+                          // Force sync to Firestore
+                          syncWithFirestore();
+
+                          appLog(`Debug: Set streak freezes to ${freezes}`);
+
+                          Toast.show({
+                            type: 'success',
+                            text1: 'Streak Freezes Set!',
+                            text2: `Streak freezes set to ${freezes} ❄️`,
+                            position: 'top',
+                            visibilityTime: 3000,
+                          });
+                        }}>
+                        <Text className="font-din text-sm text-textPrimary">{`${freezes} ❄️`}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Test Covenant Success */}
+                <View className="mb-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    🏆 Test Covenant Success
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {[3, 7, 21].map((days) => (
+                      <TouchableOpacity
+                        key={days}
+                        className="bg-[#E0F0FF] px-3 py-2 rounded-lg border border-[#4A90E2] mb-1"
+                        onPress={() => {
+                          //const userStore = useUserStore.getState();
+                          const homeStore = useHomeStore.getState();
+                          homeStore.handleCovenantSuccess(days);
+
+                          appLog(`🏆 Debug: Testing ${days}-day covenant completion`);
+
+                          Toast.show({
+                            type: 'success',
+                            text1: `${days}-Day Covenant!`,
+                            text2: 'Success modal should appear! 🎉',
+                            position: 'top',
+                            visibilityTime: 3000,
+                          });
+                        }}>
+                        <Text className="font-din text-sm text-textPrimary">{`${days} Day 🏆`}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -1064,6 +1498,212 @@ export function DebugButton() {
                   <Text className="font-feather text-base text-white">Test Penalty System</Text>
                   <Text className="font-din text-sm text-white/80 mt-1">
                     Sets up guaranteed penalty trigger
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Streak Freeze Scenario Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-2 border-l-4 border-l-[#4FB8FE]"
+                  onPress={() => {
+                    const now = new Date();
+                    
+                    // Set activity dates to 3 days ago to trigger streak break
+                    const activityDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3);
+                    const activityTimestamp = firestore.Timestamp.fromDate(activityDate);
+                    const userStore = useUserStore.getState();
+                    
+                    userStore.setLastActivityDate(activityTimestamp);
+                    userStore.setLastReadingDate(activityTimestamp);
+                    
+                    // Set streak to 5 and freezes to 2 for testing
+                    userStore.setStreakCount(5);
+                    userStore.setStreakFreezes(2);
+                    
+                    // Set penalty dates to 1 day ago
+                    const penaltyDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+                    const penaltyTimestamp = firestore.Timestamp.fromDate(penaltyDate);
+                    userStore.setLastReadingPenaltyDate(penaltyTimestamp);
+                    
+                    // Force sync to Firestore
+                    syncWithFirestore();
+                    
+                    Alert.alert(
+                      'Streak Freeze Test Setup',
+                      'Setup complete:\n' +
+                      '• Streak: 5\n' +
+                      '• Freezes: 2\n' +
+                      '• Last activity: 3 days ago\n' +
+                      '• Next app open should use freeze!\n\n' +
+                      'Now use "Force Check Penalties" to trigger the freeze.',
+                      [
+                        { text: 'OK' },
+                        { 
+                          text: 'Force Check Now', 
+                          onPress: async () => {
+                            try {
+                              // Import and trigger the penalty check
+                              const streakHook = require('../app/hooks/streakHook');
+                              await streakHook.checkStreakAndApplyPenalties();
+                              
+                              Alert.alert(
+                                'Freeze Applied!',
+                                'Check the StreakScreen to see the frozen day with light blue indicator! ❄️'
+                              );
+                            } catch (error) {
+                              appLog('Error triggering streak penalty check:', error);
+                              Alert.alert('Error', 'Failed to trigger penalty check');
+                            }
+                          }
+                        }
+                      ]
+                    );
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Test Streak Freeze</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Setup scenario to trigger freeze usage
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Streak Freeze Modal Button */}
+                <TouchableOpacity
+                  className="bg-[#F0F8FF] p-4 rounded-xl my-2 border-l-4 border-l-[#87CEEB]"
+                  onPress={() => {
+                    setModalVisible(false);
+                    
+                    // Show streak freeze bottom sheet directly
+                    setTimeout(() => {
+                      if (typeof global !== 'undefined' && (global as any).showStreakFreezeModal) {
+                        (global as any).showStreakFreezeModal();
+                      } else {
+                        appLog('showStreakFreezeModal not available on global object');
+                        Toast.show({
+                          type: 'info',
+                          text1: 'Streak Freeze Sheet',
+                          text2: 'Global function not available yet',
+                          position: 'top',
+                          visibilityTime: 3000,
+                        });
+                      }
+                    }, 300);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Show Freeze Sheet</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Test the streak freeze bottom sheet
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Streak Freeze Visual Display */}
+                <TouchableOpacity
+                  className="bg-[#ADD8E6] p-4 rounded-xl my-2 border-l-4 border-l-white"
+                  onPress={() => {
+                    const userStore = useUserStore.getState();
+                    
+                    // Add some fake streak freeze used dates for testing
+                    const today = new Date();
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 2);
+                    const twoDaysAgo = new Date(today);
+                    twoDaysAgo.setDate(twoDaysAgo.getDate() - 3);
+                    const fiveDaysAgo = new Date(today);
+                    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 6);
+                    
+                    const testFreezeUsedDates = [
+                      yesterday.toISOString().split('T')[0],
+                      fiveDaysAgo.toISOString().split('T')[0]
+                    ];
+                    
+                    userStore.setStreakFreezeUsedDates(testFreezeUsedDates);
+                    
+                    // Also set a current streak and remaining freezes
+                    userStore.setStreakCount(7);
+                    userStore.setStreakFreezes(1);
+                    
+                    // Force sync to Firestore
+                    syncWithFirestore();
+                    
+                    appLog('Debug: Added test streak freeze dates:', testFreezeUsedDates);
+                    
+                    Alert.alert(
+                      'Streak Freeze Visual Test',
+                      `Added freeze usage for:\n• ${yesterday.toLocaleDateString()}\n• ${fiveDaysAgo.toLocaleDateString()}\n\nGo to StreakScreen to see the light blue frozen days! ❄️`,
+                      [
+                        { text: 'OK' },
+                        { 
+                          text: 'Go to StreakScreen', 
+                          onPress: () => {
+                            setModalVisible(false);
+                            // Navigate to StreakScreen (assuming it can be navigated to)
+                            router.push('/streak');
+                          }
+                        }
+                      ]
+                    );
+                  }}>
+                  <Text className="font-feather text-base text-white">Test Freeze Visuals ❄️</Text>
+                  <Text className="font-din text-sm text-white mt-1">
+                    Add fake freeze dates to see light blue indicators
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Clear Streak Freeze Test Data */}
+                <TouchableOpacity
+                  className="bg-[#FFF8DC] p-4 rounded-xl my-2 border-l-4 border-l-[#FFD700]"
+                  onPress={() => {
+                    const userStore = useUserStore.getState();
+                    userStore.setStreakFreezeUsedDates([]);
+                    
+                    // Force sync to Firestore
+                    syncWithFirestore();
+                    
+                    appLog('Debug: Cleared all streak freeze used dates');
+                    
+                    Toast.show({
+                      type: 'success',
+                      text1: 'Cleared Freeze Data',
+                      text2: 'All streak freeze visual indicators removed',
+                      position: 'top',
+                      visibilityTime: 3000,
+                    });
+                  }}>
+                  <Text className="font-feather text-base text-[#8B7D3A]">Clear Freeze Visuals</Text>
+                  <Text className="font-din text-sm text-[#8B7D3A] mt-1">
+                    Remove all freeze visual indicators
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Streak Freeze Notification Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-2 border-l-4 border-l-[#4FB8FE]"
+                  onPress={async () => {
+                    try {
+                      const notificationStore = useNotificationStore.getState();
+                      
+                      // Schedule a test freeze notification with 2 freezes remaining
+                      await notificationStore.scheduleStreakFreezeReminder(2);
+                      
+                      Toast.show({
+                        type: 'success',
+                        text1: 'Freeze Notification Scheduled! ❄️',
+                        text2: 'Will notify in 3 days at 9 AM about 2 freezes left',
+                        position: 'top',
+                        visibilityTime: 4000,
+                      });
+                      
+                      appLog('❄️ Test freeze notification scheduled for 3 days from now at 9 AM');
+                    } catch (error) {
+                      appLog('Error scheduling test freeze notification:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Failed to schedule notification',
+                        text2: String(error),
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Test Freeze Notification</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Schedule freeze reminder for 3 days from now
                   </Text>
                 </TouchableOpacity>
 
@@ -1192,7 +1832,7 @@ export function DebugButton() {
                               visibilityTime: 3000,
                             });
                             
-                            console.log('✅ Check-in data reset successfully');
+                            appLog('✅ Check-in data reset successfully');
                           },
                         },
                       ]
@@ -1258,7 +1898,7 @@ export function DebugButton() {
                 <TouchableOpacity
                   className="bg-[#E8F3E0] p-4 rounded-xl my-1.5 border-l-4 border-l-[#A0D468]"
                   onPress={() => {
-                    console.log('🔍 DEBUG: Manual devotional fetch triggered from DebugModal');
+                    appLog('🔍 DEBUG: Manual devotional fetch triggered from DebugModal');
                     const devotionalStore = useDevotionalStore.getState();
                     devotionalStore.fetchTodaysDevotional();
                   }}>
@@ -1274,7 +1914,7 @@ export function DebugButton() {
                 <TouchableOpacity
                   className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
                   onPress={() => {
-                    console.log('📱 DEBUG: Manual widget refresh triggered from DebugModal');
+                    appLog('📱 DEBUG: Manual widget refresh triggered from DebugModal');
                     const devotionalStore = useDevotionalStore.getState();
                     devotionalStore.refreshWidgetData();
                     Toast.show({
@@ -1297,7 +1937,7 @@ export function DebugButton() {
                 <TouchableOpacity
                   className="bg-[#F0E6FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
                   onPress={() => {
-                    console.log('📱 DEBUG: Showing widget guide from DebugModal');
+                    appLog('📱 DEBUG: Showing widget guide from DebugModal');
                     setModalVisible(false);
                     setShowWidgetSheet(true);
                   }}>
@@ -1313,13 +1953,13 @@ export function DebugButton() {
                 <TouchableOpacity
                   className="bg-[#FFE0E8] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF80A0]"
                   onPress={() => {
-                    console.log('📱 DEBUG: Testing WidgetDataSharer native module');
-                    console.log('📱 Available NativeModules:', Object.keys(NativeModules));
+                    appLog('📱 DEBUG: Testing WidgetDataSharer native module');
+                    appLog('📱 Available NativeModules:', Object.keys(NativeModules));
 
                     try {
                       const { WidgetDataSharer } = NativeModules;
                       if (WidgetDataSharer) {
-                        console.log('📱 WidgetDataSharer found:', {
+                        appLog('📱 WidgetDataSharer found:', {
                           hasUpdateVerseData: typeof WidgetDataSharer.updateVerseData === 'function',
                           hasUpdateWidgetStatus: typeof WidgetDataSharer.updateWidgetStatus === 'function',
                         });
@@ -1334,7 +1974,7 @@ export function DebugButton() {
                           visibilityTime: 3000,
                         });
                       } else {
-                        console.log('📱 WidgetDataSharer not found in NativeModules');
+                        appLog('📱 WidgetDataSharer not found in NativeModules');
                         Toast.show({
                           type: 'error',
                           text1: 'Native Module Missing',
@@ -1366,7 +2006,7 @@ export function DebugButton() {
                 <TouchableOpacity
                   className="bg-[#FFF4D9] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FCD34D]"
                   onPress={() => {
-                    console.log('🔍 DEBUG: Clearing devotional data');
+                    appLog('🔍 DEBUG: Clearing devotional data');
                     const devotionalStore = useDevotionalStore.getState();
                     devotionalStore.reset();
                     Alert.alert('Devotional Data Cleared', 'All devotional data has been reset.');
@@ -1384,7 +2024,7 @@ export function DebugButton() {
                   className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
                   onPress={async () => {
                     try {
-                      console.log('🔍 DEBUG: Clearing path and nextUnit data from store and AsyncStorage');
+                      appLog('🔍 DEBUG: Clearing path and nextUnit data from store and AsyncStorage');
                       const pathStore = usePathStore.getState();
                       
                       // Clear path data from store
@@ -1394,7 +2034,7 @@ export function DebugButton() {
                       pathStore.setNextUnitPreview(null);
                       
                       // Clear path data from AsyncStorage
-                      console.log('🗑️ Clearing AsyncStorage key: shepherd-path-storage');
+                      appLog('🗑️ Clearing AsyncStorage key: shepherd-path-storage');
                       await AsyncStorage.removeItem('shepherd-path-storage');
                       
                       // Also clear any user selectedPathId from userStore
@@ -1448,7 +2088,7 @@ export function DebugButton() {
                       riveRefType: typeof riveRef?.current,
                       riveRefKeys: riveRef?.current ? Object.keys(riveRef.current) : [],
                     };
-                    console.log('🔍 Complete Rive Debug Info:', debugInfo);
+                    appLog('🔍 Complete Rive Debug Info:', debugInfo);
                     Toast.show({
                       type: 'info',
                       text1: 'Debug Info Logged',
@@ -1527,7 +2167,7 @@ export function DebugButton() {
                   <TouchableOpacity
                     className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-[#A0D468] mb-1"
                     onPress={() => {
-                      console.log('🛡️ Attempting to set Armor skin (9)');
+                      appLog('🛡️ Attempting to set Armor skin (9)');
                       setRiveSkin(9, 0);
                     }}>
                     <Text className="font-din text-sm text-textPrimary">9 Armor Skin</Text>
@@ -1537,20 +2177,54 @@ export function DebugButton() {
                   <TouchableOpacity
                     className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
                     onPress={() => {
-                      console.log('🔟 Testing skin 10');
+                      appLog('🔥 Setting Phoenix skin (10)');
                       setRiveSkin(10, 0);
                     }}>
-                    <Text className="font-din text-sm text-textPrimary">10 Test</Text>
+                    <Text className="font-din text-sm text-textPrimary">10 Phoenix</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     className="bg-[#E0FFE0] px-3 py-2 rounded-lg border border-[#4FD675] mb-1"
                     onPress={() => {
-                      console.log('🛡️ Testing armor with action 1');
+                      appLog('🛡️ Testing armor with action 1');
                       setRiveSkin(9, 1);
                     }}>
                     <Text className="font-din text-sm text-textPrimary">9 Armor + Action</Text>
                   </TouchableOpacity>
+                </View>
+                
+                {/* Evolution Animation Section */}
+                <View className="mt-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    Evolution Animation
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    <TouchableOpacity
+                      className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
+                      onPress={() => {
+                        appLog('🦋 Evolution Animation - Level 1');
+                        setEvolutionLevel(1);
+                        setModalVisible(false);
+                        setTimeout(() => {
+                          setEvolutionModalVisible(true);
+                        }, 300);
+                      }}>
+                      <Text className="font-din text-sm text-textPrimary">Evolve 1</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      className="bg-[#E8E0FF] px-3 py-2 rounded-lg border border-[#9B7FFE] mb-1"
+                      onPress={() => {
+                        appLog('🦋 Evolution Animation - Level 2');
+                        setEvolutionLevel(2);
+                        setModalVisible(false);
+                        setTimeout(() => {
+                          setEvolutionModalVisible(true);
+                        }, 300);
+                      }}>
+                      <Text className="font-din text-sm text-textPrimary">Evolve 2</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
 
@@ -1602,6 +2276,83 @@ export function DebugButton() {
                     </View>
                   </View>
                 ))}
+              </View>
+
+              {/* Show Current Covenant Status */}
+              <View className="mb-4">
+                <Text className="font-feather text-base text-textPrimary mb-2">
+                  📊 Current Covenant Status
+                </Text>
+                <TouchableOpacity
+                  className="bg-[#F0F0FF] px-4 py-3 rounded-lg border border-[#9090FF] mb-1"
+                  onPress={() => {
+                    const userStore = useUserStore.getState();
+                    const covenantProgress = userStore.getCovenantProgress();
+                    const currentStreak = userStore.getStreakCount();
+                    
+                    appLog('📊 Current Covenant Status:', {
+                      streakCount: currentStreak,
+                      covenantProgress,
+                      rawCovenantData: userStore.covenantProgress
+                    });
+
+                    Alert.alert(
+                      'Covenant Status',
+                      `Current Streak: ${currentStreak}\n` +
+                      `Target Days: ${covenantProgress.targetDays}\n` +
+                      `Progress: ${covenantProgress.progress.toFixed(1)}%\n` +
+                      `State: ${covenantProgress.state}\n\n` +
+                      `Next streak increment will ${currentStreak + 1 >= covenantProgress.targetDays ? 'TRIGGER SUCCESS MODAL! 🎉' : `make progress ${currentStreak + 1}/${covenantProgress.targetDays}`}`
+                    );
+                  }}>
+                  <Text className="font-din text-sm text-textPrimary text-center">Show Covenant Info 📊</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Show Current Streak Freeze Status */}
+              <View className="mb-4">
+                <Text className="font-feather text-base text-textPrimary mb-2">
+                  ❄️ Current Streak Freeze Status
+                </Text>
+                <TouchableOpacity
+                  className="bg-[#E8F4FD] px-4 py-3 rounded-lg border border-[#4FB8FE] mb-1"
+                  onPress={() => {
+                    const userStore = useUserStore.getState();
+                    const currentStreak = userStore.getStreakCount();
+                    const currentFreezes = userStore.getStreakFreezes();
+                    const lastActivityDate = userStore.getLastActivityDate();
+                    const lastReadingDate = userStore.getLastReadingDate();
+                    
+                    const now = new Date();
+                    const daysSinceActivity = lastActivityDate ? 
+                      Math.floor((now.getTime() - lastActivityDate.toDate().getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                    const daysSinceReading = lastReadingDate ? 
+                      Math.floor((now.getTime() - lastReadingDate.toDate().getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                    
+                    appLog('❄️ Current Streak Freeze Status:', {
+                      streakCount: currentStreak,
+                      streakFreezes: currentFreezes,
+                      daysSinceActivity,
+                      daysSinceReading,
+                      lastActivityDate: lastActivityDate?.toDate(),
+                      lastReadingDate: lastReadingDate?.toDate()
+                    });
+
+                    Alert.alert(
+                      'Streak Freeze Status',
+                      `Current Streak: ${currentStreak} 🔥\n` +
+                      `Streak Freezes: ${currentFreezes} ❄️\n` +
+                      `Days Since Activity: ${daysSinceActivity}\n` +
+                      `Days Since Reading: ${daysSinceReading}\n\n` +
+                      `${daysSinceReading > 1 && currentFreezes > 0 ? 
+                        '⚠️ Streak would break, but freeze available!' : 
+                        daysSinceReading > 1 ? 
+                        '💔 Streak would break (no freezes)' : 
+                        '✅ Streak is safe'}`
+                    );
+                  }}>
+                  <Text className="font-din text-sm text-textPrimary text-center">Show Freeze Status ❄️</Text>
+                </TouchableOpacity>
               </View>
 
               {/* Hide Debug Button */}
@@ -1732,6 +2483,19 @@ export function DebugButton() {
             </View>
           </View>
         </SafeAreaView>
+      </Modal>
+
+      {/* Evolution Animation Modal */}
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={evolutionModalVisible}
+        presentationStyle="pageSheet"
+        onRequestClose={() => setEvolutionModalVisible(false)}>
+        <EvolutionScreen
+          evolutionLevel={evolutionLevel}
+          onClose={() => setEvolutionModalVisible(false)}
+        />
       </Modal>
     </>
   );

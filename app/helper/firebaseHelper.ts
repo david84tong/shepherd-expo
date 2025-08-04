@@ -1,9 +1,10 @@
 import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
 import { UserDoc } from '../models/User';
-import { syncUserDocument, batchUpdate } from '../../utils/firestore';
+import { syncUserDocument, batchUpdate, removeFunctions } from '../../utils/firestore';
 import { useUserStore } from '../stores/userStore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
+import { appLog } from './helper';
 
 // Constants
 const USER_FETCH_CACHE_DURATION = 5000; // 5 seconds
@@ -67,14 +68,16 @@ export const debouncedSyncUserDocument = async (data: Partial<UserDoc>) => {
 export const syncWithFirestore = async (): Promise<boolean> => {
   if (!isAuthenticated()) return false;
   const userData = useUserStore.getState();
-  await debouncedSyncUserDocument(userData);
+  // await debouncedSyncUserDocument({
+  await debouncedSyncUserDocument(removeFunctions(userData));
   return true;
 };
 
 export const updateUserData = async (updates: Partial<UserDoc>): Promise<void> => {
   if (isAuthenticated()) {
+    const cleanedData = removeFunctions(updates);
     const updatedData = {
-      ...updates,
+      ...cleanedData,
       updatedAt: Timestamp.now(),
     };
     await batchUpdate(updatedData);
@@ -98,27 +101,27 @@ export const fetchFromFirestore = async ({
   lastUserFetchTime = now;
   lastUserFetch = (async () => {
     const currentUser = currentLoggedUser || auth?.()?.currentUser;
-    console.log('currentUser ===>', currentUser);
+    appLog('currentUser ===>', currentUser);
     if (!currentUser) {
-      console.log('User not authenticated, skipping Firestore fetch');
+      appLog('User not authenticated, skipping Firestore fetch');
       return { success: false };
     }
 
     try {
       if (!currentUser?.uid) {
-        console.log('No valid user ID available');
+        appLog('No valid user ID available');
         return { success: false };
       }
 
       const userDoc = await firestore().collection('users').doc(currentUser?.uid).get();
 
       if (!userDoc.exists) {
-        console.log('User document does not exist');
+        appLog('User document does not exist');
         return { success: false };
       }
 
       const userData = userDoc.data() as UserDoc;
-      console.log('userData ======>', userData);
+      appLog('userData ======>', userData);
 
       if (userData) {
         // Ensure we have all required fields
@@ -130,10 +133,10 @@ export const fetchFromFirestore = async ({
         };
 
         const convertedUserData = convertTimestamps(updatedUserData);
-        console.log('Syncing user data to store:', convertedUserData);
+        appLog('Syncing user data to store:', convertedUserData);
 
         // Sync the data to store
-        useUserStore.getState().syncFirestoreData(convertedUserData);
+        await useUserStore.getState().syncFirestoreData(convertedUserData);
 
         // Sync streak data to widget
         const syncStreakWithWidget = (streakCount: number, lastActivityDate: any) => {
@@ -144,7 +147,7 @@ export const fetchFromFirestore = async ({
           }
           if(streakCount === 0) return
           syncStreakDataToWidget(streakCount, activityDate).catch((error: Error) =>
-            console.log('Failed to sync streak with widget:', error)
+            appLog('Failed to sync streak with widget:', error)
           );
         };
 

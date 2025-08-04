@@ -23,6 +23,7 @@ import { heightScreen } from '~/utils/dimensions';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { useHomeStore } from '../stores/homeStore';
 import { hapticMedium } from '~/utils/haptics';
+import { appLog } from '../helper/helper';
 
 // Define our custom section type
 type BibleSection = {
@@ -43,7 +44,7 @@ type BibleSection = {
 // Optimize NextNodeIndicator with memo
 // const NextNodeIndicator = React.memo(({ alignment }: { alignment: 'start' | 'center' | 'end' }) => {
 //   // Load Rive assets
-//   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+//   const [riveAssets] = useAssets([require('../../assets/riveAnimations/home_lamb.riv')]);
 
 //   // Only render on non-center alignments (left or right of path)
 //   if (alignment === 'center') return null;
@@ -192,13 +193,13 @@ export default function MapScreen() {
 
     let orderedPaths = pathsToUse;
     if (selectedPath && Array.isArray(selectedPath.order) && selectedPath.order.length > 0) {
-      console.log('[MapScreen Component] Reordering paths based on selectedPath:', selectedPath.id);
+      appLog('[MapScreen Component] Reordering paths based on selectedPath:', selectedPath.id);
       const pathMap = Object.fromEntries(pathsToUse.map((p) => [p.id, p]));
       orderedPaths = selectedPath.order.map((id) => pathMap[id]).filter(Boolean);
       const remaining = pathsToUse.filter((p) => !selectedPath.order.includes(p.id));
       orderedPaths = [...orderedPaths, ...remaining];
     } else {
-      console.log('[MapScreen Component] Using default path order.');
+      appLog('[MapScreen Component] Using default path order.');
     }
 
     return orderedPaths.map((path, index) => ({
@@ -286,14 +287,14 @@ export default function MapScreen() {
 
   // Load all Rive assets needed for sections
   const [riveAssets] = useAssets([
-    require('../../assets/riveAnimations/homeLamb.riv'),
-    require('../../assets/riveAnimations/successLamb.riv'),
+    require('../../assets/riveAnimations/home_lamb.riv'),
+    require('../../assets/riveAnimations/success_lamb.riv'),
   ]);
 
   const handleNodePress = (unit: Unit, isLastUnitInSection: boolean) => {
-    console.log('Pressed unit:', unit.title, unit.reference);
-    console.log('Reference details:', JSON.stringify(unit.reference));
-    console.log('unit selected', unit);
+    appLog('Pressed unit:', unit.title, unit.reference);
+    appLog('Reference details:', JSON.stringify(unit.reference));
+    appLog('unit selected', unit);
 
     // Get the current section/path information
     const currentPath = sections.find((section) => section.data.some((u) => u.id === unit.id));
@@ -358,7 +359,7 @@ export default function MapScreen() {
           const endVerse = parseInt(verseMatch[2], 10);
 
           if (!isNaN(startVerse) && !isNaN(endVerse)) {
-            console.log(`Found verse range in unit ID: ${startVerse}-${endVerse}`);
+            appLog(`Found verse range in unit ID: ${startVerse}-${endVerse}`);
             pathInfo.startVerse = startVerse;
             pathInfo.endVerse = endVerse;
           }
@@ -434,7 +435,7 @@ export default function MapScreen() {
 
         // First unit or unit after a completed one is available
         if (i === 0 || completedUnitIds.includes(path.units[i - 1].id)) {
-          console.log('Next available unit:', unit.id, unit.title);
+          appLog('Next available unit:', unit.id, unit.title);
           return unit;
         }
       }
@@ -461,9 +462,9 @@ export default function MapScreen() {
   const getRiveAssetUri = (riveName?: string) => {
     if (!riveAssets || !riveName) return null;
 
-    if (riveName === 'homeLamb') {
+    if (riveName === 'home_lamb') {
       return riveAssets[0].uri!;
-    } else if (riveName === 'successLamb') {
+    } else if (riveName === 'success_lamb') {
       return riveAssets[1].uri!;
     }
 
@@ -489,15 +490,15 @@ export default function MapScreen() {
       const isFourthNodeInSection = index === 3;
 
       if (shouldIndicateNext) {
-        console.log(`Next unit on screen: ${item.id} (${item.title})`);
+        appLog(`Next unit on screen: ${item.id} (${item.title})`);
       }
 
       const isLastUnitInSection = index === section.data.length - 1;
 
       // Handle node click with additional checks for non-pro users and reading completion
       function onNodePress(unit: Unit) {
-        console.log('onNodePress', unit);
-        console.log(
+        appLog('onNodePress', unit);
+        appLog(
           'Debug - Pro status:',
           isProMember,
           'Reading completed:',
@@ -511,7 +512,7 @@ export default function MapScreen() {
         // 2. User has completed their daily reading (readingCompleted is true)
         // 3. They're trying to access a non-first path (section.index > 0)
         if (!isProMember) {
-          console.log(
+          appLog(
             'Showing pricing screen: user is not pro, has completed reading, and is trying to access a non-first path'
           );
           handleSubscriptionPress();
@@ -534,7 +535,7 @@ export default function MapScreen() {
           {/* Sheep decoration at second node position in every section - Only render when visible */}
           {isSecondNodeInSection && section.riveName && section.artboardName && false && (
             <View
-              className={`absolute ${section.riveName === 'successLamb' ? 'right-24' : 'right-2'} top-1/2 -translate-y-1/2`}
+              className={`absolute ${section.riveName === 'success_lamb' ? 'right-24' : 'right-2'} top-1/2 -translate-y-1/2`}
               style={{ zIndex: 10 }}>
               <View className="w-44 h-44">
                 {/* Rive animations temporarily disabled for performance */}

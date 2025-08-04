@@ -17,13 +17,12 @@ import Purchases from 'react-native-purchases';
 import Rive from 'rive-react-native';
 import '../global.css';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import AppLoading from '../components/AppLoading';
 import { DebugButton } from '../components/DebugModal';
 import { HalfModalType } from './halfModal';
 import { useAppInitialization, onAppForegroundOrInit } from './hooks/initHook';
 import { checkStreakAndApplyPenalties } from './hooks/streakHook';
-import { usePreloadAssets } from './stores/assetsStore';
+import { usePreloadAssets, usePreloadRiveAssets, useAssetsStore } from './stores/assetsStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { useUIStore } from './stores/uiStore';
 import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
@@ -45,17 +44,44 @@ import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
 import GlobalDevotionalsSheet, { DevotionalsSheetRef } from '../components/GlobalDevotionalsSheet';
 import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
+import StreakFreezeBottomSheet, { StreakFreezeBottomSheetRef } from '~/components/StreakFreezeBottomSheet';
 import { disableFontScaling } from './helper/disableFontScaling';
 import { adapty } from 'react-native-adapty';
 import './stores/userStore';
 import { IS_ANDROID } from './utils/utils';
+import { initializeQuickActions } from './utils/quickActions';
 
 // Import highlight store setup function
 import useHighlightStore from './stores/highlightStore';
 import './stores/userStore';
-import './stores/subscriptionStore';
+import useSubscriptionStore from './stores/subscriptionStore';
 import { useRemoteConfig } from './hooks/useRemoteConfig';
 import { initializeLanguage } from './utils/i18n';
+import { useHomeStore } from './stores/homeStore';
+import { useDevotionalStore } from './stores/devotionalStore';
+import { appLog } from './helper/helper';
+import { COVENANT_STATES } from './hooks/streakHook';
+import { useUserStore } from './stores/userStore';
+import CovenantSuccessSheet, { CovenantSuccessSheetRef } from '../components/CovenantSuccessSheet';
+import * as Sentry from '@sentry/react-native';
+import { performanceMonitor, trackOperation, trackRive } from './utils/performanceMonitor';
+
+Sentry.init({
+  dsn: 'https://c9b3a3c9ed0846a755ee7175b07982f8@o4509279727321088.ingest.us.sentry.io/4509279728828416',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
 // Define missing ref types
 type PrayerSheetRef = {
   show: () => void;
@@ -78,18 +104,18 @@ if (__DEV__) {
   LogBox.ignoreLogs(['Warning: ...']); // Ignore specific warnings if needed
 } else {
   // Production error logging
-  const originalConsoleError = console.log;
+  const originalConsoleError = appLog;
   console.error = (...args) => {
     originalConsoleError(...args);
     if (args[0] && typeof args[0] === 'string') {
-      console.log(`An error occurred: ${args[0].substring(0, 100)}...`);
+      appLog(`An error occurred: ${args[0].substring(0, 100)}...`);
     }
   };
 
   // Set up global error handler
   ErrorUtils.setGlobalHandler((error, isFatal) => {
     if (isFatal) {
-      console.log(
+      appLog(
         `A critical error occurred in the app: ${error.message}\n\nPlease restart the app.`
       );
     }
@@ -122,7 +148,7 @@ export const unstable_settings = {
 //   'LoadingScreen'
 // ];
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
   const { visibleForceUpdate } = useForceUpdateCheck();
@@ -135,7 +161,7 @@ export default function RootLayout() {
     'Nunito-Regular': require('../assets/fonts/Nunito-Regular.ttf'),
     'Nunito-BlackItalic': require('../assets/fonts/Nunito-BlackItalic.ttf'),
   });
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/shepherd-splash_screen.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/shepherd_splash_screen.riv')]);
 
   // Loading states
   const [appReady, setAppReady] = useState(false);
@@ -145,6 +171,8 @@ export default function RootLayout() {
   const [hasError, setHasError] = useState(false);
   const [showRiveAnimation, setShowRiveAnimation] = useState(false);
   const [isRiveReady, setIsRiveReady] = useState(false);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+  const [pendingDiscountDeepLink, setPendingDiscountDeepLink] = useState(false);
 
   // Global modal state
   const isModalDimActive = useUIStore((state) => state.isModalDimActive);
@@ -174,6 +202,8 @@ export default function RootLayout() {
   const statsSheetRef = useRef<StatsSheetRef>(null);
   const checkInRef = useRef<GlobalCheckInRef>(null);
   const devotionalsSheetRef = useRef<DevotionalsSheetRef>(null);
+  const covenantSuccessSheetRef = useRef<CovenantSuccessSheetRef>(null);
+  const streakFreezeSheetRef = useRef<StreakFreezeBottomSheetRef>(null);
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
@@ -189,39 +219,50 @@ export default function RootLayout() {
   }>({});
 
   // App initialization
-  const { isInitialized } = useAppInitialization();
+  const { isInitialized, isAnalyticsReady } = useAppInitialization();
 
   const appState = useRef(AppState.currentState);
 
   usePreloadAssets(); // Garante preload global dos assets
+  usePreloadRiveAssets(); // Preload Rive assets during splash screen
   useRemoteConfig();
+
+  // Get Rive assets loading status from store
+  const riveAssetsLoaded = useAssetsStore((s) => s.riveLoaded);
+  const preloadedRiveAssets = useAssetsStore((s) => s.riveAssets);
 
   // Call onAppForegroundOrInit after initialization
   useEffect(() => {
-    console.log('isInitialized ==>', isInitialized);
+    appLog('isInitialized ==>', isInitialized);
     if (isInitialized) {
       onAppForegroundOrInit();
-      checkAndShowCheckInIfNeeded();
+      // Check and show check-in after a delay to ensure everything is ready
+      // But only if hearts lost modal is not scheduled to show
+      setTimeout(() => {
+        if (!isHeartsLostModalVisible.current) {
+          checkAndShowCheckInIfNeeded();
+        }
+      }, 3000);
     }
   }, [isInitialized]);
 
   // Check onboarding status with timeout
   const checkOnboarding = async () => {
     try {
-      console.log(`[RootLayout] 🔄 Checking onboarding status...`);
+      appLog(`[RootLayout] 🔄 Checking onboarding status...`);
 
       // Check if onboarding has been completed by looking for the key in AsyncStorage
       const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-      console.log('[RootLayout] Onboarding completed status:', onboardingCompleted);
+      appLog('[RootLayout] Onboarding completed status:', onboardingCompleted);
 
       // If onboarding is completed, the value will be 'true'
       const isOnboardingCompleted = onboardingCompleted === 'true';
 
       // Initialize onboarding store to load saved screen
-      console.log(`[RootLayout] 🏪 Initializing onboarding store...`);
+      appLog(`[RootLayout] 🏪 Initializing onboarding store...`);
       const onboardingStore = useOnboardingStore.getState();
       const savedScreen = await onboardingStore.initializeFromStorage();
-      console.log(`[RootLayout] 📍 Onboarding store initialized, saved screen: ${savedScreen}`);
+      appLog(`[RootLayout] 📍 Onboarding store initialized, saved screen: ${savedScreen}`);
 
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
@@ -229,12 +270,12 @@ export default function RootLayout() {
 
       // Log the status for debugging
       if (isOnboardingCompleted) {
-        console.log('[RootLayout] ✅ User has completed onboarding');
+        appLog('[RootLayout] ✅ User has completed onboarding');
       } else {
-        console.log('[RootLayout] ❌ User has NOT completed onboarding');
-        console.log(`[RootLayout] 📍 Saved onboarding screen: ${savedScreen}`);
+        appLog('[RootLayout] ❌ User has NOT completed onboarding');
+        appLog(`[RootLayout] 📍 Saved onboarding screen: ${savedScreen}`);
         // Let the onboarding layout handle navigation to avoid timing issues
-        console.log('[RootLayout] 📝 Navigation will be handled by onboarding layout');
+        appLog('[RootLayout] 📝 Navigation will be handled by onboarding layout');
       }
 
       return isOnboardingCompleted;
@@ -252,7 +293,15 @@ export default function RootLayout() {
     try {
       const result = await checkStreakAndApplyPenalties();
 
-      if (result && result.heartPenalty > 0) {
+      if (result && 'streakFreezeUsed' in result && result.streakFreezeUsed) {
+        // Show streak freeze bottom sheet
+        streakFreezeSheetRef.current?.show();
+        
+        analytics.logEvent('streak_freeze_used', {
+          freezesRemaining: result.freezesRemaining || 1,
+          totalFreezes: 2, // Always 2 for now
+        });
+      } else if (result && result.heartPenalty > 0) {
         // Prepare params for heart penalty modal
         const params = {
           type: HalfModalType.HEART_PENALTY,
@@ -267,49 +316,113 @@ export default function RootLayout() {
           penalty: result.heartPenalty,
           daysMissed: result.daysMissed,
         });
+        // Set flag to indicate hearts lost modal is visible
+        isHeartsLostModalVisible.current = true;
         // Show the half modal with a delay
         setTimeout(() => {
           showHalfModal(params);
         }, 3000);
       }
     } catch (error) {
-      console.log('Error checking streak status:', error);
+      appLog('Error checking streak status:', error);
     }
   };
   
+  // Add ref to track if check-in is already scheduled
+  const checkInScheduledRef = useRef(false);
+  // Add ref to track if hearts lost modal is visible
+  const isHeartsLostModalVisible = useRef(false);
+  
   // Check if one hour has passed since last check-in AND today's check-in is not complete
   const checkAndShowCheckInIfNeeded = () => {
+    // Import auth to check if user is logged in
+    const auth = require('@react-native-firebase/auth').default;
+    const currentUser = auth().currentUser;
+    
+    appLog('[CheckIn] checkAndShowCheckInIfNeeded called');
+    appLog('[CheckIn] Current user:', currentUser?.uid, 'Anonymous:', currentUser?.isAnonymous);
+    
+    // Don't show check-in if user is not logged in at all
+    if (!currentUser) {
+      appLog('[CheckIn] Skipping check-in: User not logged in');
+      return;
+    }
+    
+    // Check if check-in is already scheduled
+    if (checkInScheduledRef.current) {
+      appLog('[CheckIn] ❌ Check-in already scheduled, skipping duplicate call');
+      return;
+    }
+    
+    // Check if hearts lost modal is visible
+    if (isHeartsLostModalVisible.current) {
+      appLog('[CheckIn] ❌ Hearts lost modal is visible, delaying check-in');
+      return;
+    }
+    
     const checkInStore = useCheckInStore.getState();
     const hasCompletedToday = checkInStore.hasCompletedTodaysCheckIn();
     const hasBeenOneHour = checkInStore.hasBeenOneHourSinceLastCheckIn();
+    const lastCheckInTime = checkInStore.lastCheckInTime;
+    const todaysCheckIn = checkInStore.getTodaysCheckIn();
+    const checkInHistory = checkInStore.checkInHistory;
     
-    console.log('[CheckIn] Auto-show check:', {
+    appLog('[CheckIn] Store state:', {
       hasCompletedToday,
       hasBeenOneHour,
-      todaysCheckIn: checkInStore.getTodaysCheckIn()
+      lastCheckInTime,
+      todaysCheckIn,
+      checkInHistoryLength: checkInHistory?.length || 0,
+      isNavigating: checkInStore.isNavigating
     });
     
-    // Only show if one hour has passed AND today's check-in is not complete
-    if (hasBeenOneHour && !hasCompletedToday) {
-      console.log('Showing check-in: One hour passed and today\'s check-in not complete');
-      // Show check-in with a delay to ensure app is ready
-      setTimeout(() => {
-        showCheckIn();
-      }, 2000);
-    } else if (hasCompletedToday) {
-      console.log('Skipping check-in: Already completed today');
+    // Check if currently navigating
+    if (checkInStore.isNavigating) {
+      appLog('[CheckIn] ❌ Not showing check-in: Currently navigating');
+      return;
     }
+    
+    // Check if already completed today
+    if (hasCompletedToday) {
+      appLog('[CheckIn] ❌ Not showing check-in: Already completed today', {
+        todaysCheckIn,
+        completedAt: todaysCheckIn?.completedAt
+      });
+      return;
+    }
+    
+    // Check if one hour has passed since last check-in
+    if (!hasBeenOneHour) {
+      appLog('[CheckIn] ❌ Not showing check-in: Less than one hour since last check-in', {
+        lastCheckInTime,
+        currentTime: new Date().toISOString()
+      });
+      return;
+    }
+    
+    // All conditions met - show check-in
+    appLog('[CheckIn] ✅ All conditions met - showing check-in');
+    // Mark as scheduled
+    checkInScheduledRef.current = true;
+    
+    // Show check-in with a delay to ensure app is ready
+    setTimeout(() => {
+      appLog('[CheckIn] Calling showCheckIn() now...');
+      showCheckIn();
+      // Reset the flag after showing
+      checkInScheduledRef.current = false;
+    }, 2000);
   };
 
   // Initialize notifications system
   const initializeNotifications = async () => {
     try {
-      console.log('Initializing notification system...');
+      appLog('Initializing notification system...');
       const notificationStore = useNotificationStore.getState();
       await notificationStore.initializeNotifications();
-      console.log('Notification system initialized successfully');
+      appLog('Notification system initialized successfully');
     } catch (error) {
-      console.log('Error initializing notifications:', error);
+      appLog('Error initializing notifications:', error);
     }
   };
 
@@ -324,8 +437,63 @@ export default function RootLayout() {
   };
 
   const showCheckIn = () => {
-    checkInRef.current?.expand();
+    appLog('[showCheckIn] Function called at:', new Date().toISOString());
+    
+    // Import auth to check if user is logged in
+    const auth = require('@react-native-firebase/auth').default;
+    const currentUser = auth().currentUser;
+    
+    // Don't show check-in if user is not logged in at all
+    if (!currentUser) {
+      appLog('[showCheckIn] Not showing check-in: User not logged in');
+      return;
+    }
+    
+    appLog('[showCheckIn] User authenticated:', currentUser.uid, 'Anonymous:', currentUser.isAnonymous);
+    appLog('[showCheckIn] checkInRef.current exists:', !!checkInRef.current);
+    appLog('[showCheckIn] isUserLoggedIn state:', isUserLoggedIn);
+    
+    // Check if the ref exists before trying to expand
+    if (checkInRef.current) {
+      appLog('[showCheckIn] checkInRef exists, calling forceShow()');
+      try {
+        // Use forceShow for more reliable opening
+        checkInRef.current.forceShow();
+        appLog('[showCheckIn] forceShow() called successfully');
+      } catch (error) {
+        console.error('[showCheckIn] Error calling forceShow():', error);
+      }
+    } else {
+      console.error('[showCheckIn] checkInRef.current is null, cannot show check-in');
+      appLog('[showCheckIn] Attempting to retry in 500ms...');
+      
+      // Retry after a short delay
+      setTimeout(() => {
+        if (checkInRef.current) {
+          appLog('[showCheckIn] Retry successful, calling forceShow()');
+          checkInRef.current.forceShow();
+        } else {
+          console.error('[showCheckIn] Retry failed, checkInRef still null');
+        }
+      }, 500);
+    }
   };
+
+  // Monitor auth state changes
+  useEffect(() => {
+    const auth = require('@react-native-firebase/auth').default;
+    const unsubscribe = auth().onAuthStateChanged((user: any) => {
+      const isLoggedIn = !!user; // Include anonymous users as logged in
+      setIsUserLoggedIn(isLoggedIn);
+      appLog('[Auth] User auth state changed:', { 
+        isLoggedIn, 
+        isAnonymous: user?.isAnonymous,
+        uid: user?.uid 
+      });
+    });
+    
+    return unsubscribe;
+  }, []);
 
   // Expose global functions
   useEffect(() => {
@@ -339,13 +507,14 @@ export default function RootLayout() {
       (global as any).showStatsSheet = showStatsSheet;
       (global as any).showCheckIn = showCheckIn;
       (global as any).showDevotionalsSheet = showDevotionalsSheet;
+      (global as any).showStreakFreezeModal = () => streakFreezeSheetRef.current?.show();
     }
-  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet, showDevotionalsSheet]);
+  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet, showCheckIn, showDevotionalsSheet]);
 
   // Effect to watch isPrayerSheetVisible and control the sheet ref
   useEffect(() => {
     if (isPrayerSheetVisible && prayerSheetRef.current) {
-      console.log('[RootLayout] Opening prayer sheet via ref');
+      appLog('[RootLayout] Opening prayer sheet via ref');
       prayerSheetRef.current.show();
     }
   }, [isPrayerSheetVisible]);
@@ -353,7 +522,7 @@ export default function RootLayout() {
   // Effect to watch isStatsSheetVisible and control the sheet ref
   useEffect(() => {
     if (isStatsSheetVisible && statsSheetRef.current) {
-      console.log('[RootLayout] Opening stats sheet via ref');
+      appLog('[RootLayout] Opening stats sheet via ref');
       statsSheetRef.current.show();
     }
   }, [isStatsSheetVisible]);
@@ -361,7 +530,7 @@ export default function RootLayout() {
   // Effect to watch isDevotionalsSheetVisible and control the sheet ref
   useEffect(() => {
     if (isDevotionalsSheetVisible && devotionalsSheetRef.current) {
-      console.log('[RootLayout] Opening devotionals sheet via ref');
+      appLog('[RootLayout] Opening devotionals sheet via ref');
       devotionalsSheetRef.current.show();
     }
   }, [isDevotionalsSheetVisible]);
@@ -371,6 +540,7 @@ export default function RootLayout() {
     const initializationTimeout = setTimeout(() => {
       if (!appReady) {
         console.warn('App initialization timed out, forcing ready state');
+        Sentry.captureMessage('App initialization timeout - forcing ready state', 'warning');
         setAppReady(true);
         SplashScreen.hideAsync();
       }
@@ -383,7 +553,7 @@ export default function RootLayout() {
   useEffect(() => {
     initializeLanguage()
     const handleError = (error: Error) => {
-      console.log('App initialization error:', error);
+      appLog('App initialization error:', error);
       setHasError(true);
       setAppReady(true);
       SplashScreen.hideAsync();
@@ -405,21 +575,29 @@ export default function RootLayout() {
 
   // Modify the initializeApp function to handle both scenarios
   const initializeApp = async () => {
+    const endTracking = trackOperation('app_initialization', {
+      riveAssetsLoaded,
+      fontsLoaded: !!fontsLoaded
+    });
+
     try {
-      console.log('🚀 Starting app initialization...');
+      appLog('🚀 Starting app initialization...');
 
       // Wait for fonts to load
       // if (!fontsLoaded && !fontError) {
-      //   console.log('Waiting for fonts to load...');
+      //   appLog('Waiting for fonts to load...');
       //   return;
       // }
 
-      // Wait for Rive assets to be ready
-      if (!riveAssets?.[0]?.uri) {
-        console.log('Waiting for Rive assets to load...');
+      // Wait for Rive assets to be ready (both splash and preloaded)
+      if (!riveAssets?.[0]?.uri || !riveAssetsLoaded) {
+        appLog('Waiting for Rive assets to load...', { 
+          splashRive: !!riveAssets?.[0]?.uri, 
+          preloadedRive: riveAssetsLoaded 
+        });
         return;
       }
-      console.log('CALLED TO RESOLVED');
+      appLog('🎬 All Rive assets loaded successfully');
 
       try {
         // Initialize app components
@@ -427,11 +605,15 @@ export default function RootLayout() {
         await checkStreakStatus();
         await initializeNotifications();
         
-        // Check if we need to show check-in after initialization
-        checkAndShowCheckInIfNeeded();
-      } catch (error) { }
+        // Note: checkAndShowCheckInIfNeeded is called in the isInitialized useEffect
+      } catch (error) { 
+        appLog('Non-critical initialization error:', error);
+        Sentry.captureException(error);
+      }
+      
       // Set Rive ready
       setIsRiveReady(true);
+      trackRive('splash_screen', 'start');
       setShowRiveAnimation(true);
       setAppReady(true);
 
@@ -439,8 +621,11 @@ export default function RootLayout() {
       setTimeout(() => {
         SplashScreen.hideAsync();
       }, 100);
+      
+      endTracking();
     } catch (error) {
-      console.log('Error during app initialization:', error);
+      appLog('Error during app initialization:', error);
+      Sentry.captureException(error);
       Alert.alert('Error during app initialization:', error instanceof Error ? error.message : String(error));
       setHasError(true);
       setAppReady(true);
@@ -450,26 +635,26 @@ export default function RootLayout() {
 
   // Call initializeApp when fonts and Rive assets are ready
   useEffect(() => {
-    if (riveAssets?.[0]?.uri && !appReady) {
-      console.log('Assets ready, initializing app...');
+    if (riveAssets?.[0]?.uri && riveAssetsLoaded && !appReady) {
+      appLog('🎬 All assets ready, initializing app...');
       initializeApp();
     }
-  }, [fontsLoaded, riveAssets, appReady]);
+  }, [fontsLoaded, riveAssets, riveAssetsLoaded, appReady]);
 
   const activateAdapty = async () => {
     try {
       const isActivated = await adapty.isActivated();
-      console.log('isActivated ==>', isActivated);
+      appLog('isActivated ==>', isActivated);
       if (isActivated) return;
       // if(adapty){
-      //   console.log("adapty ==>",adapty?.isActivated());
+      //   appLog("adapty ==>",adapty?.isActivated());
       // }
       await adapty.activate('public_live_6JQmP6iR.y5BUrJSqvfMEVYQBPBLz', {
         lockMethodsUntilReady: true,
       });
-      console.log('Adapty activated');
+      appLog('Adapty activated');
     } catch (error) {
-      console.log('Error activating Adapty:', error);
+      appLog('Error activating Adapty:', error);
     }
   };
 
@@ -477,41 +662,89 @@ export default function RootLayout() {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         // App has come to the foreground!
-        console.log('App has come to the foreground!');
+        appLog('App has come to the foreground!');
         onAppForegroundOrInit();
         useHighlightStore.getState().syncHighlights();
-        checkAndShowCheckInIfNeeded();
+        // Only check for check-in if hearts lost modal is not visible
+        if (!isHeartsLostModalVisible.current) {
+          checkAndShowCheckInIfNeeded();
+        }
       }
       appState.current = nextAppState;
     };
-    console.log('Activating Adapty');
+    appLog('Activating Adapty');
 
     activateAdapty();
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const quickActionsSubscription = initializeQuickActions();
 
     return () => {
       subscription.remove();
+      quickActionsSubscription?.remove();
     };
   }, []);
 
-  // Add state for isCreator
-  const [isCreator, setIsCreator] = useState(false);
+  // Add state for isCreator - now from subscription store
+  const hasEnteredCreateCode = useSubscriptionStore((state) => state.hasEnteredCreateCode);
 
-  // Check isCreator from AsyncStorage
+  // Check CREATE code status on initialization
   useEffect(() => {
-    AsyncStorage.getItem('isCreator').then((val) => {
-      setIsCreator(val === 'true');
-    });
+    useSubscriptionStore.getState().checkHasEnteredCreateCode();
   }, []);
+
+  // Handle pending discount deep link when app is ready
+  useEffect(() => {
+    if (appReady && pendingDiscountDeepLink) {
+      appLog('App is ready, handling pending discount deep link...');
+      setPendingDiscountDeepLink(false);
+      
+      // Add a delay to ensure everything is fully loaded
+      setTimeout(async () => {
+        try {
+          appLog('Triggering discount paywall from pending deep link...');
+          
+          // Check if Adapty is activated
+          const isActivated = await adapty.isActivated();
+          if (!isActivated) {
+            appLog('Adapty not activated yet, waiting...');
+            return;
+          }
+          
+          // Check user pro status
+          const userProStatus = useUserStore.getState().proStatus;
+          const subscriptionProStatus = useSubscriptionStore.getState().isProMember;
+          appLog('User pro status check:', { userProStatus, subscriptionProStatus });
+          
+          if (userProStatus === 'pro' || subscriptionProStatus) {
+            appLog('User is already pro, skipping paywall');
+            return;
+          }
+          
+          const result = await useSubscriptionStore.getState().presentHalfOffPaywall();
+          appLog('Discount paywall result:', result);
+        } catch (error) {
+          appLog('Error triggering discount paywall:', error);
+        }
+      }, 2000);
+    }
+  }, [appReady, pendingDiscountDeepLink]);
+
+
 
   // Add deep linking handler
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {
-      console.log('Deep link received:', event.url);
+      appLog('Deep link received:', event.url);
       if (event.url === 'io.bytehouse://stay') {
         // Navigate to the stay screen or handle the deep link as needed
         router.replace('/(tabs)');
+      } else if (event.url === 'io.bytehouse://discount') {
+        // Handle discount deep link - trigger Adapty paywall
+        appLog('Discount deep link received, setting pending flag...');
+        // Navigate to tabs first, then set pending flag
+        router.replace('/(tabs)');
+        setPendingDiscountDeepLink(true);
       }
     };
 
@@ -522,6 +755,10 @@ export default function RootLayout() {
     Linking.getInitialURL().then((url) => {
       if (url && url === 'io.bytehouse://stay') {
         router.replace('/(tabs)');
+      } else if (url && url === 'io.bytehouse://discount') {
+        appLog('Initial discount deep link received, setting pending flag...');
+        router.replace('/(tabs)');
+        setPendingDiscountDeepLink(true);
       }
     });
 
@@ -529,6 +766,86 @@ export default function RootLayout() {
       subscription.remove();
     };
   }, [router]);
+
+  // Fetch recent devotionals when reading is completed or when all activities are completed
+  useEffect(() => {
+    const readingCompleted = useHomeStore.getState().readingCompleted;
+    const prayerCompleted = useHomeStore.getState().prayerCompleted;
+    const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
+
+    if (readingCompleted || (prayerCompleted && readingCompleted && reflectionCompleted)) {
+      appLog('📚 [Layout] Fetching recent devotionals due to completion state change');
+      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+      fetchRecentDevotionals()
+        .then((devotionals) => {
+          appLog(
+            '📚 [Layout] Fetched recent devotionals:',
+            devotionals.map((d) => d?.id)
+          );
+          appLog('📚 [Layout] Devotionals count:', devotionals.length);
+          appLog('📚 [Layout] Non-null devotionals:', devotionals.filter(Boolean).length);
+        })
+        .catch((error) => {
+          console.error('❌ [Layout] Error fetching recent devotionals:', error);
+        });
+    }
+  }, []);
+
+  // Monitor completion states and fetch devotionals when they change
+  const readingCompleted = useHomeStore((state) => state.readingCompleted);
+  const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
+  const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
+
+  useEffect(() => {
+    if (readingCompleted || (prayerCompleted && readingCompleted && reflectionCompleted)) {
+      appLog('📚 [Layout] Fetching recent devotionals due to completion state change');
+      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+      fetchRecentDevotionals()
+        .then((devotionals) => {
+          appLog(
+            '📚 [Layout] Fetched recent devotionals:',
+            devotionals.map((d) => d?.id)
+          );
+          appLog('📚 [Layout] Devotionals count:', devotionals.length);
+          appLog('📚 [Layout] Non-null devotionals:', devotionals.filter(Boolean).length);
+        })
+        .catch((error) => {
+          console.error('❌ [Layout] Error fetching recent devotionals:', error);
+        });
+    }
+  }, [readingCompleted, prayerCompleted, reflectionCompleted]);
+
+  // Covenant success modal state
+  const showCovenantSuccessModal = useHomeStore((state) => state.showCovenantSuccessModal);
+  const completedCovenantDays = useHomeStore((state) => state.completedCovenantDays);
+  const setShowCovenantSuccessModal = useHomeStore((state) => state.setShowCovenantSuccessModal);
+  const setCovenantProgress = useUserStore((state) => state.setCovenantProgress);
+  const {covenantProgress ,setCustomDevotionalsLeft} = useUserStore((state) => state);
+
+  useEffect(() => {
+    appLog('[RootLayout] showCovenantSuccessModal:', showCovenantSuccessModal);
+    if(showCovenantSuccessModal && covenantSuccessSheetRef.current){
+      covenantSuccessSheetRef.current?.show();
+    }
+  }, [showCovenantSuccessModal, covenantSuccessSheetRef.current]);
+
+  const handleNextCovenant = (days: number) => {
+    setCovenantProgress({
+      currentStreak: completedCovenantDays,
+      targetDays: days,
+      progress: 0, // TODO: calculate progress
+      state: COVENANT_STATES.IN_PROGRESS
+    });
+    setShowCovenantSuccessModal(false);
+  };
+
+  // Watch for covenant success modal state and show sheet
+  useEffect(() => {
+    if (showCovenantSuccessModal && covenantSuccessSheetRef.current) {
+      appLog('[RootLayout] Opening covenant success sheet via ref');
+      covenantSuccessSheetRef.current.show();
+    }
+  }, [showCovenantSuccessModal]);
 
   // Show Rive animation
   if (showRiveAnimation && riveAssets?.[0]?.uri) {
@@ -540,21 +857,41 @@ export default function RootLayout() {
             style={styles.riveAnimation}
             autoplay={true}
             onPause={() => {
+              appLog('Rive animation paused');
+              trackRive('splash_screen', 'end');
               setShowRiveAnimation(false);
             }}
             onStop={() => {
+              appLog('Rive animation stopped');
+              trackRive('splash_screen', 'end');
               setShowRiveAnimation(false);
             }}
-          />
-        ) : (
-          <Rive
-            url={riveAssets[0].uri!}
+            onError={(error) => {
+              appLog('Rive animation error:', error);
+              trackRive('splash_screen', 'error');
+              Sentry.captureException(error);
+              setShowRiveAnimation(false);
+            }}
+            />
+          ) : (
+            <Rive
+            resourceName={'shepherd_splash_screen'}
             style={styles.riveAnimation}
             autoplay={true}
             onPause={() => {
+              appLog('Rive animation paused');
+              trackRive('splash_screen', 'end');
               setShowRiveAnimation(false);
             }}
             onStop={() => {
+              appLog('Rive animation stopped');
+              trackRive('splash_screen', 'end');
+              setShowRiveAnimation(false);
+            }}
+            onError={(error) => {
+              appLog('Rive animation error:', error);
+              trackRive('splash_screen', 'error');
+              Sentry.captureException(error);
               setShowRiveAnimation(false);
             }}
           />
@@ -574,7 +911,7 @@ export default function RootLayout() {
 
   if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
   // return <SaveProgressScreen />
-  console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
+  appLog(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
@@ -603,6 +940,16 @@ export default function RootLayout() {
                 penalty: halfModalParams.penalty,
                 daysMissed: halfModalParams.daysMissed,
               }}
+              onDismiss={() => {
+                // If this was a hearts lost modal, clear the flag and check if we need to show check-in
+                if (halfModalParams.type === HalfModalType.HEART_PENALTY) {
+                  isHeartsLostModalVisible.current = false;
+                  // Check if we should show check-in after hearts lost modal is dismissed
+                  setTimeout(() => {
+                    checkAndShowCheckInIfNeeded();
+                  }, 500);
+                }
+              }}
             />
 
             {/* Settings Sheet */}
@@ -626,11 +973,25 @@ export default function RootLayout() {
             {/* Old Reflection Sheet */}
             {Boolean(showOldReflectionSheet) && <OldReflectionSheet />}
 
-            {/* Global Check-In Sheet */}
-            <GlobalCheckIn checkInRef={checkInRef} />
+            {/* Global Check-In Sheet - Only show for logged-in users */}
+            {isUserLoggedIn && <GlobalCheckIn checkInRef={checkInRef} />}
 
             {/* Global Devotionals Sheet */}
             <GlobalDevotionalsSheet devotionalsSheetRef={devotionalsSheetRef} />
+
+            {/* Global Covenant Success Sheet */}
+            <CovenantSuccessSheet
+              covenantSheetRef={covenantSuccessSheetRef}
+              completedDays={completedCovenantDays}
+              onSelectNextCovenant={handleNextCovenant}
+            />
+
+            {/* Streak Freeze Bottom Sheet */}
+            <StreakFreezeBottomSheet
+              freezeSheetRef={streakFreezeSheetRef}
+            />
+
+
 
             {/* Dimmed background for modal overlays */}
             {isModalDimActive && (
@@ -645,8 +1006,8 @@ export default function RootLayout() {
               />
             )}
 
-            {/* Debug button (visible only in development or for creators) */}
-            {(__DEV__ || isCreator) && <DebugButton />}
+            {/* Debug button (visible only when CREATE code has been entered) */}
+            {(hasEnteredCreateCode || __DEV__) && <DebugButton />}
           </>
         )}
       </BottomSheetModalProvider>
@@ -655,7 +1016,7 @@ export default function RootLayout() {
       ) : null}
     </GestureHandlerRootView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

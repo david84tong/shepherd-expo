@@ -17,21 +17,33 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
-                            <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="Shepherd" textAlignment="center" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="S9h-A6-ELl">
+                            <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="center" contentVerticalAlignment="center" text="Shepherd" textAlignment="center" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="S9h-A6-ELl">
                                 <rect key="frame" x="140" y="748" width="121" height="41"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <color key="backgroundColor" red="0.99215686319999996" green="0.9529411793" blue="0.86274516580000005" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                 <color key="textColor" red="0.30196079609999998" green="0.29803922770000002" blue="0.2901961207" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                 <fontDescription key="fontDescription" name="Kailasa-Bold" family="Kailasa" pointSize="33"/>
                                 <textInputTraits key="textInputTraits"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="121" id="text-width"/>
+                                    <constraint firstAttribute="height" constant="41" id="text-height"/>
+                                </constraints>
                             </textField>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="splashLogo" translatesAutoresizingMaskIntoConstraints="NO" id="FzV-B7-dJe">
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="splashLogo" translatesAutoresizingMaskIntoConstraints="NO" id="FzV-B7-dJe">
                                 <rect key="frame" x="67" y="362" width="267" height="159"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="276" id="logo-width"/>
+                                    <constraint firstAttribute="height" constant="171" id="logo-height"/>
+                                </constraints>
                             </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="Rmq-lb-GrQ"/>
                         <color key="backgroundColor" name="SplashScreenBackground"/>
+                        <constraints>
+                            <constraint firstItem="FzV-B7-dJe" firstAttribute="centerX" secondItem="EXPO-ContainerView" secondAttribute="centerX" constant="2" id="logo-center-x"/>
+                            <constraint firstItem="FzV-B7-dJe" firstAttribute="centerY" secondItem="EXPO-ContainerView" secondAttribute="centerY" constant="7" id="logo-center-y"/>
+                            <constraint firstItem="S9h-A6-ELl" firstAttribute="centerX" secondItem="EXPO-ContainerView" secondAttribute="centerX" id="text-center-x"/>
+                            <constraint firstItem="S9h-A6-ELl" firstAttribute="bottom" secondItem="EXPO-ContainerView" secondAttribute="bottom" constant="-40" id="text-bottom"/>
+                        </constraints>
                     </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="EXPO-PLACEHOLDER-1" userLabel="First Responder" sceneMemberID="firstResponder"/>

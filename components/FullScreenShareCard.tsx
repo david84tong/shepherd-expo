@@ -17,7 +17,7 @@ import { Devotional } from '~/app/models/Devotional';
 import { ImageBackground } from 'expo-image';
 import PrimaryButton from './PrimaryButton';
 import i18n from '../app/utils/i18n';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import firestore from '@react-native-firebase/firestore';
 import { useUserStore } from '~/app/stores/userStore';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
@@ -68,7 +68,17 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     const shareCount = storeDevotional?.shares || 0;
     const [isCapturing, setIsCapturing] = useState(false);
 
-    const isRealDevotional = devotionalData ? !devotionalData.id.startsWith('quick-') && !devotionalData.id.startsWith('ai-') : false;
+    const isRealDevotional = devotionalData ? !devotionalData.id.startsWith('quick-') : false;
+
+    // Check if this is a custom devotional
+    const isCustomDevotional = devotionalData ? (devotionalData.id.startsWith('custom-') || devotionalData.id.startsWith('ai-')) : false;
+
+    // Format date for custom devotionals
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const options: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric', year: 'numeric' };
+        return date.toLocaleDateString('en-US', options);
+    };
     useEffect(() => {
         if (startShareFlow) {
             handleSharePress();
@@ -111,17 +121,50 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
         setIsLiked(newLikedState);
 
         // Determine the correct collection based on devotional ID
-        const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('quick-');
+        const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('custom-');
         const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
         const devotionalRef = firestore().collection(collectionName).doc(devotionalData.id);
 
         try {
+            // Update likes in the original collection
             await devotionalRef.update({
                 likes: firestore.FieldValue.increment(newLikedState ? 1 : -1),
                 likedBy: newLikedState
                     ? firestore.FieldValue.arrayUnion(currentUser.id)
                     : firestore.FieldValue.arrayRemove(currentUser.id),
             });
+
+            // Save or remove from savedDevotionals collection
+            const savedDevotionalId = `${currentUser.id}_${devotionalData.id}`;
+
+            if (newLikedState) {
+                // Save devotional to savedDevotionals collection
+                const savedDevotionalData = {
+                    ...devotionalData,
+                    savedAt: new Date().toISOString(),
+                    userId: currentUser.id,
+                    originalCollection: collectionName,
+                    originalId: devotionalData.id,
+                };
+
+                appLog('🔍 Saving devotional to savedDevotionals from FullScreenShareCard:', {
+                    id: savedDevotionalId,
+                    devotionalId: devotionalData.id,
+                    userId: currentUser.id
+                });
+
+                await firestore().collection('savedDevotionals').doc(savedDevotionalId).set(savedDevotionalData);
+            } else {
+                // Remove devotional from savedDevotionals collection
+                appLog('🔍 Removing devotional from savedDevotionals from FullScreenShareCard:', {
+                    id: savedDevotionalId,
+                    devotionalId: devotionalData.id,
+                    userId: currentUser.id
+                });
+
+                await firestore().collection('savedDevotionals').doc(savedDevotionalId).delete();
+            }
+
             analytics.logEvent('FullScreenShareCard_Like', {
                 bibleReference: devotionalData.bibleReference,
                 liked: newLikedState,
@@ -235,7 +278,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                             };
 
                             // Determine the correct collection based on devotional ID
-                            const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('quick-');
+                            const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('custom-');
                             const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
                             const devotionalRef = firestore().collection(collectionName).doc(devotionalData.id);
                             await devotionalRef.update({
@@ -248,13 +291,13 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                             });
                             useDevotionalStore.getState().incrementShareCount(devotionalData.id);
                             const shareResult = await Share.open(shareOptions);
-                            console.log('Share successful:', shareResult);
+                            appLog('Share successful:', shareResult);
 
                             // Update share count and analytics
 
 
                         } catch (shareError) {
-                            console.log('Share cancelled or failed:', shareError);
+                            appLog('Share cancelled or failed:', shareError);
                             // Don't update share count if user cancelled
                         }
 
@@ -423,7 +466,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                         {devotionalData?.bibleReference}
                                     </Text>
                                     <Text className="font-nunito-mediumItalic text-white text-[20px]  mb-7">
-                                        {i18n.t('verse_of_the_day')}
+                                        {isCustomDevotional && devotionalData?.createdAt ? formatDate(devotionalData.createdAt) : i18n.t('verse_of_the_day')}
                                     </Text>
                                     <Text className="font-din text-white text-[24px]  mb-10">
                                         {devotionalData?.verse}
@@ -432,11 +475,11 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                     <View style={{ opacity: isCapturing ? 0 : 1 }} className="flex-row items-center mt-4">
                                         <TouchableOpacity onPress={handleLikePress} className="flex-row items-center mr-4">
                                             <Ionicons name="heart" size={RPH(2.2)} color={isLiked ? "#B36303" : "white"} />
-                                            <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>
+                                            {!isCustomDevotional && <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>}
                                         </TouchableOpacity>
                                         <TouchableOpacity onPress={handleSharePress} disabled={isCapturing} className="flex-row items-center">
                                             <FontAwesome5 name="share-alt" size={RPH(1.8)} color="white" />
-                                            <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>
+                                            {!isCustomDevotional && <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>}
                                         </TouchableOpacity>
                                     </View>
                                 </Animated.View>

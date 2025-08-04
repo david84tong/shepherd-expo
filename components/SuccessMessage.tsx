@@ -26,6 +26,7 @@ interface SuccessMessageProps {
   xpGained?: number;
   showCollectBonus?: boolean;
   onLoad?: () => void;
+  screenType?: 'reading' | 'prayer' | 'reflection';
 }
 
 const MAX_HEARTS = 100;
@@ -46,6 +47,7 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
   xpGained = 0,
   showCollectBonus = false,
   onLoad,
+  screenType,
 }) => {
   const didLevelUp = useMemo(() => level > prevLevel, [level, prevLevel]);
 
@@ -63,17 +65,21 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
   // Determine if we should show collect bonus button
   // This happens when completing prayer and both reading and reflection are already done
   // OR when completing reflection and prayer has already been done
+  // Get prayerCompleted from store properly
+  const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
+  
   const shouldShowCollectBonus = useMemo(() => {
     if (showCollectBonus) return true; // Explicit prop override
 
     // Check if bonus is available - either after prayer with reading+reflection done
     // OR after reflection with reading+prayer done
-    const isFirstReadingOfDay = !sawStreakToday;
-    const allActivitiesComplete = readingCompleted && reflectionCompleted && useHomeStore.getState().prayerCompleted;
-    const isBonusAvailable = allActivitiesComplete && isFirstReadingOfDay && !sawDailyBonus;
+    // const isFirstReadingOfDay = !sawStreakToday;
+    const allActivitiesComplete = readingCompleted && reflectionCompleted && prayerCompleted;
+    const isBonusAvailable = allActivitiesComplete && !sawDailyBonus;
 
     return isBonusAvailable;
-  }, [showCollectBonus, readingCompleted, reflectionCompleted, sawStreakToday, sawDailyBonus]);
+  }, [showCollectBonus, readingCompleted, reflectionCompleted, prayerCompleted, sawStreakToday, sawDailyBonus]);
+
 
   // Get user data
   const lambHearts = useUserStore((state) => state?.getLambHearts?.());
@@ -316,7 +322,7 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
         ) : (
           // Normal flow with both buttons
           <>
-            {!hidePrayButton && (
+            {!hidePrayButton && (screenType !== 'reflection') && (
               <RNAnimated.View style={blueButtonStyle} className="w-full">
                 <PrimaryButton
                   title={prayButtonTitle || i18n.t('pray_about_this_verse')}

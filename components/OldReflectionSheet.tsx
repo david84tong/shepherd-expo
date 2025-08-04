@@ -14,6 +14,7 @@ import BottomSheet, {
 import { useUIStore } from '../app/stores/uiStore';
 import dayjs from 'dayjs';
 import { hapticMedium } from '~/utils/haptics';
+import { appLog } from '~/app/helper/helper';
 
 // Using exact same date handling from stats.tsx
 function toDateSafe(ts: any): Date {
@@ -65,7 +66,7 @@ function formatRelativeTime(timestamp: any): string {
     const diffYears = Math.floor(diffMonths / 12);
     return `${diffYears}y ago`;
   } catch (error) {
-    console.log('Error formatting relative time:', error, timestamp);
+    appLog('Error formatting relative time:', error, timestamp);
     return 'Recent Reflection';
   }
 }
@@ -76,7 +77,7 @@ function formatFullDate(timestamp: any): string {
     const date = toDateSafe(timestamp);
     return dayjs(date).format('MMMM D, YYYY · h:mm A');
   } catch (error) {
-    console.log('Error formatting full date:', error);
+    appLog('Error formatting full date:', error);
     return '';
   }
 }
@@ -101,18 +102,18 @@ const OldReflectionSheet: React.FC = () => {
 
   // Log when reflection data changes
   useEffect(() => {
-    console.log('OldReflectionSheet: reflectionData changed:', reflectionData);
+    appLog('OldReflectionSheet: reflectionData changed:', reflectionData);
   }, [reflectionData]);
 
   // Log when visibility changes
   useEffect(() => {
-    console.log('OldReflectionSheet: isVisible changed to:', isVisible);
+    appLog('OldReflectionSheet: isVisible changed to:', isVisible);
   }, [isVisible]);
 
   // Effect to control sheet visibility based on store state
   useEffect(() => {
     if (isVisible) {
-      console.log('OldReflectionSheet: Expanding sheet');
+      appLog('OldReflectionSheet: Expanding sheet');
       // Add a small delay to ensure the sheet expands properly
       setTimeout(() => {
         bottomSheetRef.current?.expand();
@@ -121,14 +122,14 @@ const OldReflectionSheet: React.FC = () => {
       // Provide haptic feedback when sheet opens
       hapticMedium();
     } else {
-      console.log('OldReflectionSheet: Closing sheet');
+      appLog('OldReflectionSheet: Closing sheet');
       bottomSheetRef.current?.close();
     }
   }, [isVisible]);
 
   // Handle sheet closing
   const handleSheetChanges = useCallback((index: number) => {
-    console.log('OldReflectionSheet: Sheet index changed to:', index);
+    appLog('OldReflectionSheet: Sheet index changed to:', index);
     if (index === -1) { // Index -1 means sheet is closed
       hideSheet();
     }
@@ -136,7 +137,7 @@ const OldReflectionSheet: React.FC = () => {
 
   // Close button handler
   const handleClose = useCallback(() => {
-    console.log('OldReflectionSheet: Close button pressed');
+    appLog('OldReflectionSheet: Close button pressed');
     bottomSheetRef.current?.close();
   }, []);
 
@@ -156,7 +157,7 @@ const OldReflectionSheet: React.FC = () => {
 
   // Don't render anything if no reflection data
   if (!reflectionData) {
-    console.log('OldReflectionSheet: No reflection data, not rendering');
+    appLog('OldReflectionSheet: No reflection data, not rendering');
     return null;
   }
 
@@ -188,6 +189,9 @@ const OldReflectionSheet: React.FC = () => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          <Text style={styles.reflectionPromptText}>
+            {reflectionData?.reflectionPrompt || 'No prompt found.'}
+          </Text>
           <Text style={styles.relativeTimeText}>
             {formatRelativeTime(reflectionData.date)}
           </Text>
@@ -268,6 +272,13 @@ const styles = StyleSheet.create({
     fontFamily: 'DIN Next Rounded LT W01 Regular', // din font
     color: '#3C584A', // textPrimary
     lineHeight: 24, // Improve readability
+  },
+  reflectionPromptText: {
+    fontSize: 20,
+    fontFamily: 'Nunito-Bold', // din font
+    color: '#3C584A', // textPrimary
+    lineHeight: 24, // Improve readability
+    marginBottom: 12,
   },
   relativeTimeText: {
     fontSize: 14,
