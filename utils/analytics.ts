@@ -31,9 +31,9 @@ class Analytics {
 
     try {
       // Initialize Mixpanel
-      const trackAutomaticEvents = false;
-      const useNative = true;
-      this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, trackAutomaticEvents, useNative);
+      this.mixpanel = Platform.OS === 'android' 
+        ? new Mixpanel(MIXPANEL_TOKEN, false, true)
+        : new Mixpanel(MIXPANEL_TOKEN, false, false);
       await this.mixpanel.init();
       console.log('✅ Mixpanel initialized successfully');
       this.mixpanel.track('test_event', { platform: Platform.OS });
