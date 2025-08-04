@@ -316,14 +316,11 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             try {
               // Deduct gems and add custom devotional count
               const newGems = currentGems - gemCost;
-              const newCustomDevotionalsLeft = customDevotionalsLeft + 1;
               
               setGens(newGems);
-              setCustomDevotionalsLeft(newCustomDevotionalsLeft);
               
               appLog('[GlobalCheckIn] Custom devotional purchased successfully', {
                 newGems,
-                newCustomDevotionalsLeft,
               });
               
               // Haptic feedback
@@ -333,7 +330,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               analytics.logEvent('checkin_custom_devotional_purchased', {
                 gemCost,
                 newGems,
-                newCustomDevotionalsLeft,
               });
               
               // Now generate the custom devotional (skip pro check since they just purchased with gems)
@@ -486,7 +482,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           setCheckInSaved(false);
           setGemsAwarded(false);
           setShowRewardAnimation(false);
-          setCustomDevotionalsLeft(customDevotionalsLeft > 0 ? customDevotionalsLeft - 1 : 0);
           // Reset animations
           moodAnim.setValue(0);
           focusAnim.setValue(screenWidth);
@@ -1236,6 +1231,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 // User has custom devotionals left - generate directly (skip pro check)
                 appLog('[GlobalCheckIn] User has custom devotionals left, generating');
                 await handleGenerateCustomDevotional(true);
+                setCustomDevotionalsLeft(customDevotionalsLeft > 0 ? customDevotionalsLeft - 1 : 0);
                 return;
               }
               
