@@ -51,7 +51,27 @@ export const onAppForegroundOrInit = async () => {
   } catch (firestoreError) {
     console.error('Error fetching user from Firestore (foreground/init):', firestoreError);
   }
-  await checkStreakAndApplyPenalties();
+  // Check streak and show freeze modal if needed
+  const result = await checkStreakAndApplyPenalties();
+  
+  // Show streak freeze modal if a freeze was used
+  if (result && 'streakFreezeUsed' in result && result.streakFreezeUsed) {
+    // Access the global streak freeze modal function
+    if (typeof global !== 'undefined' && (global as any).streakFreezeSheetRef) {
+      appLog('❄️ Showing streak freeze modal from foreground/init - freeze was used');
+      (global as any).streakFreezeSheetRef.current?.show(true);
+      
+      // Log analytics
+      const analytics = require('../../utils/analytics').default;
+      analytics.logEvent('streak_freeze_used_foreground', {
+        freezesRemaining: result.freezesRemaining,
+        streakFreezeUsed: result.streakFreezeUsed,
+        daysMissed: result.daysMissed,
+      });
+    } else {
+      appLog('❌ Could not show streak freeze modal - global ref not available');
+    }
+  }
 };
 // Function to restore user state from Firestore
 const restoreUserState = async () => {

@@ -204,6 +204,7 @@ export default Sentry.wrap(function RootLayout() {
   const devotionalsSheetRef = useRef<DevotionalsSheetRef>(null);
   const covenantSuccessSheetRef = useRef<CovenantSuccessSheetRef>(null);
   const streakFreezeSheetRef = useRef<StreakFreezeBottomSheetRef>(null);
+  const streakFreezes = useUserStore((state) => state.streakFreezes);
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
@@ -294,12 +295,21 @@ export default Sentry.wrap(function RootLayout() {
       const result = await checkStreakAndApplyPenalties();
 
       if (result && 'streakFreezeUsed' in result && result.streakFreezeUsed) {
-        // Show streak freeze bottom sheet
-        streakFreezeSheetRef.current?.show();
+        // Show streak freeze bottom sheet with "used" notification
+        appLog('❄️ Showing streak freeze modal from app startup - freeze was used');
+        setTimeout(() => {
+          if (typeof global !== 'undefined' && (global as any).streakFreezeSheetRef) {
+            appLog('🧪 [DEBUG TEST] Showing freeze modal with remaining:', result.freezesRemaining);
+            (global as any).streakFreezeSheetRef.current?.show(true);
+          }
+        }, 500);
+        //streakFreezeSheetRef.current?.show(true);
         
         analytics.logEvent('streak_freeze_used', {
-          freezesRemaining: result.freezesRemaining || 1,
-          totalFreezes: 2, // Always 2 for now
+          freezesRemaining: result.freezesRemaining,
+          totalFreezes: streakFreezes,
+          streakFreezeUsed: result.streakFreezeUsed,
+          daysMissed: result.daysMissed,
         });
       } else if (result && result.heartPenalty > 0) {
         // Prepare params for heart penalty modal
@@ -507,7 +517,8 @@ export default Sentry.wrap(function RootLayout() {
       (global as any).showStatsSheet = showStatsSheet;
       (global as any).showCheckIn = showCheckIn;
       (global as any).showDevotionalsSheet = showDevotionalsSheet;
-      (global as any).showStreakFreezeModal = () => streakFreezeSheetRef.current?.show();
+      (global as any).showStreakFreezeModal = () => streakFreezeSheetRef.current?.show(false);
+    (global as any).streakFreezeSheetRef = streakFreezeSheetRef;
     }
   }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet, showCheckIn, showDevotionalsSheet]);
 

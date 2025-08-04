@@ -80,6 +80,9 @@ interface NotificationState {
 
   // Action: Schedule streak freeze reminder notification for 3 days after freeze is used
   scheduleStreakFreezeReminder: (freezesRemaining: number) => Promise<void>;
+
+  // Action: Cancel streak freeze reminder notification
+  cancelStreakFreezeReminder: () => Promise<void>;
 }
 
 // Configure notification behavior
@@ -761,10 +764,10 @@ export const useNotificationStore = create<NotificationState>()(
             return;
           }
 
-          // Calculate notification time: 3 days from now at 9:00 AM
+          // Calculate notification time: tomorrow morning at 9:00 AM
           const now = new Date();
           const notificationTime = new Date(now);
-          notificationTime.setDate(notificationTime.getDate() + 3); // 3 days later
+          notificationTime.setDate(notificationTime.getDate() + 1); // Tomorrow
           notificationTime.setHours(9, 0, 0, 0); // 9:00 AM
 
           // If the calculated time is in the past (edge case), add one more day
@@ -804,6 +807,16 @@ export const useNotificationStore = create<NotificationState>()(
 
         } catch (error) {
           console.error('📱 Failed to schedule streak freeze reminder:', error);
+        }
+      },
+
+      // Cancel streak freeze reminder notification (when user becomes active again)
+      cancelStreakFreezeReminder: async () => {
+        try {
+          await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.STREAK_FREEZE_REMINDER);
+          appLog('📱 Cancelled streak freeze reminder - user is active again');
+        } catch (error) {
+          console.error('📱 Failed to cancel streak freeze reminder:', error);
         }
       },
     }),

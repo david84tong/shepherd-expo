@@ -11,6 +11,7 @@ import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
 import { appLog } from '../helper/helper';
 import { COVENANT_STATES } from '../hooks/streakHook';
 import { useHomeStore } from './homeStore';
+import { useNotificationStore } from './notificationStore';
 
 // Constants
 
@@ -296,6 +297,7 @@ export const useUserStore = create<UserStore>()(
             streak: firestoreData.streak || state.streak,
             streakCount: firestoreData.streakCount || state.streakCount,
             streakFreezes: firestoreData.streakFreezes ?? state.streakFreezes ?? 2,
+            streakFreezeUsedDates: firestoreData.streakFreezeUsedDates ?? state.streakFreezeUsedDates ?? [],
             // Sync completion data - use Firestore data if available
             completedReadings: firestoreData.completedReadings ?? state.completedReadings ?? [],
             completedPrayers: firestoreData.completedPrayers ?? state.completedPrayers ?? [],
@@ -551,6 +553,13 @@ export const useUserStore = create<UserStore>()(
         set({ lastActivityDate: date });
         if (isAuthenticated()) {
           updateUserData({ lastActivityDate: date });
+           // Cancel streak freeze reminder notification since user is active again
+          try {
+            const notificationStore = useNotificationStore.getState();
+            notificationStore.cancelStreakFreezeReminder();
+          } catch (error) {
+            appLog('Error cancelling streak freeze reminder:', error);
+          }
         }
         syncStreakWithWidget(get().streakCount, date);
       },

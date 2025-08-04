@@ -3,6 +3,7 @@ import firestore, { Timestamp } from '@react-native-firebase/firestore';
 
 import { UserDoc } from '../app/models/User';
 import { appLog } from '~/app/helper/helper';
+import { COVENANT_STATES } from '~/app/hooks/streakHook';
 
 /**
  * Firebase Request Debugger
@@ -192,6 +193,15 @@ export const createUserDocument = async (id: string, userData: Partial<UserDoc>)
       completedReflections: userData.completedReflections || [],
       completedPrayers: userData.completedPrayers || [],
       completedReadings: userData.completedReadings || [],
+      streakFreezes: userData.streakFreezes || 2,
+      streakFreezeUsedDates: userData.streakFreezeUsedDates || [],
+      customDevotionalsLeft: userData.customDevotionalsLeft || 0,
+      covenantProgress: userData.covenantProgress || {
+        currentStreak: 0,
+        targetDays: 0,
+        progress: 0,
+        state: COVENANT_STATES.NOT_STARTED,
+      },
     };
     const docToCreateCleaned = undefinedToNull(docToCreate);
 

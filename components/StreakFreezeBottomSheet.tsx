@@ -18,7 +18,7 @@ import PrimaryButton from './PrimaryButton';
 import streakFreezeIcon from '~/assets/images/streakFreezeIcon.png';
 
 export type StreakFreezeBottomSheetRef = {
-  show: () => void;
+  show: (isUsedNotification?: boolean) => void;
   close: () => void;
 };
 
@@ -54,12 +54,12 @@ const StreakFreezeBottomSheet: React.FC<StreakFreezeBottomSheetProps> = ({
   const bottomSheetRef = useRef<BottomSheet>(null);
   
   const { playButtonSound } = useSoundStore();
-  const { getStreakFreezes } = useUserStore();
+  const { streakFreezes } = useUserStore();
   const [isSheetVisible, setIsSheetVisible] = useState(false);
+  const [isUsedNotification, setIsUsedNotification] = useState(false);
   
   // Get current freeze data
-  const freezesRemaining = getStreakFreezes();
-  const totalFreezes = 2;
+  const freezesRemaining = streakFreezes;
 
 
   // Custom backdrop renderer
@@ -80,20 +80,20 @@ const StreakFreezeBottomSheet: React.FC<StreakFreezeBottomSheetProps> = ({
     hapticLight();
     
     analytics.logEvent('StreakFreezeSheet_Continue_Tapped', { 
-      freezesRemaining,
-      totalFreezes 
+      freezesRemaining, 
     });
     
     handleDismiss();
-  }, [freezesRemaining, totalFreezes, handleDismiss]);
+  }, [freezesRemaining, handleDismiss]);
 
   // Expose methods via ref
   useImperativeHandle(
     freezeSheetRef,
     () => ({
-      show: () => {
-        appLog('[StreakFreezeBottomSheet] show() called');
+      show: (isUsedNotification = false) => {
+        appLog('[StreakFreezeBottomSheet] show() called with isUsedNotification:', isUsedNotification);
         
+        setIsUsedNotification(isUsedNotification);
         setIsSheetVisible(true);
         bottomSheetRef.current?.snapToIndex(0);
         
@@ -112,10 +112,10 @@ const StreakFreezeBottomSheet: React.FC<StreakFreezeBottomSheetProps> = ({
     if (isSheetVisible) {
       analytics.logEvent('StreakFreezeSheet_Viewed', {
         freezesRemaining,
-        totalFreezes
+        isUsedNotification
       });
     }
-  }, [isSheetVisible, freezesRemaining, totalFreezes]);
+  }, [isSheetVisible, freezesRemaining, isUsedNotification]);
 
   // Memoized freeze icon render
   const renderFreezeIcon = useMemo(() => {
@@ -142,22 +142,22 @@ const StreakFreezeBottomSheet: React.FC<StreakFreezeBottomSheetProps> = ({
     return (
       <View className="items-center mb-4 mt-6">
         <View
-          className="px-3 py-4">
+          className="px-4 py-4">
           <Text className="font-feather text-[#3C584A] text-center" style={{ fontSize: AppFonts[22] }}>
-            A streak freeze protects your streak for a day. You have{' '}
-            <Text className="font-feather text-accentGold">{freezesRemaining} of {totalFreezes}</Text>{' '}
-            equipped.
+           1x Streak Freeze Used ! You have{' '}
+            <Text className="font-feather text-accentGold">{freezesRemaining}x</Text>{' '}
+            left.
           </Text>
         </View>
       </View>
     );
-  }, [freezesRemaining, totalFreezes]);
+  }, [freezesRemaining, isUsedNotification]);
 
   return (
     <BottomSheet
       ref={bottomSheetRef}
       index={-1}
-      snapPoints={['60%', '65%', '70%']}
+      snapPoints={['52%', '55%', '60%']}
       enableDynamicSizing={true}
       enablePanDownToClose
       backgroundStyle={{
