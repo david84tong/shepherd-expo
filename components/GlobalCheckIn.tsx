@@ -278,7 +278,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     
     const { getGens, setGens, customDevotionalsLeft, setCustomDevotionalsLeft } = useUserStore.getState();
     const currentGems = getGens();
-    const gemCost = 100;
+    const gemCost = 200;
     
     // Check if user has enough gems
     if (currentGems < gemCost) {
@@ -296,7 +296,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     // Show confirmation alert
     Alert.alert(
       'Purchase Custom Devotional',
-      `Are you sure you want to create a custom devotional for 100 gems?\n\nYou currently have ${currentGems} gems.`,
+      `Are you sure you want to create a custom devotional for 200 gems?\n\nYou currently have ${currentGems} gems.`,
       [
         {
           text: 'Cancel',
@@ -336,8 +336,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 newCustomDevotionalsLeft,
               });
               
-              // Now generate the custom devotional
-              await handleGenerateCustomDevotional();
+              // Now generate the custom devotional (skip pro check since they just purchased with gems)
+              await handleGenerateCustomDevotional(true);
               
             } catch (error) {
               console.error('[GlobalCheckIn] Error purchasing custom devotional:', error);
@@ -354,44 +354,47 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   }, []);
 
   // Handle custom devotional generation
-  const handleGenerateCustomDevotional = useCallback(async () => {
-    appLog('[GlobalCheckIn] handleGenerateCustomDevotional started');
+  const handleGenerateCustomDevotional = useCallback(async (skipProCheck = false) => {
+    appLog('[GlobalCheckIn] handleGenerateCustomDevotional started, skipProCheck:', skipProCheck);
     const currentUser = auth().currentUser;
     if (!currentUser) {
       console.error('No authenticated user available for generating devotional');
       return;
     }
 
-    // Check if user is pro - check both subscription store and user store
-    const { isProMember, forceRefreshProStatus } = useSubscriptionStore.getState();
-    const userProStatus = useUserStore.getState().proStatus;
-    
-    // First force refresh pro status to get latest from all sources
-    await forceRefreshProStatus();
-    
-    // Re-check pro status after refresh
-    const subscriptionStore = useSubscriptionStore.getState();
-    const userStore = useUserStore.getState();
-    const isProAfterRefresh = subscriptionStore.isProMember;
-    const userProStatusAfterRefresh = userStore.proStatus;
-    const userIsPro = userStore.getUser()?.isPro;
-    
-    // Check all possible pro status sources
-    const isPro = isProAfterRefresh || userProStatusAfterRefresh === 'pro' || userIsPro === true;
-    
-    appLog('[GlobalCheckIn] Pro status check:', {
-      isProMember,
-      isProAfterRefresh,
-      userProStatus,
-      userProStatusAfterRefresh,
-      userIsPro,
-      finalIsPro: isPro
-    });
-    
-    if (!isPro && customDevotionalsLeft <= 0) {
-      appLog('[GlobalCheckIn] User is not pro, presenting free trial paywall');
-      await safelyPresentPaywall('free');
-      return;
+    // Only check pro status if not skipping (i.e., not called after gem purchase)
+    if (!skipProCheck) {
+      // Check if user is pro - check both subscription store and user store
+      const { isProMember, forceRefreshProStatus } = useSubscriptionStore.getState();
+      const userProStatus = useUserStore.getState().proStatus;
+      
+      // First force refresh pro status to get latest from all sources
+      await forceRefreshProStatus();
+      
+      // Re-check pro status after refresh
+      const subscriptionStore = useSubscriptionStore.getState();
+      const userStore = useUserStore.getState();
+      const isProAfterRefresh = subscriptionStore.isProMember;
+      const userProStatusAfterRefresh = userStore.proStatus;
+      const userIsPro = userStore.getUser()?.isPro;
+      
+      // Check all possible pro status sources
+      const isPro = isProAfterRefresh || userProStatusAfterRefresh === 'pro' || userIsPro === true;
+      
+      appLog('[GlobalCheckIn] Pro status check:', {
+        isProMember,
+        isProAfterRefresh,
+        userProStatus,
+        userProStatusAfterRefresh,
+        userIsPro,
+        finalIsPro: isPro
+      });
+      
+      if (!isPro && customDevotionalsLeft <= 0) {
+        appLog('[GlobalCheckIn] User is not pro and no custom devotionals left, presenting free trial paywall');
+        await safelyPresentPaywall('free');
+        return;
+      }
     }
 
     setIsGenerating(true);
@@ -483,7 +486,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           setCheckInSaved(false);
           setGemsAwarded(false);
           setShowRewardAnimation(false);
-          setCustomDevotionalsLeft(customDevotionalsLeft - 1);
+          setCustomDevotionalsLeft(customDevotionalsLeft > 0 ? customDevotionalsLeft - 1 : 0);
           // Reset animations
           moodAnim.setValue(0);
           focusAnim.setValue(screenWidth);
@@ -507,6 +510,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     handleCompleteCheckIn,
     handleDismiss,
     router,
+    customDevotionalsLeft,
   ]);
 
   // Animate screen transitions
@@ -1206,7 +1210,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   }
                   
                   // If user is not pro and has no custom devotionals left, show with gem cost
-                  return `${i18n.t('checkin_generate_custom_devotional_for_gems')} (-100)`;
+                  return `${i18n.t('checkin_generate_custom_devotional_for_gems')} (-200)`;
                 })()
               : i18n.t('checkin_start_todays_devotional')
           }
@@ -1221,17 +1225,17 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               const isPro = isProMember || user?.isPro || user?.isProWithReferral;
               
               if (isPro) {
-                // Pro user - generate custom devotional directly
+                // Pro user - generate custom devotional directly (skip pro check)
                 appLog('[GlobalCheckIn] Pro user generating custom devotional');
-                await handleGenerateCustomDevotional();
+                await handleGenerateCustomDevotional(true);
                 return;
               }
               
               // Non-pro user - check if they have custom devotionals left
               if (customDevotionalsLeft > 0) {
-                // User has custom devotionals left - generate directly
+                // User has custom devotionals left - generate directly (skip pro check)
                 appLog('[GlobalCheckIn] User has custom devotionals left, generating');
-                await handleGenerateCustomDevotional();
+                await handleGenerateCustomDevotional(true);
                 return;
               }
               

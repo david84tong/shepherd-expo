@@ -193,7 +193,7 @@ const initialState: UserDoc = {
   chaptersReadTotal: 0,
   bibleVersion: 'ESV',
   proStatus: 'free',
-  gens: 100,
+  gens: 200,
   createdAt: Timestamp.now(),
   updatedAt: Timestamp.now(),
   completedReflections: [],

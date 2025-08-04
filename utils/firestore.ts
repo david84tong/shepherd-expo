@@ -188,7 +188,7 @@ export const createUserDocument = async (id: string, userData: Partial<UserDoc>)
       chaptersReadTotal: userData.chaptersReadTotal || 0,
       bibleVersion: userData.bibleVersion || 'ESV',
       proStatus: userData.proStatus || 'free',
-      gens: userData.gens || 10,
+      gens: userData.gens || 200,
       completedReflections: userData.completedReflections || [],
       completedPrayers: userData.completedPrayers || [],
       completedReadings: userData.completedReadings || [],
