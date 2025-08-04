@@ -8,6 +8,7 @@ import {
   Platform,
   Text,
   View,
+  TouchableOpacity,
 } from 'react-native';
 
 import { SuccessAnimationType, useHomeStore } from '../app/stores/homeStore';
@@ -424,6 +425,16 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       height: screenHeight,
     }}
       pointerEvents="box-none">
+      {pathInProgress && (
+        <TouchableOpacity 
+          onPress={cancelPrayer}
+          className="absolute top-4 right-4 z-50 p-2"
+          style={{ marginTop: useSafeAreaInsets().top }}
+        >
+          {/* Ionicons name="close" size={32} color="#3C584A" /> */}
+        </TouchableOpacity>
+      )}
+
       {/* Back Button */}
       <BackButton onPress={handleBackPress} containerClassName="-pt-[4px]" />
 
@@ -436,9 +447,8 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
         }}>
         {/* Header title */}
         <Text className="text-heading font-feather text-textPrimary mb-1 text-center">
-          {tappedPrayAboutVerse && currentPath && currentPath.unitTitle
-            ? currentPath.unitTitle
-            : "Prayer"}
+          {tappedPrayAboutVerse ? i18n.t('pray_about_this_verse')
+            : i18n.t('prayer')}
         </Text>
 
         {/* Subtitle with book and chapter range */}
@@ -477,7 +487,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
           transform: [{ translateY: buttonAnim }, { translateX: shakeTranslateX }],
         }}>
         <View className="mt-64" style={{ marginBottom: Platform.OS === 'android' ? bottomPadding + 20 : 0 }}>
-          <PrimaryButton title="Amen" onPress={
+          <PrimaryButton title={i18n.t('amen_button')} onPress={
             () => {
               analytics.logEvent("Prayer_Tapped_Amen", {
                 prayer: prayerText

@@ -10,6 +10,7 @@ import PrimaryButton from './PrimaryButton';
 import { HalfModalType } from '../app/halfModal';
 import { useUserStore } from '../app/stores/userStore';
 import { hapticMedium } from '~/utils/haptics';
+import i18n from '../app/utils/i18n';
 
 export type HalfModalSheetRef = {
   expand: () => void;
@@ -84,12 +85,15 @@ const HalfModalSheet: React.FC<HalfModalSheetProps> = ({ halfModalRef, snapPoint
               style={styles.icon}
               resizeMode="contain"
             />
-            <Text style={styles.title}>{params.message || 'Hearts Lost!'}</Text>
+            <Text style={styles.title}>{params.message || i18n.t('hearts_lost')}</Text>
             {params.penalty && params.daysMissed ? (
               <View>
                 <Text style={styles.penaltyText}>
-                  ❤️ {useUserStore.getState().getLambName()} lost {params.penalty} hearts after{' '}
-                  {params.daysMissed} days away.
+                  {i18n.t('lamb_lost_hearts_after_days', {
+                    lambName: useUserStore.getState().getLambName(),
+                    penalty: params.penalty,
+                    daysMissed: params.daysMissed
+                  })}
                 </Text>
               </View>
             ) : null}
@@ -101,14 +105,14 @@ const HalfModalSheet: React.FC<HalfModalSheetProps> = ({ halfModalRef, snapPoint
               style={styles.icon}
               resizeMode="contain"
             />
-            <Text style={styles.title}>{params.message || 'Attention'}</Text>
-            <Text style={styles.penaltyText}>{params.subMessage || 'Something happened.'}</Text>
+            <Text style={styles.title}>{params.message || i18n.t('attention')}</Text>
+            <Text style={styles.penaltyText}>{params.subMessage || i18n.t('something_happened')}</Text>
           </>
         )}
 
         {/* Close Button */}
         <PrimaryButton
-          title="Let's bounce back"
+          title={i18n.t('lets_bounce_back')}
           onPress={handleDismiss}
           style="w-full mt-6"
           buttonType="default"
