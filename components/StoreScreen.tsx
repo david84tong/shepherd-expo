@@ -551,7 +551,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     const isEquipped = equippedSkin === skinId;
     const isStreakFreeze = item.id === 'streak_freeze';
     const isCustomDevotional = item.id === 'custom_devotional';
-    const isCustomDevotionalLocked = isCustomDevotional && userGems < 100;
+    const isCustomDevotionalLocked = isCustomDevotional && userGems < 200;
 
     // Debug logging for Annointed Lamb
     if (isAnointedLamb) {

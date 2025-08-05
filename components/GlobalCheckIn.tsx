@@ -278,7 +278,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     
     const { getGens, setGens, customDevotionalsLeft, setCustomDevotionalsLeft } = useUserStore.getState();
     const currentGems = getGens();
-    const gemCost = 100;
+    const gemCost = 200;
     
     // Check if user has enough gems
     if (currentGems < gemCost) {
@@ -296,7 +296,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     // Show confirmation alert
     Alert.alert(
       'Purchase Custom Devotional',
-      `Are you sure you want to create a custom devotional for 100 gems?\n\nYou currently have ${currentGems} gems.`,
+      `Are you sure you want to create a custom devotional for 200 gems?\n\nYou currently have ${currentGems} gems.`,
       [
         {
           text: 'Cancel',
@@ -314,16 +314,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           style: 'default',
           onPress: async () => {
             try {
-              // Deduct gems and add custom devotional count
+              // Deduct gems immediately
               const newGems = currentGems - gemCost;
-              const newCustomDevotionalsLeft = customDevotionalsLeft + 1;
-              
               setGens(newGems);
-              setCustomDevotionalsLeft(newCustomDevotionalsLeft);
               
               appLog('[GlobalCheckIn] Custom devotional purchased successfully', {
                 newGems,
-                newCustomDevotionalsLeft,
               });
               
               // Haptic feedback
@@ -333,11 +329,21 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               analytics.logEvent('checkin_custom_devotional_purchased', {
                 gemCost,
                 newGems,
-                newCustomDevotionalsLeft,
               });
               
-              // Now generate the custom devotional
-              await handleGenerateCustomDevotional();
+              // Navigate to loading screen immediately since we have enough gems
+              // Set navigation flag to prevent check-in from showing during navigation
+              const { setIsNavigating } = useCheckInStore.getState();
+              setIsNavigating(true);
+              
+              // Close the sheet
+              bottomSheetRef.current?.close();
+              
+              // Navigate immediately to loading screen
+              router.push('/devotionalLoading' as any);
+              
+              // Generate the custom devotional in the background
+              handleGenerateCustomDevotionalInBackground();
               
             } catch (error) {
               console.error('[GlobalCheckIn] Error purchasing custom devotional:', error);
@@ -353,45 +359,163 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     );
   }, []);
 
-  // Handle custom devotional generation
-  const handleGenerateCustomDevotional = useCallback(async () => {
-    appLog('[GlobalCheckIn] handleGenerateCustomDevotional started');
+  // Handle custom devotional generation in background (for immediate navigation after gem purchase)
+  const handleGenerateCustomDevotionalInBackground = useCallback(async () => {
+    appLog('[GlobalCheckIn] handleGenerateCustomDevotionalInBackground started');
     const currentUser = auth().currentUser;
     if (!currentUser) {
       console.error('No authenticated user available for generating devotional');
       return;
     }
 
-    // Check if user is pro - check both subscription store and user store
-    const { isProMember, forceRefreshProStatus } = useSubscriptionStore.getState();
-    const userProStatus = useUserStore.getState().proStatus;
-    
-    // First force refresh pro status to get latest from all sources
-    await forceRefreshProStatus();
-    
-    // Re-check pro status after refresh
-    const subscriptionStore = useSubscriptionStore.getState();
-    const userStore = useUserStore.getState();
-    const isProAfterRefresh = subscriptionStore.isProMember;
-    const userProStatusAfterRefresh = userStore.proStatus;
-    const userIsPro = userStore.getUser()?.isPro;
-    
-    // Check all possible pro status sources
-    const isPro = isProAfterRefresh || userProStatusAfterRefresh === 'pro' || userIsPro === true;
-    
-    appLog('[GlobalCheckIn] Pro status check:', {
-      isProMember,
-      isProAfterRefresh,
-      userProStatus,
-      userProStatusAfterRefresh,
-      userIsPro,
-      finalIsPro: isPro
-    });
-    
-    if (!isPro && customDevotionalsLeft <= 0) {
-      appLog('[GlobalCheckIn] User is not pro, presenting free trial paywall');
-      await safelyPresentPaywall('free');
+    try {
+      // Get the user's ID token
+      const idToken = await currentUser.getIdToken();
+
+      // Create the check-in data
+      const checkInData = {
+        mood: currentMood,
+        focus: currentFocus,
+        struggle: currentStruggle,
+      };
+
+      appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
+
+      // Generate the custom devotional
+      const customDevotional = await createDevotionalFromCheckIn(checkInData, idToken);
+
+      // Get random background using the proper backgrounds from model
+      const backgroundUrls = Object.values(devotionalBackgrounds);
+      const randomBackground = backgroundUrls[Math.floor(Math.random() * backgroundUrls.length)];
+
+      // Save the custom devotional to the store
+      const fullDevotional: Devotional = {
+        id: 'custom-checkin',
+        title: customDevotional.title,
+        content: customDevotional.context, // Using context as content
+        createdAt: new Date().toISOString(),
+        context: customDevotional.context,
+        bibleReference: customDevotional.bibleReference || '',
+        prayer: customDevotional.prayer,
+        reflectionPrompt: customDevotional.reflectionPrompt,
+        likes: 0,
+        shares: 0,
+        completed: 0,
+        date: dayjs().format('YYYY-MM-DD') || new Date().toISOString().split('T')[0],
+        imageURL: randomBackground,
+        verse: customDevotional.verse || '',
+      };
+
+      appLog('GlobalCheckIn: Full devotional object:', fullDevotional);
+
+      // Use the new function to save to Firestore
+      await createCustomDevotionalFromCheckIn(fullDevotional);
+
+      // Complete the check-in and save to both stores
+      appLog('[GlobalCheckIn] About to save check-in...');
+      await handleCompleteCheckIn();
+      appLog('[GlobalCheckIn] Check-in saved successfully');
+
+      // Log analytics
+      analytics.logEvent('checkin_custom_devotional_generated', {
+        mood: currentMood,
+        focus: currentFocus,
+        struggle: currentStruggle,
+      });
+
+      // Set check-in flag
+      setIsFromCheckIn(true);
+
+      // Reset navigation flag
+      setTimeout(() => {
+        const { setIsNavigating } = useCheckInStore.getState();
+        setIsNavigating(false);
+      }, 1000);
+
+      // Reset state after generation
+      setTimeout(() => {
+        setCurrentScreen('mood');
+        setSelectedMood(null);
+        setSelectedFocus(null);
+        setSelectedStruggle(null);
+        clearCurrentSession();
+        setIsGenerating(false);
+        setCheckInSaved(false);
+        setGemsAwarded(false);
+        setShowRewardAnimation(false);
+        // Reset animations
+        moodAnim.setValue(0);
+        focusAnim.setValue(screenWidth);
+        struggleAnim.setValue(screenWidth);
+        successAnim.setValue(screenWidth);
+        rewardCardOpacity.setValue(0);
+        rewardCardScale.setValue(0.8);
+        gemTextOpacity.setValue(0);
+      }, 100);
+    } catch (error) {
+      appLog('Error generating custom devotional in background:', error);
+      // Reset navigation flag on error
+      const { setIsNavigating } = useCheckInStore.getState();
+      setIsNavigating(false);
+    }
+  }, [
+    currentMood,
+    currentFocus,
+    currentStruggle,
+    setCustomDevotional,
+    handleCompleteCheckIn,
+    moodAnim,
+    focusAnim,
+    struggleAnim,
+    successAnim,
+    rewardCardOpacity,
+    rewardCardScale,
+    gemTextOpacity,
+    clearCurrentSession,
+  ]);
+
+  // Handle custom devotional generation
+  const handleGenerateCustomDevotional = useCallback(async (skipProCheck = false) => {
+    appLog('[GlobalCheckIn] handleGenerateCustomDevotional started, skipProCheck:', skipProCheck);
+    const currentUser = auth().currentUser;
+    if (!currentUser) {
+      console.error('No authenticated user available for generating devotional');
       return;
+    }
+
+    // Only check pro status if not skipping (i.e., not called after gem purchase)
+    if (!skipProCheck) {
+      // Check if user is pro - check both subscription store and user store
+      const { isProMember, forceRefreshProStatus } = useSubscriptionStore.getState();
+      const userProStatus = useUserStore.getState().proStatus;
+      
+      // First force refresh pro status to get latest from all sources
+      await forceRefreshProStatus();
+      
+      // Re-check pro status after refresh
+      const subscriptionStore = useSubscriptionStore.getState();
+      const userStore = useUserStore.getState();
+      const isProAfterRefresh = subscriptionStore.isProMember;
+      const userProStatusAfterRefresh = userStore.proStatus;
+      const userIsPro = userStore.getUser()?.isPro;
+      
+      // Check all possible pro status sources
+      const isPro = isProAfterRefresh || userProStatusAfterRefresh === 'pro' || userIsPro === true;
+      
+      appLog('[GlobalCheckIn] Pro status check:', {
+        isProMember,
+        isProAfterRefresh,
+        userProStatus,
+        userProStatusAfterRefresh,
+        userIsPro,
+        finalIsPro: isPro
+      });
+      
+      if (!isPro && customDevotionalsLeft <= 0) {
+        appLog('[GlobalCheckIn] User is not pro and no custom devotionals left, presenting free trial paywall');
+        await safelyPresentPaywall('free');
+        return;
+      }
     }
 
     setIsGenerating(true);
@@ -483,7 +607,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           setCheckInSaved(false);
           setGemsAwarded(false);
           setShowRewardAnimation(false);
-          setCustomDevotionalsLeft(customDevotionalsLeft - 1);
           // Reset animations
           moodAnim.setValue(0);
           focusAnim.setValue(screenWidth);
@@ -507,6 +630,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     handleCompleteCheckIn,
     handleDismiss,
     router,
+    customDevotionalsLeft,
   ]);
 
   // Animate screen transitions
@@ -1206,7 +1330,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   }
                   
                   // If user is not pro and has no custom devotionals left, show with gem cost
-                  return `${i18n.t('checkin_generate_custom_devotional_for_gems')} (-100)`;
+                  return `${i18n.t('checkin_generate_custom_devotional_for_gems')} (-200)`;
                 })()
               : i18n.t('checkin_start_todays_devotional')
           }
@@ -1221,17 +1345,18 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               const isPro = isProMember || user?.isPro || user?.isProWithReferral;
               
               if (isPro) {
-                // Pro user - generate custom devotional directly
+                // Pro user - generate custom devotional directly (skip pro check)
                 appLog('[GlobalCheckIn] Pro user generating custom devotional');
-                await handleGenerateCustomDevotional();
+                await handleGenerateCustomDevotional(true);
                 return;
               }
               
               // Non-pro user - check if they have custom devotionals left
               if (customDevotionalsLeft > 0) {
-                // User has custom devotionals left - generate directly
+                // User has custom devotionals left - generate directly (skip pro check)
                 appLog('[GlobalCheckIn] User has custom devotionals left, generating');
-                await handleGenerateCustomDevotional();
+                await handleGenerateCustomDevotional(true);
+                setCustomDevotionalsLeft(customDevotionalsLeft > 0 ? customDevotionalsLeft - 1 : 0);
                 return;
               }
               

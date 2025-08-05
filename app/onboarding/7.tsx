@@ -139,8 +139,8 @@ export default function OnboardingAgeRangeScreen() {
       title: i18n.t('onboarding_age_parent'),
     },
     {
-      id: 'under-13',
-      title: i18n.t('onboarding_age_under_13'),
+      id: 'under-12',
+      title: i18n.t('onboarding_age_under_12'),
     },
     {
       id: '13-17',

@@ -11,6 +11,7 @@ import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
 import { appLog } from '../helper/helper';
 import { COVENANT_STATES } from '../hooks/streakHook';
 import { useHomeStore } from './homeStore';
+import { useNotificationStore } from './notificationStore';
 
 // Constants
 
@@ -23,6 +24,7 @@ const STORE_METHOD_KEYS = [
   'addSkin',
   'addXp',
   'createUser',
+  'getAgeRange',
   'getBibleVersion',
   'getCovenantProgress',
   'getChaptersReadTotal',
@@ -63,6 +65,7 @@ const STORE_METHOD_KEYS = [
   'getVersesReadTotal',
   'incrementStreak',
   'resetUserStore',
+  'setAgeRange',
   'setBibleVersion',
   'setChaptersReadTotal',
   'setCompletedMapPaths',
@@ -193,7 +196,7 @@ const initialState: UserDoc = {
   chaptersReadTotal: 0,
   bibleVersion: 'ESV',
   proStatus: 'free',
-  gens: 100,
+  gens: 200,
   createdAt: Timestamp.now(),
   updatedAt: Timestamp.now(),
   completedReflections: [],
@@ -296,6 +299,7 @@ export const useUserStore = create<UserStore>()(
             streak: firestoreData.streak || state.streak,
             streakCount: firestoreData.streakCount || state.streakCount,
             streakFreezes: firestoreData.streakFreezes ?? state.streakFreezes ?? 2,
+            streakFreezeUsedDates: firestoreData.streakFreezeUsedDates ?? state.streakFreezeUsedDates ?? [],
             // Sync completion data - use Firestore data if available
             completedReadings: firestoreData.completedReadings ?? state.completedReadings ?? [],
             completedPrayers: firestoreData.completedPrayers ?? state.completedPrayers ?? [],
@@ -449,9 +453,11 @@ export const useUserStore = create<UserStore>()(
       getSkins: () => get().skins || initialState.skins,
       getCheckIns: () => get().checkIns,
       getCustomDevotionalsLeft: () => get().customDevotionalsLeft || initialState.customDevotionalsLeft,
+      getAgeRange: () => get().ageRange || initialState.ageRange,
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
+      setAgeRange: (ageRange) => set({ ageRange }),
       setCovenantProgress: (covenantProgress: UserDoc['covenantProgress']) => {
         set({ covenantProgress });
         if (isAuthenticated()) {
@@ -551,6 +557,13 @@ export const useUserStore = create<UserStore>()(
         set({ lastActivityDate: date });
         if (isAuthenticated()) {
           updateUserData({ lastActivityDate: date });
+           // Cancel streak freeze reminder notification since user is active again
+          try {
+            const notificationStore = useNotificationStore.getState();
+            notificationStore.cancelStreakFreezeReminder();
+          } catch (error) {
+            appLog('Error cancelling streak freeze reminder:', error);
+          }
         }
         syncStreakWithWidget(get().streakCount, date);
       },

@@ -300,7 +300,7 @@
     "onboarding_affiliation_other": "Outro",
     "onboarding_age_range_question": "Qual é a sua faixa etária?",
     "onboarding_age_parent": "Sou pai/mãe/responsável",
-    "onboarding_age_under_13": "13 ou menos",
+    "onboarding_age_under_12": "12 ou menos",
     "onboarding_age_13_17": "13-17",
     "onboarding_age_18_24": "18-24",
     "onboarding_age_25_34": "25-34",
@@ -571,5 +571,6 @@
     "next_reward": "PRÓXIMA RECOMPENSA",
     "unlock_phoenix_lamb": "Desbloquear Cordeiro Phoenix",
     "covenant_success_gems_earned": "Você ganhou {{gems}} gemas",
-    "report_bug_title": "Relatar um Bug"
+    "report_bug_title": "Relatar um Bug",
+    "onboarding_streak_commitment_title": "Selecione sua meta de estudo bíblico"
 }

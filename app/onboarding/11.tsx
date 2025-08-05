@@ -358,7 +358,7 @@ export default function SaveProgressScreen() {
         proStatus: 'free',
         createdAt: now,
         updatedAt: now,
-        gens: 100,
+        gens: 200,
         lastReadingDate: now,
         lastPrayerDate: now,
         lastReflectionDate: now,

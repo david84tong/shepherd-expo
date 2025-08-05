@@ -58,6 +58,8 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
   const setNotificationsEnabled = useNotificationStore((state) => state.setNotificationsEnabled);
   const scheduleStreakReminders = useNotificationStore((state) => state.scheduleStreakReminders);
   const cancelStreakNotifications = useNotificationStore((state) => state.cancelStreakNotifications);
+  const scheduleStreakFreezeReminder = useNotificationStore((state) => state.scheduleStreakFreezeReminder);
+  const cancelStreakFreezeReminder = useNotificationStore((state) => state.cancelStreakFreezeReminder);
   const scheduleDailyReminder = useNotificationStore((state) => state.scheduleDailyReminder);
   const cancelDailyReminder = useNotificationStore((state) => state.cancelDailyReminder);
 
@@ -1135,6 +1137,8 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
     const initializeNotificationState = async () => {
       try {
         const user = auth().currentUser;
+        const userStore = useUserStore.getState();
+        const streakFreezes = userStore.getStreakFreezes();
 
         if (user) {
           const userDoc = await firestore().collection('users').doc(user.uid).get();
@@ -1145,9 +1149,11 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
 
             if (userData.notificationsEnabled) {
               await scheduleStreakReminders();
+              await scheduleStreakFreezeReminder(streakFreezes);
             } else {
               await cancelStreakNotifications();
               await cancelDailyReminder();
+              await cancelStreakFreezeReminder();
             }
           }
         } else {

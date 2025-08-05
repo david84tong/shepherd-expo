@@ -1501,69 +1501,6 @@ export function DebugButton() {
                   </Text>
                 </TouchableOpacity>
 
-                {/* Test Streak Freeze Scenario Button */}
-                <TouchableOpacity
-                  className="bg-[#E0F7FF] p-4 rounded-xl my-2 border-l-4 border-l-[#4FB8FE]"
-                  onPress={() => {
-                    const now = new Date();
-                    
-                    // Set activity dates to 3 days ago to trigger streak break
-                    const activityDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3);
-                    const activityTimestamp = firestore.Timestamp.fromDate(activityDate);
-                    const userStore = useUserStore.getState();
-                    
-                    userStore.setLastActivityDate(activityTimestamp);
-                    userStore.setLastReadingDate(activityTimestamp);
-                    
-                    // Set streak to 5 and freezes to 2 for testing
-                    userStore.setStreakCount(5);
-                    userStore.setStreakFreezes(2);
-                    
-                    // Set penalty dates to 1 day ago
-                    const penaltyDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-                    const penaltyTimestamp = firestore.Timestamp.fromDate(penaltyDate);
-                    userStore.setLastReadingPenaltyDate(penaltyTimestamp);
-                    
-                    // Force sync to Firestore
-                    syncWithFirestore();
-                    
-                    Alert.alert(
-                      'Streak Freeze Test Setup',
-                      'Setup complete:\n' +
-                      '• Streak: 5\n' +
-                      '• Freezes: 2\n' +
-                      '• Last activity: 3 days ago\n' +
-                      '• Next app open should use freeze!\n\n' +
-                      'Now use "Force Check Penalties" to trigger the freeze.',
-                      [
-                        { text: 'OK' },
-                        { 
-                          text: 'Force Check Now', 
-                          onPress: async () => {
-                            try {
-                              // Import and trigger the penalty check
-                              const streakHook = require('../app/hooks/streakHook');
-                              await streakHook.checkStreakAndApplyPenalties();
-                              
-                              Alert.alert(
-                                'Freeze Applied!',
-                                'Check the StreakScreen to see the frozen day with light blue indicator! ❄️'
-                              );
-                            } catch (error) {
-                              appLog('Error triggering streak penalty check:', error);
-                              Alert.alert('Error', 'Failed to trigger penalty check');
-                            }
-                          }
-                        }
-                      ]
-                    );
-                  }}>
-                  <Text className="font-feather text-base text-textPrimary">Test Streak Freeze</Text>
-                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
-                    Setup scenario to trigger freeze usage
-                  </Text>
-                </TouchableOpacity>
-
                 {/* Test Streak Freeze Modal Button */}
                 <TouchableOpacity
                   className="bg-[#F0F8FF] p-4 rounded-xl my-2 border-l-4 border-l-[#87CEEB]"
@@ -1589,6 +1526,137 @@ export function DebugButton() {
                   <Text className="font-feather text-base text-textPrimary">Show Freeze Sheet</Text>
                   <Text className="font-din text-sm text-[#6A8A94] mt-1">
                     Test the streak freeze bottom sheet
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Simulate Missed Day & Test Freeze Logic */}
+                <TouchableOpacity
+                  className="bg-[#FFE4B5] p-4 rounded-xl my-2 border-l-4 border-l-[#FFA500]"
+                  onPress={() => {
+                    setModalVisible(false);
+                    
+                    Alert.alert(
+                      'Test Missed Day Scenario',
+                      'This will simulate missing a day and trigger the freeze logic if you have freezes available.',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { 
+                          text: 'Simulate Missed Day', 
+                          onPress: async () => {
+                            try {
+                              const userStore = useUserStore.getState();
+                              
+                              // Check current state
+                              const currentStreak = userStore.getStreakCount();
+                              const currentFreezes = userStore.getStreakFreezes();
+                              
+                              appLog('🧪 [DEBUG TEST] Current state:', {
+                                streak: currentStreak,
+                                freezes: currentFreezes
+                              });
+                              
+                              
+                              // Simulate missed day by setting lastReadingDate to 2 days ago
+                              const twoDaysAgo = new Date();
+                              twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+                              const timestamp = require('@react-native-firebase/firestore').Timestamp.fromDate(twoDaysAgo);
+                              
+                              appLog('🧪 [DEBUG TEST] Setting lastReadingDate to 2 days ago:', twoDaysAgo.toISOString());
+                              userStore.setLastReadingDate(timestamp);
+                              
+                              // Also set lastActivityDate to trigger the logic
+                              userStore.setLastActivityDate(timestamp);
+                              
+                              // Wait a moment for state to update
+                              setTimeout(async () => {
+                                try {
+                                  // Now trigger the normal streak checking logic
+                                  const streakHook = require('../app/hooks/streakHook');
+                                  const result = await streakHook.checkStreakAndApplyPenalties();
+                                  
+                                  appLog('🧪 [DEBUG TEST] Streak check result:', result);
+                                  
+                                  if (result && result.streakFreezeUsed) {
+                                    // Show the freeze modal as it would normally appear
+                                    setTimeout(() => {
+                                      if (typeof global !== 'undefined' && (global as any).streakFreezeSheetRef) {
+                                        appLog('🧪 [DEBUG TEST] Showing freeze modal with remaining:', result.freezesRemaining);
+                                        (global as any).streakFreezeSheetRef.current?.show(true);
+                                      }
+                                    }, 500);
+                                    
+                                    Toast.show({
+                                      type: 'success',
+                                      text1: '❄️ Freeze Used!',
+                                      text2: `Streak saved! ${result.freezesRemaining} freezes left`,
+                                      position: 'top',
+                                      visibilityTime: 3000,
+                                    });
+                                  } else {
+                                    testPenaltyScenario();
+                                  }
+                                } catch (error) {
+                                  appLog('🧪 [DEBUG TEST] Error in streak check:', error);
+                                  Alert.alert('Test Error', 'Failed to run streak check: ' + (error instanceof Error ? error.message : String(error)));
+                                }
+                              }, 100);
+                              
+                            } catch (error) {
+                              appLog('🧪 [DEBUG TEST] Error setting up test:', error);
+                              Alert.alert('Setup Error', 'Failed to setup test scenario: ' + (error instanceof Error ? error.message : String(error)));
+                            }
+                          }
+                        }
+                      ]
+                    );
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">🧪 Test Missed Day</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Simulate missing a day & trigger freeze logic
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Reset Test State */}
+                <TouchableOpacity
+                  className="bg-[#F5F5F5] p-4 rounded-xl my-2 border-l-4 border-l-[#808080]"
+                  onPress={() => {
+                    Alert.alert(
+                      'Reset Test State',
+                      'This will reset your reading date to today and restore normal state.',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { 
+                          text: 'Reset', 
+                          onPress: () => {
+                            try {
+                              const userStore = useUserStore.getState();
+                              const now = new Date();
+                              const timestamp = require('@react-native-firebase/firestore').Timestamp.fromDate(now);
+                              
+                              userStore.setLastReadingDate(timestamp);
+                              userStore.setLastActivityDate(timestamp);
+                              
+                              Toast.show({
+                                type: 'success',
+                                text1: '✅ State Reset',
+                                text2: 'Reading date reset to today',
+                                position: 'top',
+                                visibilityTime: 2000,
+                              });
+                              
+                              appLog('🧪 [DEBUG TEST] State reset - dates set to now');
+                            } catch (error) {
+                              appLog('🧪 [DEBUG TEST] Error resetting state:', error);
+                              Alert.alert('Reset Error', 'Failed to reset state: ' + (error instanceof Error ? error.message : String(error)));
+                            }
+                          }
+                        }
+                      ]
+                    );
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">🔄 Reset Test State</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Reset reading date to today (normal state)
                   </Text>
                 </TouchableOpacity>
 
@@ -2309,51 +2377,6 @@ export function DebugButton() {
                 </TouchableOpacity>
               </View>
 
-              {/* Show Current Streak Freeze Status */}
-              <View className="mb-4">
-                <Text className="font-feather text-base text-textPrimary mb-2">
-                  ❄️ Current Streak Freeze Status
-                </Text>
-                <TouchableOpacity
-                  className="bg-[#E8F4FD] px-4 py-3 rounded-lg border border-[#4FB8FE] mb-1"
-                  onPress={() => {
-                    const userStore = useUserStore.getState();
-                    const currentStreak = userStore.getStreakCount();
-                    const currentFreezes = userStore.getStreakFreezes();
-                    const lastActivityDate = userStore.getLastActivityDate();
-                    const lastReadingDate = userStore.getLastReadingDate();
-                    
-                    const now = new Date();
-                    const daysSinceActivity = lastActivityDate ? 
-                      Math.floor((now.getTime() - lastActivityDate.toDate().getTime()) / (1000 * 60 * 60 * 24)) : 0;
-                    const daysSinceReading = lastReadingDate ? 
-                      Math.floor((now.getTime() - lastReadingDate.toDate().getTime()) / (1000 * 60 * 60 * 24)) : 0;
-                    
-                    appLog('❄️ Current Streak Freeze Status:', {
-                      streakCount: currentStreak,
-                      streakFreezes: currentFreezes,
-                      daysSinceActivity,
-                      daysSinceReading,
-                      lastActivityDate: lastActivityDate?.toDate(),
-                      lastReadingDate: lastReadingDate?.toDate()
-                    });
-
-                    Alert.alert(
-                      'Streak Freeze Status',
-                      `Current Streak: ${currentStreak} 🔥\n` +
-                      `Streak Freezes: ${currentFreezes} ❄️\n` +
-                      `Days Since Activity: ${daysSinceActivity}\n` +
-                      `Days Since Reading: ${daysSinceReading}\n\n` +
-                      `${daysSinceReading > 1 && currentFreezes > 0 ? 
-                        '⚠️ Streak would break, but freeze available!' : 
-                        daysSinceReading > 1 ? 
-                        '💔 Streak would break (no freezes)' : 
-                        '✅ Streak is safe'}`
-                    );
-                  }}>
-                  <Text className="font-din text-sm text-textPrimary text-center">Show Freeze Status ❄️</Text>
-                </TouchableOpacity>
-              </View>
 
               {/* Hide Debug Button */}
               <View className="mt-6 pt-4 border-t border-buttonBorder">
