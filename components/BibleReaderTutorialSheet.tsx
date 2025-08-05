@@ -75,11 +75,11 @@ export default function BibleReaderTutorialSheet({ visible, onClose }: BibleRead
 
     const handleNextStep = () => {
         if (step < steps.length - 1) {
-            analytics.logEvent(`bible_reader_tutorial_next_step_${step + 1}_pressed`);
+            analytics.trackEvent(`bible_reader_tutorial_next_step_${step + 1}_pressed`);
             setStep(step + 1);
             scrollViewRef.current?.scrollTo({ y: 0, animated: true });
         } else {
-            analytics.logEvent('bible_reader_tutorial_done_pressed');
+            analytics.trackEvent('bible_reader_tutorial_done_pressed');
             handleClose();
         }
     };
@@ -90,7 +90,7 @@ export default function BibleReaderTutorialSheet({ visible, onClose }: BibleRead
     };
 
     const onSkipPressed = () => {
-        analytics.logEvent('bible_reader_tutorial_skip_pressed');
+        analytics.trackEvent('bible_reader_tutorial_skip_pressed');
         handleClose();
     };
 
