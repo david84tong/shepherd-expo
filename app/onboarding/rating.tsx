@@ -135,7 +135,7 @@ const Rating = () => {
     position: 'absolute',
     left: 24,
     right: 24,
-    bottom: Math.max(insets.bottom, 16),
+    bottom: Math.max(insets.bottom + 20, isIPhoneSE ? 60 : 40),
   }));
 
   const handleRateApp = async () => {
@@ -210,8 +210,10 @@ const Rating = () => {
 
             {/* shepherd Ratings image */}
               <TestimonialList />
+            </View>
+            
             {/* Bottom button */}
-            <Animated.View style={buttonStyle} className="items-center mt-24">
+            <Animated.View style={buttonStyle} className="items-center">
               <PrimaryButton title="Leave a rating" onPress={handleRateApp} buttonType="gold" />
               <TouchableOpacity onPress={handleIRatedPress} className="mt-0 items-center ">
                 <Text className={`font-din text-description underline text-[16px] ${isIPhoneSE ? '-mb-1' : '-mb-24'}`}>
@@ -219,7 +221,6 @@ const Rating = () => {
                 </Text>
               </TouchableOpacity>
             </Animated.View>
-          </View>
         </SafeAreaView>
       </Animated.View>
     </>
