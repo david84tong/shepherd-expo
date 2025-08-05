@@ -314,9 +314,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           style: 'default',
           onPress: async () => {
             try {
-              // Deduct gems and add custom devotional count
+              // Deduct gems immediately
               const newGems = currentGems - gemCost;
-              
               setGens(newGems);
               
               appLog('[GlobalCheckIn] Custom devotional purchased successfully', {
@@ -332,8 +331,19 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 newGems,
               });
               
-              // Now generate the custom devotional (skip pro check since they just purchased with gems)
-              await handleGenerateCustomDevotional(true);
+              // Navigate to loading screen immediately since we have enough gems
+              // Set navigation flag to prevent check-in from showing during navigation
+              const { setIsNavigating } = useCheckInStore.getState();
+              setIsNavigating(true);
+              
+              // Close the sheet
+              bottomSheetRef.current?.close();
+              
+              // Navigate immediately to loading screen
+              router.push('/devotionalLoading' as any);
+              
+              // Generate the custom devotional in the background
+              handleGenerateCustomDevotionalInBackground();
               
             } catch (error) {
               console.error('[GlobalCheckIn] Error purchasing custom devotional:', error);
@@ -348,6 +358,121 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       ]
     );
   }, []);
+
+  // Handle custom devotional generation in background (for immediate navigation after gem purchase)
+  const handleGenerateCustomDevotionalInBackground = useCallback(async () => {
+    appLog('[GlobalCheckIn] handleGenerateCustomDevotionalInBackground started');
+    const currentUser = auth().currentUser;
+    if (!currentUser) {
+      console.error('No authenticated user available for generating devotional');
+      return;
+    }
+
+    try {
+      // Get the user's ID token
+      const idToken = await currentUser.getIdToken();
+
+      // Create the check-in data
+      const checkInData = {
+        mood: currentMood,
+        focus: currentFocus,
+        struggle: currentStruggle,
+      };
+
+      appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
+
+      // Generate the custom devotional
+      const customDevotional = await createDevotionalFromCheckIn(checkInData, idToken);
+
+      // Get random background using the proper backgrounds from model
+      const backgroundUrls = Object.values(devotionalBackgrounds);
+      const randomBackground = backgroundUrls[Math.floor(Math.random() * backgroundUrls.length)];
+
+      // Save the custom devotional to the store
+      const fullDevotional: Devotional = {
+        id: 'custom-checkin',
+        title: customDevotional.title,
+        content: customDevotional.context, // Using context as content
+        createdAt: new Date().toISOString(),
+        context: customDevotional.context,
+        bibleReference: customDevotional.bibleReference || '',
+        prayer: customDevotional.prayer,
+        reflectionPrompt: customDevotional.reflectionPrompt,
+        likes: 0,
+        shares: 0,
+        completed: 0,
+        date: dayjs().format('YYYY-MM-DD') || new Date().toISOString().split('T')[0],
+        imageURL: randomBackground,
+        verse: customDevotional.verse || '',
+      };
+
+      appLog('GlobalCheckIn: Full devotional object:', fullDevotional);
+
+      // Use the new function to save to Firestore
+      await createCustomDevotionalFromCheckIn(fullDevotional);
+
+      // Complete the check-in and save to both stores
+      appLog('[GlobalCheckIn] About to save check-in...');
+      await handleCompleteCheckIn();
+      appLog('[GlobalCheckIn] Check-in saved successfully');
+
+      // Log analytics
+      analytics.logEvent('checkin_custom_devotional_generated', {
+        mood: currentMood,
+        focus: currentFocus,
+        struggle: currentStruggle,
+      });
+
+      // Set check-in flag
+      setIsFromCheckIn(true);
+
+      // Reset navigation flag
+      setTimeout(() => {
+        const { setIsNavigating } = useCheckInStore.getState();
+        setIsNavigating(false);
+      }, 1000);
+
+      // Reset state after generation
+      setTimeout(() => {
+        setCurrentScreen('mood');
+        setSelectedMood(null);
+        setSelectedFocus(null);
+        setSelectedStruggle(null);
+        clearCurrentSession();
+        setIsGenerating(false);
+        setCheckInSaved(false);
+        setGemsAwarded(false);
+        setShowRewardAnimation(false);
+        // Reset animations
+        moodAnim.setValue(0);
+        focusAnim.setValue(screenWidth);
+        struggleAnim.setValue(screenWidth);
+        successAnim.setValue(screenWidth);
+        rewardCardOpacity.setValue(0);
+        rewardCardScale.setValue(0.8);
+        gemTextOpacity.setValue(0);
+      }, 100);
+    } catch (error) {
+      appLog('Error generating custom devotional in background:', error);
+      // Reset navigation flag on error
+      const { setIsNavigating } = useCheckInStore.getState();
+      setIsNavigating(false);
+    }
+  }, [
+    currentMood,
+    currentFocus,
+    currentStruggle,
+    setCustomDevotional,
+    handleCompleteCheckIn,
+    moodAnim,
+    focusAnim,
+    struggleAnim,
+    successAnim,
+    rewardCardOpacity,
+    rewardCardScale,
+    gemTextOpacity,
+    clearCurrentSession,
+  ]);
 
   // Handle custom devotional generation
   const handleGenerateCustomDevotional = useCallback(async (skipProCheck = false) => {

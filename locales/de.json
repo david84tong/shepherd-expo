@@ -301,7 +301,7 @@
     "onboarding_affiliation_other": "Andere",
     "onboarding_age_range_question": "Wie alt bist du?",
     "onboarding_age_parent": "Ich bin ein Elternteil/Vormund",
-    "onboarding_age_under_13": "13 oder jünger",
+    "onboarding_age_under_12": "12 oder jünger",
     "onboarding_age_13_17": "13-17",
     "onboarding_age_18_24": "18-24",
     "onboarding_age_25_34": "25-34",
@@ -570,5 +570,6 @@
     "next_reward": "NÄCHSTE BELOHNUNG",
     "unlock_phoenix_lamb": "Phoenix-Lamm freischalten",
     "covenant_success_gems_earned": "Du hast {{gems}} Edelsteine verdient",
-    "report_bug_title": "Fehler melden"
+    "report_bug_title": "Fehler melden",
+    "onboarding_streak_commitment_title": "Wähle dein Bibelstudium-Ziel"
 }

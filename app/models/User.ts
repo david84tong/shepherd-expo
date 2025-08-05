@@ -123,6 +123,7 @@ export interface UserStore extends UserDoc {
   getSkins: () => string[];
   getCovenantProgress: () => CovenantProgress;
   getCustomDevotionalsLeft: () => number;
+  getAgeRange: () => string;
   // Getters for Lamb fields
   getLambLevel: () => number;
   getLambXp: () => number;
@@ -169,6 +170,7 @@ export interface UserStore extends UserDoc {
   setCovenantProgress: (progress: CovenantProgress) => void;
   setCustomDevotionalsLeft: (count: number) => void;
   decrementCustomDevotionalsLeft: () => void;
+  setAgeRange: (ageRange: string) => void;
   // Setters for Lamb fields
   setLambLevel: (level: number) => void;
   setLambXp: (xp: number) => void;

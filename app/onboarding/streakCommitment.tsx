@@ -413,8 +413,8 @@ export default function StreakCommitmentScreen() {
           <View className="flex-1 items-center">
             <View className="h-[350px] items-center justify-center mb-5">
               {!selectedStreak ? (
-                <Text className="font-feather text-2xl text-textPrimary text-center px-8">
-                  Select your bible study goal
+                <Text className="font-feather text-2xl text-textPrimary text-center px-8 -mt-72">
+                  {i18n.t('onboarding_streak_commitment_title')}
                 </Text>
               ) : (
                 <>

@@ -24,6 +24,7 @@ const STORE_METHOD_KEYS = [
   'addSkin',
   'addXp',
   'createUser',
+  'getAgeRange',
   'getBibleVersion',
   'getCovenantProgress',
   'getChaptersReadTotal',
@@ -64,6 +65,7 @@ const STORE_METHOD_KEYS = [
   'getVersesReadTotal',
   'incrementStreak',
   'resetUserStore',
+  'setAgeRange',
   'setBibleVersion',
   'setChaptersReadTotal',
   'setCompletedMapPaths',
@@ -451,9 +453,11 @@ export const useUserStore = create<UserStore>()(
       getSkins: () => get().skins || initialState.skins,
       getCheckIns: () => get().checkIns,
       getCustomDevotionalsLeft: () => get().customDevotionalsLeft || initialState.customDevotionalsLeft,
+      getAgeRange: () => get().ageRange || initialState.ageRange,
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
+      setAgeRange: (ageRange) => set({ ageRange }),
       setCovenantProgress: (covenantProgress: UserDoc['covenantProgress']) => {
         set({ covenantProgress });
         if (isAuthenticated()) {
