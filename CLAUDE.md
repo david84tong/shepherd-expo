@@ -91,6 +91,8 @@ riveRef.current.setInputState('State Machine 1', 'Action-Number', stateNumber);
 ```
 States: 0=Idle, 1=Raising Hand, 2=Eating, 3=Full, 4=Sleepy, 5=Angry, 6=Dying Chubby, 7=Dying Skinny, 8=Dead, 9=Reading, 10=Writing, 11=Drinking, 12=Achievement
 
+
+
 ## Firebase Integration
 - Use react-native-firebase packages, not web SDK
 - Single source of truth: User stats in root users/{uid} doc

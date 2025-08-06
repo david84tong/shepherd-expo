@@ -33,7 +33,7 @@ class Analytics {
       // Initialize Mixpanel
       this.mixpanel = Platform.OS === 'android' 
         ? new Mixpanel(MIXPANEL_TOKEN, false, true)
-        : new Mixpanel(MIXPANEL_TOKEN, false, false);
+        : new Mixpanel(MIXPANEL_TOKEN, false, true);
       await this.mixpanel.init();
       console.log('✅ Mixpanel initialized successfully');
       this.mixpanel.track('test_event', { platform: Platform.OS });

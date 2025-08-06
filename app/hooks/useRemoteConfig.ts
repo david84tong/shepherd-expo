@@ -22,6 +22,7 @@ export const useRemoteConfig = () => {
         const show_email_password = remoteConfig().getValue('show_email_password').asBoolean();
         const is_In_Review = remoteConfig().getValue('inReview').asBoolean();
          // Get the values
+         console.log('show_email_password ==>', show_email_password);
         (global as any).hideGoogleLogin = hide_google_login;
         (global as any).showEmailPassword = show_email_password;
         (global as any).is_In_Review = is_In_Review;
