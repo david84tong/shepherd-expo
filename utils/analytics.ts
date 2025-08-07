@@ -31,13 +31,10 @@ class Analytics {
 
     try {
       // Initialize Mixpanel
-      this.mixpanel = Platform.OS === 'android' 
-        ? new Mixpanel(MIXPANEL_TOKEN, false, true)
-        : new Mixpanel(MIXPANEL_TOKEN, false, true);
+      this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
       await this.mixpanel.init();
       console.log('✅ Mixpanel initialized successfully');
-      this.mixpanel.track('test_event', { platform: Platform.OS });
-
+      this.mixpanel.track('first_app_open');
       // Initialize Amplitude
       await amplitudeInit(AMPLITUDE_API_KEY);
       console.log('✅ Amplitude initialized successfully');
