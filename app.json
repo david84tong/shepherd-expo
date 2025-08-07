@@ -116,6 +116,12 @@
         }
       ],
       [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow Shepherd to access your contacts."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/custom_splash_icon.png",

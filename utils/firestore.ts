@@ -175,6 +175,9 @@ export const createUserDocument = async (id: string, userData: Partial<UserDoc>)
       frequencyGoal: userData.frequencyGoal || 'daily',
       displayName: userData.displayName || 'Anonymous User',
       selectedPathId: userData.selectedPathId || '',
+      phoneNumber: userData.phoneNumber || undefined,
+      phoneVerified: userData.phoneVerified || false,
+      contacts: userData.contacts || [],
       lamb: userData.lamb || {
         level: 1,
         xp: 0,

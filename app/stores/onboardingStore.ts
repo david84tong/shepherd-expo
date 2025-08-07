@@ -23,6 +23,9 @@ interface ExtendedOnboardingResponses extends Omit<OnboardingResponses, 'selecte
   notificationTime?: string | null;
   authMethod?: "apple" | "anonymous" | "skip";
   onboardingCompleted?: boolean;
+  phoneNumber?: string;
+  phoneVerified?: boolean;
+  contacts?: string[];
 }
 
 // Extended OnboardingState interface with more specific typing for responses

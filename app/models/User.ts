@@ -32,6 +32,9 @@ export interface UserDoc {
   id: string;
   selectedPathId: string;
   email?: string; // User email from authentication
+  phoneNumber?: string;
+  phoneVerified?: boolean;
+  contacts?: string[];
   spiritualGoal: string;
   experienceLevel: string;
   covenantProgress: CovenantProgress;
@@ -99,6 +102,9 @@ export interface UserStore extends UserDoc {
   getDenomination: () => UserDoc['denomination'];
   getDisplayName: () => string;
   getSelectedPathId: () => string;
+  getPhoneNumber: () => string | undefined;
+  getPhoneVerified: () => boolean | undefined;
+  getContacts: () => string[] | undefined;
   getLamb: () => Lamb;
   getStreakCount: () => number;
   getStreakFreezes: () => number;
@@ -139,6 +145,9 @@ export interface UserStore extends UserDoc {
   setDenomination: (denomination?: string) => void;
   setDisplayName: (name: string) => void;
   setSelectedPathId: (pathId: string) => void;
+  setPhoneNumber: (phoneNumber?: string) => void;
+  setPhoneVerified: (verified: boolean) => void;
+  setContacts: (contacts: string[]) => void;
   setLamb: (lamb: Lamb) => void;
   setStreakCount: (count: number) => void;
   setStreakFreezes: (count: number) => void;

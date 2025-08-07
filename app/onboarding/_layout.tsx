@@ -25,6 +25,9 @@ const IMPLEMENTED_SCREENS = [
   'explainer',
   '9',
   '10', // Ensure 10 is included
+  'phoneNumber',
+  'contacts',
+  'alreadyOnShepherd',
   'rating',
   'streakCommitment',
   '11',

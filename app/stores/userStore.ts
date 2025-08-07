@@ -170,6 +170,9 @@ const initialLamb: Lamb = {
 const initialState: UserDoc = {
   id: '',
   email: '',
+  phoneNumber: undefined,
+  phoneVerified: false,
+  contacts: [],
   spiritualGoal: 'Walk',
   experienceLevel: 'new',
   frequencyGoal: 'daily',
@@ -290,6 +293,9 @@ export const useUserStore = create<UserStore>()(
             id: firestoreData.id || state.id,
             displayName: firestoreData.displayName || state.displayName,
             email: firestoreData.email || state.email,
+            phoneNumber: firestoreData.phoneNumber || state.phoneNumber,
+            phoneVerified: firestoreData.phoneVerified ?? state.phoneVerified ?? false,
+            contacts: firestoreData.contacts || state.contacts || [],
             createdAt: firestoreData.createdAt || state.createdAt,
             updatedAt: firestoreData.updatedAt || state.updatedAt,
             lastActivityDate: firestoreData.lastActivityDate || state.lastActivityDate,
@@ -417,6 +423,9 @@ export const useUserStore = create<UserStore>()(
       getDenomination: () => get().denomination || initialState.denomination,
       getDisplayName: () => get().displayName || initialState.displayName,
       getSelectedPathId: () => get().selectedPathId || initialState.selectedPathId,
+      getPhoneNumber: () => get().phoneNumber,
+      getPhoneVerified: () => get().phoneVerified,
+      getContacts: () => get().contacts,
       getLamb: () => get().lamb || initialState.lamb,
       getStreakCount: () => get().streakCount || initialState.streakCount,
       getStreakFreezes: () => get().streakFreezes || initialState.streakFreezes,
@@ -479,6 +488,24 @@ export const useUserStore = create<UserStore>()(
       setDenomination: (denomination) => set({ denomination }),
       setDisplayName: (displayName) => set({ displayName }),
       setSelectedPathId: (selectedPathId) => set({ selectedPathId }),
+      setPhoneNumber: (phoneNumber) => {
+        set({ phoneNumber });
+        if (isAuthenticated()) {
+          updateField('phoneNumber', phoneNumber);
+        }
+      },
+      setPhoneVerified: (phoneVerified) => {
+        set({ phoneVerified });
+        if (isAuthenticated()) {
+          updateField('phoneVerified', phoneVerified);
+        }
+      },
+      setContacts: (contacts) => {
+        set({ contacts });
+        if (isAuthenticated()) {
+          updateField('contacts', contacts);
+        }
+      },
       setIsProFromOnboarding: (isProFromOnboarding) => set({ isProFromOnboarding }),
       setLamb: (lamb) => set({ lamb }),
 

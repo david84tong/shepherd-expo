@@ -192,7 +192,7 @@ export default function OnboardingReminderTimeScreen() {
     }
 
     // Navigate to the next screen
-    router.push('/onboarding/rating');
+    router.push('/onboarding/phoneNumber');
   };
 
   const options = [
