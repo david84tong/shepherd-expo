@@ -213,7 +213,7 @@ export default function AlreadyOnShepherdScreen() {
         {!loading && (
           <Animated.View style={continueStyle}>
             <PrimaryButton
-              title={mutualFriends.length > 0 ? 'Continue to Shepherd' : 'Start My Journey'}
+              title={mutualFriends.length > 0 ? 'Continue to Shepherd' : 'Continue'}
               onPress={handleContinue}
               disabled={false}
               isActive={true}

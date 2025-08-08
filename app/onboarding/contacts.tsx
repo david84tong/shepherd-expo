@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Alert, StatusBar, FlatList } from 'react-native';
+import { View, Text, Alert, StatusBar, FlatList, TextInput, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
@@ -97,21 +97,13 @@ export default function ContactsScreen() {
       hapticLight();
       
       const { status } = await Contacts.requestPermissionsAsync();
+
+      appLog('Contacts permission status:', status);
       
       if (status === 'granted') {
         setPermissionGranted(true);
         await loadContacts();
         analytics.logEvent('OnboardingContactsScreen_PermissionGranted');
-      } else {
-        Alert.alert(
-          'Permission Required',
-          'To help you find friends on Shepherd, we need access to your contacts. You can change this in Settings later.',
-          [
-            { text: 'Skip', onPress: handleSkip },
-            { text: 'Settings', onPress: () => Contacts.requestPermissionsAsync() }
-          ]
-        );
-        analytics.logEvent('OnboardingContactsScreen_PermissionDenied');
       }
     } catch (error) {
       console.error('Contacts permission error:', error);
@@ -119,6 +111,19 @@ export default function ContactsScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    checkContactsPermission().then(status => {
+      if (status) {
+        loadContacts();
+      }
+    });
+  }, []);
+
+  const checkContactsPermission = async () => {
+    const { status } = await Contacts.getPermissionsAsync();
+    return status === 'granted' ;
   };
 
   const loadContacts = async () => {
@@ -140,7 +145,6 @@ export default function ContactsScreen() {
           name: contact.name || 'Unknown',
           phoneNumbers: contact.phoneNumbers!
             .map(phone => normalizePhoneNumber(phone.number || ''))
-            .filter(phone => phone.length >= 10) // Only valid phone numbers
         }))
         .filter(contact => contact.phoneNumbers.length > 0)
         .slice(0, 500); // Limit to first 500 contacts for performance
@@ -224,7 +228,7 @@ export default function ContactsScreen() {
         elevation: 2,
       }}
     >
-      <Text
+      <Pressable
         onPress={() => toggleContactSelection(item.id)}
         className="flex-1 flex-row items-center"
       >
@@ -260,7 +264,7 @@ export default function ContactsScreen() {
             <Ionicons name="checkmark" size={16} color="#795323" />
           )}
         </View>
-      </Text>
+      </Pressable>
     </View>
   );
 
@@ -298,7 +302,7 @@ export default function ContactsScreen() {
           <>
             {/* Title */}
             <Animated.View style={titleStyle}>
-              <Text className="font-feather text-h1 text-center text-textPrimary mb-4 px-4">
+              <Text className="font-feather text-h2 text-center text-textPrimary mb-4 px-4">
                 Find friends on Shepherd
               </Text>
             </Animated.View>
@@ -313,10 +317,10 @@ export default function ContactsScreen() {
             {/* Content Spacer */}
             <Animated.View style={contentStyle} className="flex-1 items-center justify-center mb-8">
               <View className="bg-accentGold rounded-full p-6 mb-6">
-                <Ionicons name="people" size={RPH(6)} color="#795323" />
+                <Ionicons name="people-circle-outline" size={RPH(6)} color="#795323" />
               </View>
-              <Text className="font-din text-base text-description text-center px-8">
-                With your permission, we'll check your contacts to see who's already on Shepherd
+              <Text className="font-feather text-2xl text-h2  text-description text-center px-8">
+                Import your contacts 
               </Text>
             </Animated.View>
 

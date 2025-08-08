@@ -32,7 +32,6 @@ export default function PhoneNumberScreen() {
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const otpInputRefs = useRef<(TextInput | null)[]>([]);
   const phoneInputRef = useRef<PhoneInput>(null);
-
   // Animation values
   const screenOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
@@ -134,6 +133,7 @@ export default function PhoneNumberScreen() {
       
       
       const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
+      appLog('Confirmation:', confirmation);
       setConfirmation(confirmation);
       setShowVerification(true);
       
@@ -247,6 +247,7 @@ export default function PhoneNumberScreen() {
     transform: [{ translateY: buttonTranslateY.value }],
   }));
 
+
   return (
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
@@ -257,18 +258,8 @@ export default function PhoneNumberScreen() {
       >
         {/* Title */}
         <Animated.View style={titleStyle}>
-          <Text className="font-feather text-h2 text-center text-textPrimary mb-4 px-2">
-            {showVerification ? 'Enter Verification Code' : 'What\'s your phone number?'}
-          </Text>
-        </Animated.View>
-
-        {/* Subtitle */}
-        <Animated.View style={subtitleStyle}>
-          <Text className="font-din text-lg text-description text-center mt-0 mb-8">
-            {showVerification 
-              ? `We sent a 6-digit code to ${phoneNumber}`
-              : 'We\'ll use this to help you find friends who are already on Shepherd'
-            }
+          <Text className="font-feather text-h2 text-center text-textPrimary mb-4 mt-4 px-2">
+            {showVerification ? 'Verify your phone number' : 'What\'s your phone number?'}
           </Text>
         </Animated.View>
 
@@ -277,26 +268,27 @@ export default function PhoneNumberScreen() {
           {!showVerification ? (
             // Phone Number Input using react-native-phone-input
             <View className="mb-8">
-              <View className="bg-white border-2 border-pillBorder rounded-xl px-4 py-4">
+              <View className="bg-white rounded-full px-4 py-4">
                 <PhoneInput
                   ref={phoneInputRef}
                   initialCountry="us"
                   textStyle={{ 
                     color: '#795323', 
                     fontSize: 18,
-                    fontFamily: 'DIN Next Rounded LT W01 Regular',
                   }}
                   textProps={{
                     placeholder: "Enter phone number",
                     placeholderTextColor: '#B89B4C',
                   }}
+                  
                   onChangePhoneNumber={(phone) => {
                     appLog('Phone number changed:', phone);
                     setPhoneNumberLocal(phone);
                   }}
                   style={{
                     width: '100%',
-                    height: 40,
+                    height: 25,
+                    borderRadius: 20,
                   }}
                 />
               </View>
@@ -304,20 +296,14 @@ export default function PhoneNumberScreen() {
           ) : (
             // Custom OTP Input Component
             <View className="mb-8">
-              <View className="flex-row justify-center space-x-3 mb-4">
+              <View className="flex-row justify-center  mb-4">
                 {otpDigits.map((digit, index) => (
                   <View
                     key={index}
-                    className={`w-12 h-12 rounded-xl border-2 items-center justify-center ${
+                    className={`w-12 h-12 rounded-xl border-2 items-center justify-center mr-2 ${
                       digit ? 'border-accentGold bg-surfaceCream' : 'border-pillBorder bg-white'
                     }`}
-                    style={{
-                      shadowColor: 'rgba(0,0,0,0.08)',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 1,
-                      shadowRadius: 4,
-                      elevation: 2,
-                    }}
+                   
                   >
                     <TextInput
                       ref={(ref) => {
@@ -341,22 +327,8 @@ export default function PhoneNumberScreen() {
               
               {/* Helper Text */}
               <View className="items-center mb-4">
-                <Text className="font-din text-sm text-description text-center">
-                  Enter the 6-digit code we sent to your phone
-                </Text>
-              </View>
-              
-              {/* Change Phone Number */}
-              <View className="items-center">
-                <Text 
-                  onPress={() => {
-                    setShowVerification(false);
-                    resetOtp();
-                    setConfirmation(null);
-                  }}
-                  className="font-din text-base text-blue"
-                >
-                  Change phone number
+                <Text className="font-din text-xl text-description text-center">
+                  Sent to {phoneNumber}
                 </Text>
               </View>
             </View>
@@ -378,7 +350,9 @@ export default function PhoneNumberScreen() {
           />
           
           {/* Skip Button */}
-          <View className="items-center mt-4">
+          {
+            !showVerification && (
+              <View className="items-center mt-4">
             <Text 
               onPress={handleSkip}
               className="font-din text-base text-description"
@@ -386,6 +360,8 @@ export default function PhoneNumberScreen() {
               Skip for now
             </Text>
           </View>
+            )
+          }
         </Animated.View>
       </Pressable>
     </>
