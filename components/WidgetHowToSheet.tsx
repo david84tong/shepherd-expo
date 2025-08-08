@@ -85,11 +85,11 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
 
   const handleNextStep = () => {
     if (step < steps.length - 1) {
-      analytics.logEvent(`how_to_widget_sheet_next_step_${steps?.length || 1}_pressed`);
+      analytics.trackEvent(`how_to_widget_sheet_next_step_${steps?.length || 1}_pressed`);
       setStep(step + 1);
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     } else {
-      analytics.logEvent('how_to_widget_sheet_done_pressed');
+      analytics.trackEvent('how_to_widget_sheet_done_pressed');
       handleClose();
     }
   };
@@ -100,12 +100,12 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
   };
 
   const onNoThanksPressed = () => {
-    analytics.logEvent('how_to_widget_sheet_no_thanks_pressed');
+    analytics.trackEvent('how_to_widget_sheet_no_thanks_pressed');
     handleClose();
   };
 
   const onAddWidgetPressed = () => {
-    analytics.logEvent('how_to_widget_sheet_add_widget_pressed');
+    analytics.trackEvent('how_to_widget_sheet_add_widget_pressed');
     setShowInstructions(true)
   };
 
