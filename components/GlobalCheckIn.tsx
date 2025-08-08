@@ -160,7 +160,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const [riveAssets] = useAssets([require('../assets/riveAnimations/success_lamb.riv')]);
 
   // Dynamic snap points based on current screen
-  const snapPoints = currentScreen === 'success' ? ['72%', '73%', '75%', '80%'] : ['70%', '75%', '78%', '80%'];
+  const snapPoints = currentScreen === 'success' ? ['70%','75%'] : currentScreen === 'struggle' ? ['70%'] : currentScreen === 'focus' ? ['70%'] : ['67%'];
 
   // Log when component mounts/unmounts
   useEffect(() => {
