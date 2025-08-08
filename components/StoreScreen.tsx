@@ -72,7 +72,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const ownedSkins = useShopStore((state) => state.ownedSkins);
   const riveRef = useHomeStore((state) => state.riveRef);
   const setCurrentSkin = useHomeStore((state) => state.setCurrentSkin);
-  const { currentStreak } = useUserStore((state) => state.covenantProgress);
+  const { streakCount: currentStreak } = useUserStore((state) => ({ streakCount: state.streakCount }));
   const { streakFreezes, customDevotionalsLeft } = useUserStore((state) => state);
   const { setCustomDevotionalsLeft, setGens } = useUserStore();
 

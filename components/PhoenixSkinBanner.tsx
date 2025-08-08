@@ -30,7 +30,7 @@ export default function PhoenixSkinBanner({ onDismiss }: PhoenixSkinBannerProps)
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   // Get current streak from user store
-  const { currentStreak } = useUserStore((state) => state.covenantProgress);
+  const { streakCount: currentStreak } = useUserStore((state) => ({ streakCount: state.streakCount }));
 
   // Check if banner should be shown
   useEffect(() => {
