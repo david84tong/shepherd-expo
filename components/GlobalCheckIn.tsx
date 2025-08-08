@@ -160,7 +160,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const [riveAssets] = useAssets([require('../assets/riveAnimations/success_lamb.riv')]);
 
   // Dynamic snap points based on current screen
-  const snapPoints = currentScreen === 'success' ? ['65%'] : ['65%'];
+  const snapPoints = currentScreen === 'success' ? ['72%', '73%', '75%', '80%'] : ['70%', '75%', '78%', '80%'];
 
   // Log when component mounts/unmounts
   useEffect(() => {
@@ -1253,7 +1253,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     <Animated.View
       style={{
         flex: 1,
-        paddingHorizontal: 20,
+        paddingHorizontal: 1,
         paddingTop: RPH(2),
         transform: [{ translateX: successAnim }],
       }}>
@@ -1586,7 +1586,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           width: '100%',
           height: '100%',
           paddingTop: 16,
-          overflow: 'hidden',
         }}>
         <View style={{ flex: 1, position: 'relative' }}>
           {/* Top Right Close Button */}
