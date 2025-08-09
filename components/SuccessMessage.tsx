@@ -9,6 +9,7 @@ import { getLevelData } from '~/utils/levelUtils';
 import i18n from '../app/utils/i18n';
 import { imageAssets } from '~/app/stores/assetsStore';
 import { AppFonts } from '~/app/constants/appFonts';
+import analytics from '../utils/analytics';
 
 interface SuccessMessageProps {
   title?: string;
@@ -186,6 +187,17 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
       }, 1200); // Wait for progress bars to finish
     }, didLevelUp ? 1000 : 500); // Start later if level up
   }, []); // Empty dependency array since we only want to run once on mount
+
+  // Track level up and update analytics profile
+  useEffect(() => {
+    if (!didLevelUp) return;
+    const userId = useUserStore.getState().id || 'anonymous';
+    analytics.trackEvent('Lamb_Level_Up', {
+      new_level: level,
+      previous_level: prevLevel,
+    });
+    analytics.identifyUser(userId, { lamb_level: level });
+  }, [didLevelUp, level, prevLevel]);
 
   // Animated styles
   const xpBarStyle = useAnimatedStyle(() => ({

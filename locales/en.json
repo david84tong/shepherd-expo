@@ -576,5 +576,10 @@
     "unlock_phoenix_lamb": "Unlock Phoenix Lamb",
     "covenant_success_gems_earned": "You earned {{gems}} gems",
     "report_bug_title": "Report a Bug",
-    "onboarding_streak_commitment_title": "Select your bible study goal"
+    "onboarding_streak_commitment_title": "Select your bible study goal",
+    "hearts_lost": "Hearts Lost!",
+    "lamb_lost_hearts_after_days": "Oh no! {{lambName}} lost {{penalty}} hearts after {{daysMissed}} day(s) away.",
+    "lets_bounce_back": "Let's bounce back",
+    "attention": "Attention",
+    "something_happened": "Something happened"
 }
