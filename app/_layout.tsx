@@ -65,6 +65,8 @@ import { useUserStore } from './stores/userStore';
 import CovenantSuccessSheet, { CovenantSuccessSheetRef } from '../components/CovenantSuccessSheet';
 import * as Sentry from '@sentry/react-native';
 import { performanceMonitor, trackOperation, trackRive } from './utils/performanceMonitor';
+import appsFlyerService from './services/appsflyerService';
+import { useFriendStore } from './stores/friendStore';
 
 Sentry.init({
   dsn: 'https://c9b3a3c9ed0846a755ee7175b07982f8@o4509279727321088.ingest.us.sentry.io/4509279728828416',
@@ -436,6 +438,34 @@ export default Sentry.wrap(function RootLayout() {
     }
   };
 
+  // Initialize AppsFlyer and friends system
+  const initializeAppsFlyer = async () => {
+    try {
+      appLog('Initializing AppsFlyer...');
+      await appsFlyerService.initialize();
+      appLog('AppsFlyer initialized successfully');
+    } catch (error) {
+      appLog('Error initializing AppsFlyer:', error);
+    }
+  };
+
+  // Load friends when user is authenticated
+  const loadFriendsData = async () => {
+    try {
+      const friendStore = useFriendStore.getState();
+      await friendStore.loadFriends();
+      
+      // Process any pending invites
+      const pendingInvite = friendStore.pendingInvite;
+      if (pendingInvite) {
+        appLog('Processing pending invite after user login');
+        await friendStore.processPendingInvite();
+      }
+    } catch (error) {
+      appLog('Error loading friends data:', error);
+    }
+  };
+
   // Sheet activation functions - these only prepare params and call the component's show method
   const showHalfModal = (params: any) => {
     setHalfModalParams(params);
@@ -500,6 +530,11 @@ export default Sentry.wrap(function RootLayout() {
         isAnonymous: user?.isAnonymous,
         uid: user?.uid 
       });
+
+      // Load friends data when user logs in
+      if (isLoggedIn && !user?.isAnonymous) {
+        loadFriendsData();
+      }
     });
     
     return unsubscribe;
@@ -615,6 +650,7 @@ export default Sentry.wrap(function RootLayout() {
         await checkOnboarding();
         await checkStreakStatus();
         await initializeNotifications();
+        await initializeAppsFlyer();
         
         // Note: checkAndShowCheckInIfNeeded is called in the isInitialized useEffect
       } catch (error) { 

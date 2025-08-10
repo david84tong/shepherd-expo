@@ -9225,6 +9225,11 @@ react-native-adapty@3.1.0:
   resolved "https://registry.npmjs.org/react-native-adapty/-/react-native-adapty-3.1.0.tgz"
   integrity sha512-x4rsLRO7PWhv4EboCEmUeY/Y4ENfxWn3cMzmu8cyfJa9DLXskmPeFD4lrPGKEJG2fm3mSi90yaDoxnsgspPwDg==
 
+react-native-appsflyer@^6.17.2:
+  version "6.17.2"
+  resolved "https://registry.yarnpkg.com/react-native-appsflyer/-/react-native-appsflyer-6.17.2.tgz#367ad64b790d24e6065c9c3e13ab81b6c5fe3aae"
+  integrity sha512-hDhU2VlicOptplW+ZWVT+k5XO/YsRLqPgA9sYuoxhrphcudV51QMx8rsh5nDEH8WQ3edT1+O9Exb5EBBeGDXAQ==
+
 react-native-css-interop@0.1.22:
   version "0.1.22"
   resolved "https://registry.npmjs.org/react-native-css-interop/-/react-native-css-interop-0.1.22.tgz"

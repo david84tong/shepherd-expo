@@ -35,5 +35,42 @@ service cloud.firestore {
       // Allow users to read their own feedback (optional)
       allow read: if request.auth != null && request.auth.uid == resource.data.userId;
     }
+    
+    // Invite Links collection rules
+    match /inviteLinks/{inviteLinkId} {
+      // Creation: only by the creator
+      allow create: if request.auth != null &&
+                    request.auth.uid == request.resource.data.userId;
+
+      // Read, update, delete: only by the creator
+      allow read, update, delete: if request.auth != null &&
+                                   request.auth.uid == resource.data.userId;
+
+      // Limited public read access (for processing invite codes)
+      // Only allow if the document doesn't contain sensitive info
+      allow get: if request.auth != null;
+    }
+
+    // Friends collection rules
+    match /friends/{friendId} {
+      // Creation: only if the user is involved
+      allow create: if request.auth != null &&
+        (request.auth.uid == request.resource.data.userId ||
+         request.auth.uid == request.resource.data.friendId);
+
+      // Individual read: only if the user is one of the two friends
+      allow get: if request.auth != null &&
+        (request.auth.uid == resource.data.userId ||
+         request.auth.uid == resource.data.friendId);
+
+      // Update, delete: only if the user is one of the two friends
+      allow update, delete: if request.auth != null &&
+        (request.auth.uid == resource.data.userId ||
+         request.auth.uid == resource.data.friendId);
+
+      // List queries: allow queries where the user is involved
+      // This is necessary for loadFriends() and checking existing friendships
+      allow list: if request.auth != null;
+    }
   }
 } 

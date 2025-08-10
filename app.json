@@ -6,6 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "io.bytehouse",
+    "associatedDomains": [
+      "applinks:io.tryshepherd.app", 
+      "applinks:shepherd-bible-pet.onelink.me"
+    ],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "developmentClient": {
