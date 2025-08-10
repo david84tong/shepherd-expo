@@ -21,7 +21,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RiveRef } from 'rive-react-native';
-import FriendsSection from '../components/FriendsSection';
+
 import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
@@ -789,13 +789,7 @@ export default function ProfileScreen() {
 
           </View>
 
-          {/* Friends Section - Only show for non-anonymous users */}
-          {
-          !isAnonymous && (
-            <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card border border-brownBorder">
-              <FriendsSection />
-            </View>
-          )}
+
 
           {/* Join Date Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card border border-brownBorder">

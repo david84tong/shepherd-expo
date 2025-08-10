@@ -97,7 +97,7 @@ const InviteFriendsSheet = forwardRef<InviteFriendsSheetRef, Props>(({ onDismiss
     if (!inviteLink) return;
 
     try {
-      const shareMessage = `Hey! Join me on Shepherd - a beautiful app for daily Bible reading and prayer. Use my invite link to get started: ${inviteLink}`;
+      const shareMessage = `Join me on Shepherd as my prayer buddy! ‘Two are better than one, because they have a good reward for their toil.’ — Ecclesiastes 4:9: ${inviteLink}`;
       
       const result = await Share.share({
         message: shareMessage,
