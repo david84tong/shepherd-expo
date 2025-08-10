@@ -279,7 +279,15 @@ export const useFriendStore = create<FriendState>()(
 
       handleInviteFromDeepLink: async (inviteCode: string, appsflyerData?: any) => {
         const currentUser = auth().currentUser;
-        appLog('[FriendStore] Handling invite from deep link:', { inviteCode, appsflyerData, currentUser: !!currentUser });
+        appLog('[FriendStore] Handling invite from deep link:', { 
+          inviteCode, 
+          appsflyerData: {
+            ...appsflyerData,
+            // Don't log sensitive data in production
+            clickId: appsflyerData?.clickId ? '[REDACTED]' : undefined
+          }, 
+          currentUser: !!currentUser 
+        });
 
         try {
           // Find the invite link
@@ -326,14 +334,23 @@ export const useFriendStore = create<FriendState>()(
               return false;
             }
 
-            // Check if already friends
-            const existingFriendship = await firestore()
-              .collection(FRIENDS_COLLECTION)
-              .where('userId', 'in', [currentUser.uid, inviteLink.userId])
-              .where('friendId', 'in', [currentUser.uid, inviteLink.userId])
-              .get();
+            // Check if already friends or have pending request
+            const [sentRequests, receivedRequests] = await Promise.all([
+              firestore()
+                .collection(FRIENDS_COLLECTION)
+                .where('userId', '==', currentUser.uid)
+                .where('friendId', '==', inviteLink.userId)
+                .get(),
+              firestore()
+                .collection(FRIENDS_COLLECTION)
+                .where('userId', '==', inviteLink.userId)
+                .where('friendId', '==', currentUser.uid)
+                .get()
+            ]);
 
-            if (!existingFriendship.empty) {
+            const existingFriendship = [...sentRequests.docs, ...receivedRequests.docs];
+
+            if (existingFriendship.length > 0) {
               appLog('[FriendStore] Users are already friends or have pending request');
               return false;
             }
@@ -403,14 +420,23 @@ export const useFriendStore = create<FriendState>()(
             return false;
           }
 
-          // Check if already friends
-          const existingFriendship = await firestore()
-            .collection(FRIENDS_COLLECTION)
-            .where('userId', 'in', [currentUser.uid, pendingInvite.inviterUserId])
-            .where('friendId', 'in', [currentUser.uid, pendingInvite.inviterUserId])
-            .get();
+          // Check if already friends or have pending request
+          const [sentRequests, receivedRequests] = await Promise.all([
+            firestore()
+              .collection(FRIENDS_COLLECTION)
+              .where('userId', '==', currentUser.uid)
+              .where('friendId', '==', pendingInvite.inviterUserId)
+              .get(),
+            firestore()
+              .collection(FRIENDS_COLLECTION)
+              .where('userId', '==', pendingInvite.inviterUserId)
+              .where('friendId', '==', currentUser.uid)
+              .get()
+          ]);
 
-          if (!existingFriendship.empty) {
+          const existingFriendship = [...sentRequests.docs, ...receivedRequests.docs];
+
+          if (existingFriendship.length > 0) {
             appLog('[FriendStore] Users are already friends or have pending request');
             get().clearPendingInvite();
             return false;

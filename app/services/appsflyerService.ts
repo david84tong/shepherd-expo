@@ -36,6 +36,11 @@ class AppsFlyerService {
     try {
       appLog('[AppsFlyer] Initializing service...');
 
+      // Validate required configuration
+      if (!this.config.devKey || this.config.devKey === 'C43LbYriLHEuMFtNv7zhJT') {
+        appLog('[AppsFlyer] Warning: Using default dev key. Please set EXPO_PUBLIC_APPSFLYER_DEV_KEY');
+      }
+
       // Initialize AppsFlyer SDK
       await appsFlyer.initSdk({
         devKey: this.config.devKey,
@@ -44,10 +49,12 @@ class AppsFlyerService {
         onInstallConversionDataListener: true,
         onDeepLinkListener: true,
         timeToWaitForATTUserAuthorization: 10,
+        manualStart: false
       },(success) => {
         appLog('[AppsFlyer] Service initialized successfully', success);
       },(error) => {
         appLog('[AppsFlyer] Error initializing service:', error);
+        throw error;
       });
 
       // Set up event listeners
@@ -76,7 +83,7 @@ class AppsFlyerService {
         const installData = data.data;
         
         // Check if this is a non-organic install with invite data
-        if (!installData.is_first_launch && installData.invite_code) {
+        if (installData.is_first_launch && installData.invite_code) {
           this.handleInviteFromInstall(installData);
         }
 
@@ -88,8 +95,7 @@ class AppsFlyerService {
         });
       }
     });
-
-    // Listen for deep links
+        // Listen for deep links
     appsFlyer.onDeepLink((data) => {
       appLog('[AppsFlyer] Deep link received:', data);
       
@@ -125,9 +131,12 @@ class AppsFlyerService {
       const deepLinkValue = data.deep_link_value;
       appLog('[AppsFlyer] Processing deep link:', deepLinkValue);
 
-      // Parse invite code from deep link
-      // Expected format: "invite?code=ABC123"
-      const url = new URL(deepLinkValue, 'https://shepherd-bible-pet.onelink.me');
+      let url: URL;
+      try {
+        url = new URL(deepLinkValue);
+      } catch {
+        url = new URL(deepLinkValue, 'https://shepherd-bible-pet.onelink.me');
+      }
       const inviteCode = url.searchParams.get('code');
 
       if (inviteCode) {
@@ -168,8 +177,23 @@ class AppsFlyerService {
       // Generate the deep link URL
       const deepLinkValue = `invite?code=${inviteData.inviteCode}`;
       
-      // Use your actual AppsFlyer OneLink
-      const inviteUrl = `https://shepherd-bible-pet.onelink.me/r9C1?pid=friend_invite&c=friend_share&invite_code=${inviteData.inviteCode}&inviter_user_id=${inviteData.inviterUserId}&inviter_name=${encodeURIComponent(inviteData.inviterDisplayName)}&deep_link_value=${encodeURIComponent(deepLinkValue)}`;
+      // Create OneLink URL with proper parameter structure
+      const oneLinkParams = new URLSearchParams({
+        pid: 'friend_invite',
+        c: 'friend_share',
+        af_force_deeplink: 'true',
+        af_dp: deepLinkValue,
+        invite_code: inviteData.inviteCode,
+        inviter_user_id: inviteData.inviterUserId,
+        inviter_name: inviteData.inviterDisplayName,
+        af_custom_data: JSON.stringify({
+          invite_code: inviteData.inviteCode,
+          inviter_user_id: inviteData.inviterUserId,
+          inviter_name: inviteData.inviterDisplayName
+        })
+      });
+      
+      const inviteUrl = `https://shepherd-bible-pet.onelink.me/r9C1?${oneLinkParams.toString()}`;
 
       appLog('[AppsFlyer] Generated invite link:', inviteUrl);
 
@@ -217,23 +241,38 @@ class AppsFlyerService {
   }
 
   async trackInviteAccepted(inviteCode: string, inviterUserId: string): Promise<void> {
-    try {
-      appLog('[AppsFlyer] Tracking invite accepted:', { inviteCode, inviterUserId });
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        appLog('[AppsFlyer] Tracking invite accepted:', { inviteCode, inviterUserId, attempt: attempt + 1 });
 
-      await appsFlyer.logEvent('invite_accepted', {
-        invite_code: inviteCode,
-        inviter_user_id: inviterUserId,
-        timestamp: Date.now()
-      });
+        await appsFlyer.logEvent('invite_accepted', {
+          invite_code: inviteCode,
+          inviter_user_id: inviterUserId,
+          timestamp: Date.now()
+        });
 
-      analytics.logEvent('invite_accepted', {
-        inviteCode,
-        inviterUserId,
-        source: 'appsflyer'
-      });
+        analytics.logEvent('invite_accepted', {
+          inviteCode,
+          inviterUserId,
+          source: 'appsflyer'
+        });
 
-    } catch (error) {
-      appLog('[AppsFlyer] Error tracking invite accepted:', error);
+        return; // Success, exit function
+      } catch (error) {
+        attempt++;
+        appLog('[AppsFlyer] Error tracking invite accepted (attempt ' + attempt + '):', error);
+        
+        if (attempt >= maxRetries) {
+          appLog('[AppsFlyer] Failed to track invite accepted after ' + maxRetries + ' attempts');
+          break;
+        }
+        
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
     }
   }
 
