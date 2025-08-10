@@ -35,6 +35,7 @@ const IMPLEMENTED_SCREENS = [
   'OldPricingScreen',
   'PricingScreen',
   'pricing',
+  'OnboardingFriendScreen',
 ];
 
 export default function OnboardingLayout() {

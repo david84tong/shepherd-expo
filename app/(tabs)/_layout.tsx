@@ -258,7 +258,19 @@ export default function TabsLayout() {
         tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
       })}>
 
-
+      <Tabs.Screen
+        name="friends"
+        options={{
+          title: 'Friends',
+          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ width: RPW(16), height: RPH(16) }} className="items-center justify-center mt-6">
+              <Image tintColor={focused ? "orange" : "#BA9F6E"} source={require('../../assets/icons/heartIcon.png')} style={{ width: RPH(3.5), height: RPH(2.5) }} />
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>Flock</Text>
+            </View>
+          ),
+        }}
+      />
 
       <Tabs.Screen
         name="index"

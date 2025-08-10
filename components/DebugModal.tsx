@@ -10,6 +10,7 @@ import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { useUserStore } from '../app/stores/userStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useDevotionalStore } from '../app/stores/devotionalStore';
+import { useOnboardingStore } from '../app/stores/onboardingStore';
 import { useNotificationStore } from '../app/stores/notificationStore';
 import { useAuth, isSignedIn } from '../app/hooks/authHook';
 import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
@@ -42,6 +43,7 @@ const ONBOARDING_SCREENS: DebugScreen[] = [
   { name: 'Onboarding 9 - Notification Permission', route: '/onboarding/9' },
   { name: 'Onboarding 10 - Reminder Time', route: '/onboarding/10' },
   { name: 'Onboarding 11 - Streak Commitment', route: '/onboarding/streakCommitment' },
+  { name: 'Onboarding - Friend Invite', route: '/onboarding/OnboardingFriendScreen' },
   { name: 'Loading Screen', route: '/onboarding/LoadingScreen' },
   { name: 'Lamb Growth Explainer', route: '/onboarding/explainer' },
 ];
@@ -636,6 +638,19 @@ export function DebugButton() {
 
   const navigateTo = (item: DebugScreen) => {
     setModalVisible(false);
+    // If navigating to an onboarding route, override any saved redirect to 11/index
+    if (item.route.startsWith('/onboarding/')) {
+      try {
+        const store = useOnboardingStore.getState();
+        // Clear any pending saved-screen redirects
+        store.clearSavedScreenNavigation();
+        // Persist the exact onboarding screen we're navigating to
+        const screen = item.route.replace('/onboarding/', '');
+        if (screen) {
+          store.setCurrentScreen(screen);
+        }
+      } catch {}
+    }
     router.push(item.route as any);
   };
 
