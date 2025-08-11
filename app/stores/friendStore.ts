@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore from '@react-native-firebase/firestore';
+import functions from '@react-native-firebase/functions';
 import auth from '@react-native-firebase/auth';
 import { Friend, InviteLink, FriendInvite } from '../models/Friend';
 import { appLog } from '../helper/helper';
@@ -29,6 +30,7 @@ interface FriendState {
   processPendingInvite: () => Promise<boolean>;
   clearPendingInvite: () => void;
   getFriendsCount: () => number;
+  sendPrayerBuddyNudge: (friendId: string) => Promise<boolean>;
   resetStore: () => void;
 }
 
@@ -553,6 +555,37 @@ export const useFriendStore = create<FriendState>()(
 
       getFriendsCount: () => {
         return get().friends.length;
+      },
+
+      sendPrayerBuddyNudge: async (friendId: string) => {
+        const currentUser = auth().currentUser;
+        if (!currentUser) {
+          appLog('[FriendStore] No authenticated user, cannot send nudge');
+          return false;
+        }
+
+        try {
+          appLog('[FriendStore] Sending prayer buddy nudge to:', friendId);
+          
+          // Call the cloud function to send the nudge
+          const sendNudge = functions().httpsCallable('sendPrayerBuddyNudge');
+          const result = await sendNudge({ targetUserId: friendId });
+          
+          if (result.data && (result.data as { success: boolean }).success) {
+            appLog('[FriendStore] Prayer buddy nudge sent successfully');
+            analytics.logEvent('prayer_buddy_nudge_sent', {
+              senderUserId: currentUser.uid,
+              targetUserId: friendId,
+            });
+            return true;
+          } else {
+            appLog('[FriendStore] Failed to send prayer buddy nudge:', (result.data as { message: string }).message);
+            return false;
+          }
+        } catch (error) {
+          console.error('[FriendStore] Error sending prayer buddy nudge:', error);
+          return false;
+        }
       },
 
       resetStore: () => {

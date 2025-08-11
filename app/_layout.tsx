@@ -47,6 +47,7 @@ import ForceUpdateModal from '~/components/ForceUpdateModal';
 import StreakFreezeBottomSheet, { StreakFreezeBottomSheetRef } from '~/components/StreakFreezeBottomSheet';
 import { disableFontScaling } from './helper/disableFontScaling';
 import { adapty } from 'react-native-adapty';
+import notificationService from './services/notificationService';
 import './stores/userStore';
 import { IS_ANDROID } from './utils/utils';
 import { initializeQuickActions } from './utils/quickActions';
@@ -432,6 +433,10 @@ export default Sentry.wrap(function RootLayout() {
       appLog('Initializing notification system...');
       const notificationStore = useNotificationStore.getState();
       await notificationStore.initializeNotifications();
+      
+      // Initialize FCM for push notifications
+      await notificationService.initialize();
+      
       appLog('Notification system initialized successfully');
     } catch (error) {
       appLog('Error initializing notifications:', error);

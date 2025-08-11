@@ -43,6 +43,7 @@ export interface UserDoc {
   ageRange: string;
   displayName: string;
   username: string;
+  fcmToken?: string; // Firebase Cloud Messaging token for push notifications
   lamb: Lamb;
   streakCount: number;
   lastActivityDate: FirebaseFirestoreTypes.Timestamp;

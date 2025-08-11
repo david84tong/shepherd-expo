@@ -116,6 +116,14 @@ export const configureNotifications = async () => {
         lightColor: '#7B2BFF',
         description: 'Notifications to remind you of your daily Bible reading',
       });
+
+      await Notifications.setNotificationChannelAsync('prayer-buddy-nudges', {
+        name: 'Prayer Buddy Nudges',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#F7B500',
+        description: 'Notifications when your prayer buddy sends you a nudge',
+      });
     }
 
     return true;

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   FlatList,
   ActivityIndicator,
   Platform,
+  Alert,
 } from 'react-native';
 import { useUserStore } from '../stores/userStore';
 import { useFriendStore } from '../stores/friendStore';
@@ -24,6 +25,7 @@ interface FriendItemProps {
   friend: any;
   onAccept?: () => void;
   onDecline?: () => void;
+  onNudge?: () => void;
   isIncomingRequest?: boolean;
 }
 
@@ -31,6 +33,7 @@ const FriendItem: React.FC<FriendItemProps> = ({
   friend, 
   onAccept, 
   onDecline, 
+  onNudge,
   isIncomingRequest = false 
 }) => {
   // Cross-platform shadow styles
@@ -106,6 +109,30 @@ const FriendItem: React.FC<FriendItemProps> = ({
           </View>
         )}
       </View>
+      
+      {/* Nudge button for accepted friends */}
+      {!isIncomingRequest && friend.status === 'accepted' && onNudge && (
+        <View className="mt-4 pt-4 border-t border-pillBorder">
+          <Pressable
+            onPress={onNudge}
+            className="bg-blue-500 rounded-card px-4 py-2 flex-row items-center justify-center"
+            style={Platform.select({
+              ios: {
+                shadowColor: '#3B82F6',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 3,
+              },
+              android: {
+                elevation: 3,
+              },
+            })}
+          >
+            <Text className="text-body font-feather text-white mr-2">🐑</Text>
+            <Text className="text-body font-feather text-white">Send Nudge</Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 };
@@ -126,6 +153,7 @@ export default function FriendsScreen() {
     loadFriends,
     acceptFriendRequest,
     declineFriendRequest,
+    sendPrayerBuddyNudge,
     getFriendsCount
   } = useFriendStore();
 
@@ -135,6 +163,83 @@ export default function FriendsScreen() {
   // Dev-only view states
   type FriendsViewState = 'invite' | 'pending' | 'connected';
   const [viewState, setViewState] = React.useState<FriendsViewState>('invite');
+  
+  // Enhanced friend type for simulation
+  interface SimulatedFriend {
+    id: string;
+    friendId: string;
+    friendDisplayName: string;
+    friendUsername: string;
+    friendAvatar: null;
+    status: 'accepted';
+    lastActiveAt: Date;
+    streak: number;
+    level: number;
+    totalReadingDays: number;
+    isPrayerBuddy: boolean;
+    lastNudgeReceived: Date | null;
+    lastNudgeSent: Date | null;
+    fcmToken: string;
+    createdAt: { toDate: () => Date };
+  }
+
+  // Simulation state for connected friends
+  const [simulatedFriends, setSimulatedFriends] = useState<SimulatedFriend[]>([
+    {
+      id: 'sim_friend_1',
+      friendId: 'user_sarahc2024',
+      friendDisplayName: 'Sarah Chen',
+      friendUsername: 'sarahc_prays2024', // Unique username
+      friendAvatar: null,
+      status: 'accepted',
+      lastActiveAt: new Date(),
+      streak: 15,
+      level: 8,
+      totalReadingDays: 42,
+      isPrayerBuddy: true,
+      lastNudgeReceived: null,
+      lastNudgeSent: null,
+      fcmToken: 'fake_fcm_token_sarah_123',
+      createdAt: { toDate: () => new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }, // 30 days ago
+    },
+    {
+      id: 'sim_friend_2', 
+      friendId: 'user_marcusj2024',
+      friendDisplayName: 'Marcus Johnson',
+      friendUsername: 'marcus_faithful_2024', // Unique username
+      friendAvatar: null,
+      status: 'accepted',
+      lastActiveAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+      streak: 7,
+      level: 4,
+      totalReadingDays: 18,
+      isPrayerBuddy: false,
+      lastNudgeReceived: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
+      lastNudgeSent: null,
+      fcmToken: 'fake_fcm_token_marcus_456',
+      createdAt: { toDate: () => new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) }, // 14 days ago
+    }
+  ]);
+  
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    type: 'friend_request' | 'friend_accepted' | 'nudge_received' | 'streak_milestone';
+    title: string;
+    message: string;
+    timestamp: Date;
+    friendName?: string;
+    isRead: boolean;
+  }>>([
+    {
+      id: 'initial_welcome',
+      type: 'friend_accepted',
+      title: '🎉 Welcome to your Prayer Circle!',
+      message: 'Sarah Chen (@sarahc_prays2024) is your prayer buddy. Start encouraging each other on your faith journey!',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+      friendName: 'Sarah Chen',
+      isRead: false,
+    }
+  ]);
 
   // Load friends when screen loads
   useEffect(() => {
@@ -201,6 +306,196 @@ export default function FriendsScreen() {
     handleInvite();
   };
 
+  const handleSendNudge = async (friendId: string, friendName: string) => {
+    try {
+      hapticLight();
+      appLog('[FriendsScreen] Sending nudge to friend:', friendId);
+      
+      // Simulate nudge for dev purposes
+      if (__DEV__ && viewState === 'connected') {
+        simulateNudgeSent(friendId, friendName);
+        return;
+      }
+      
+      const success = await sendPrayerBuddyNudge(friendId);
+      
+      if (success) {
+        analytics.logEvent('prayer_buddy_nudge_sent_ui', {
+          friendId,
+          friendName,
+          userId: user.id
+        });
+        
+        // TODO: Show success toast/feedback
+        appLog('[FriendsScreen] Nudge sent successfully');
+      } else {
+        // TODO: Show error toast/feedback
+        appLog('[FriendsScreen] Failed to send nudge');
+      }
+    } catch (error) {
+      console.error('[FriendsScreen] Error sending nudge:', error);
+      // TODO: Show error toast/feedback
+    }
+  };
+
+  // Simulation functions for dev/demo purposes
+  const simulateCloudNotification = (friend: SimulatedFriend, currentUserName: string = 'You') => {
+    // Trigger haptic feedback
+    hapticLight();
+    
+    // Simulate Firebase Cloud Function call
+    console.log('🔵 [CloudFunction] Prayer Nudge Request Started');
+    appLog(`[CloudFunction] Sending prayer nudge notification to ${friend.friendUsername}`);
+    appLog(`[CloudFunction] FCM Token: ${friend.fcmToken}`);
+    
+    const notificationPayload = {
+      to: friend.fcmToken,
+      notification: {
+        title: '🐑 Your prayer buddy is thinking of you!',
+        body: `${currentUserName} sent you a gentle nudge to spend time with the Shepherd today.`,
+        sound: 'default',
+        badge: 1,
+        priority: 'high'
+      },
+      data: {
+        type: 'prayer_buddy_nudge',
+        senderId: user?.id || 'current_user',
+        senderName: currentUserName,
+        recipientUsername: friend.friendUsername,
+        timestamp: new Date().toISOString(),
+      }
+    };
+    
+    console.log('📤 [CloudFunction] Notification payload:', notificationPayload);
+    appLog(`[CloudFunction] Notification payload:`, notificationPayload);
+
+    // Simulate cloud function processing time and response
+    setTimeout(() => {
+      console.log('✅ [CloudFunction] Notification sent successfully');
+      appLog(`[CloudFunction] ✅ Notification sent successfully to ${friend.friendUsername}`);
+      
+      // Simulate analytics tracking
+      analytics.logEvent('prayer_nudge_cloud_notification_sent', {
+        senderId: user?.id || 'current_user',
+        recipientId: friend.friendId,
+        recipientUsername: friend.friendUsername,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Simulate the receiving user getting the notification
+      const receivedNotification = {
+        id: `cloud_nudge_${Date.now()}`,
+        type: 'nudge_received' as const,
+        title: '🐑 Your prayer buddy is thinking of you!',
+        message: `${currentUserName} sent you a gentle nudge to spend time with the Shepherd today.`,
+        timestamp: new Date(),
+        friendName: currentUserName,
+        isRead: false,
+      };
+      
+      setNotifications(prev => [receivedNotification, ...prev]);
+      console.log('📱 [Simulation] Friend received notification on their device');
+    }, 1200); // Simulate realistic network delay
+  };
+
+  const simulateNudgeSent = (friendId: string, friendName: string) => {
+    const friend = simulatedFriends.find(f => f.friendId === friendId);
+    if (!friend) return;
+
+    // Simulate cloud notification
+    simulateCloudNotification(friend, user?.displayName || 'Your Prayer Buddy');
+    
+    // Show immediate feedback
+    Alert.alert(
+      '🐑 Prayer Nudge Sent!',
+      `${friendName} (@${friend.friendUsername}) will receive a cloud notification encouraging them to spend time with the Shepherd.`,
+      [
+        { text: 'Great!', style: 'default' },
+        { 
+          text: 'View Logs', 
+          style: 'default', 
+          onPress: () => {
+            // In real app, this could open a debug panel
+            console.log('Cloud notification logs would appear here');
+          }
+        }
+      ]
+    );
+    
+    // Update friend's last nudge time and our sent time
+    setSimulatedFriends(prev => prev.map(f => 
+      f.friendId === friendId 
+        ? { ...f, lastNudgeReceived: new Date(), lastNudgeSent: new Date() }
+        : f
+    ));
+  };
+
+  const simulateFriendshipCreated = () => {
+    const uniqueId = Date.now();
+    const randomNames = [
+      { display: 'Alex Rivera', username: `alex_devoted_${uniqueId}` },
+      { display: 'Emma Thompson', username: `emma_faithful_${uniqueId}` },
+      { display: 'David Kim', username: `david_walks_${uniqueId}` },
+      { display: 'Sofia Martinez', username: `sofia_prays_${uniqueId}` },
+      { display: 'Noah Wilson', username: `noah_believes_${uniqueId}` },
+    ];
+    
+    const randomName = randomNames[Math.floor(Math.random() * randomNames.length)];
+    
+    const newFriend: SimulatedFriend = {
+      id: `sim_friend_${uniqueId}`,
+      friendId: `user_${randomName.username}`,
+      friendDisplayName: randomName.display,
+      friendUsername: randomName.username, // Unique username with timestamp
+      friendAvatar: null,
+      status: 'accepted' as const,
+      lastActiveAt: new Date(),
+      streak: Math.floor(Math.random() * 10) + 1,
+      level: Math.floor(Math.random() * 5) + 1,
+      totalReadingDays: Math.floor(Math.random() * 20) + 1,
+      isPrayerBuddy: false,
+      lastNudgeReceived: null,
+      lastNudgeSent: null,
+      fcmToken: `fake_fcm_token_${uniqueId}`,
+      createdAt: { toDate: () => new Date() },
+    };
+
+    setSimulatedFriends(prev => [...prev, newFriend]);
+
+    // Add friendship notification
+    const notification = {
+      id: `friend_${uniqueId}`,
+      type: 'friend_accepted' as const,
+      title: '🎉 New Prayer Buddy!',
+      message: `${newFriend.friendDisplayName} (@${newFriend.friendUsername}) is now your prayer buddy. Encourage each other on your faith journey!`,
+      timestamp: new Date(),
+      friendName: newFriend.friendDisplayName,
+      isRead: false,
+    };
+
+    setNotifications(prev => [notification, ...prev]);
+
+    Alert.alert(
+      '🎉 New Friend Added!',
+      `${newFriend.friendDisplayName} (@${newFriend.friendUsername}) has joined your prayer circle! They'll receive a welcome notification.`,
+      [{ text: 'Awesome!', style: 'default' }]
+    );
+  };
+
+  const simulateStreakMilestone = (friendName: string, streak: number) => {
+    const notification = {
+      id: `streak_${Date.now()}`,
+      type: 'streak_milestone' as const,
+      title: `🔥 ${friendName} hit ${streak} days!`,
+      message: `Your prayer buddy is on fire! Send them some encouragement.`,
+      timestamp: new Date(),
+      friendName,
+      isRead: false,
+    };
+
+    setNotifications(prev => [notification, ...prev]);
+  };
+
   // Show error if any
   if (error) {
     return (
@@ -232,7 +527,8 @@ export default function FriendsScreen() {
 
       {/* Dev-only state switcher */}
       {__DEV__ && (
-        <View className="flex-row items-center justify-center mb-4 gap-2">
+        <View className="mb-4">
+          <View className="flex-row items-center justify-center mb-2 gap-2">
           {([
             { id: 'invite', label: 'Need Invite' },
             { id: 'pending', label: 'Pending' },
@@ -248,6 +544,31 @@ export default function FriendsScreen() {
               <Text className={`font-din ${viewState === opt.id ? 'text-white' : 'text-textPrimary/80'}`}>{opt.label}</Text>
             </TouchableOpacity>
           ))}
+          </View>
+          
+          {/* Simulation buttons */}
+          {viewState === 'connected' && (
+            <View className="flex-row items-center justify-center gap-2 flex-wrap">
+              <TouchableOpacity
+                onPress={simulateFriendshipCreated}
+                className="bg-forestGreen50 border border-forestGreen80 px-2 py-1 rounded-lg"
+              >
+                <Text className="font-din text-forestGreen80 text-xs">+ Add Friend</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => simulateStreakMilestone('Sarah Chen', 20)}
+                className="bg-amber-100 border border-amber-400 px-2 py-1 rounded-lg"
+              >
+                <Text className="font-din text-amber-600 text-xs">🔥 Streak Alert</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setNotifications([])}
+                className="bg-gray-100 border border-gray-300 px-2 py-1 rounded-lg"
+              >
+                <Text className="font-din text-gray-600 text-xs">Clear Notifs</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       )}
 
@@ -314,7 +635,15 @@ export default function FriendsScreen() {
               <FlatList
                 data={friends}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => <FriendItem friend={item} />}
+                renderItem={({ item }) => (
+                  <FriendItem 
+                    friend={item} 
+                    onNudge={() => handleSendNudge(
+                      item.friendId || item.userId, 
+                      item.friendDisplayName || item.friendUsername || 'Friend'
+                    )}
+                  />
+                )}
                 scrollEnabled={false}
               />
             </View>
@@ -345,19 +674,109 @@ export default function FriendsScreen() {
         </View>
       )}
 
-      {/* Connected state */}
+      {/* Connected state - Simulated Friends */}
       {viewState === 'connected' && (
-        <View className="bg-surfaceCreamLight rounded-2xl p-4 shadow-card border border-[#eed39d] flex-row items-center">
-          <Image source={require('../../assets/icons/profileIcon.png')} style={{ width: 72, height: 72 }} resizeMode="contain" />
-          <View className="ml-4 flex-1">
-            <Text className="font-feather text-h4 text-textPrimary">Prayer Buddy</Text>
-            <Text className="font-din text-textPrimary/70 mt-1" numberOfLines={1}>
-              Closest friend • Encourager • Keeps you consistent
-            </Text>
-            <Text className="font-din text-textPrimary/50 mt-1">
-              Your lamb: {lambName || 'Unnamed'} • LVL {lamb?.level ?? 1}
-            </Text>
-          </View>
+        <View className="flex-1">
+          {/* Notifications Feed */}
+          {notifications.length > 0 && (
+            <View className="mb-6">
+              <Text className="text-heading font-feather text-textPrimary mb-4">
+                Recent Activity ({notifications.length})
+              </Text>
+              {notifications.slice(0, 3).map((notification) => (
+                <View key={notification.id} className="bg-surfaceCreamLight rounded-card p-4 mb-3 border border-pillBorder">
+                  <View className="flex-row items-start justify-between">
+                    <View className="flex-1">
+                      <Text className="text-body font-feather text-textPrimary">
+                        {notification.title}
+                      </Text>
+                      <Text className="text-caption font-din text-description mt-1">
+                        {notification.message}
+                      </Text>
+                      <Text className="text-caption font-din text-description mt-2">
+                        {notification.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                    </View>
+                    {!notification.isRead && (
+                      <View className="w-2 h-2 bg-accentGold rounded-full mt-1" />
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Prayer Buddy Section */}
+          {simulatedFriends.find(f => f.isPrayerBuddy) && (
+            <View className="mb-6">
+              <Text className="text-heading font-feather text-textPrimary mb-4">
+                Your Prayer Buddy
+              </Text>
+              {(() => {
+                const prayerBuddy = simulatedFriends.find(f => f.isPrayerBuddy)!;
+                return (
+                  <View className="bg-surfaceCreamLight rounded-card p-6 border border-pillBorder" style={Platform.select({
+                    ios: {
+                      shadowColor: 'rgba(0,0,0,0.08)',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 1,
+                      shadowRadius: 4,
+                    },
+                    android: {
+                      elevation: 2,
+                    },
+                  })}>
+                    <View className="flex-row items-center justify-between mb-4">
+                      <View className="flex-1">
+                        <View className="flex-row items-center">
+                          <Text className="text-heading font-feather text-textPrimary">
+                            {prayerBuddy.friendDisplayName}
+                          </Text>
+                          <View className="bg-accentGold rounded-full px-2 py-0.5 ml-2">
+                            <Text className="text-caption font-din text-textPrimary">Buddy</Text>
+                          </View>
+                        </View>
+                        <Text className="text-body font-din text-description mt-1">
+                          @{prayerBuddy.friendUsername}
+                        </Text>
+                      </View>
+                      <View className="items-end">
+                        <Text className="text-caption font-din text-description">
+                          {prayerBuddy.lastActiveAt.getTime() > Date.now() - 60 * 60 * 1000 ? '🟢 Active now' : '🟡 Recently active'}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    <View className="flex-row justify-between mb-4">
+                      <View className="items-center">
+                        <Text className="text-h3 font-feather text-textPrimary">{prayerBuddy.streak}</Text>
+                        <Text className="text-caption font-din text-description">Day Streak</Text>
+                      </View>
+                      <View className="items-center">
+                        <Text className="text-h3 font-feather text-textPrimary">LVL {prayerBuddy.level}</Text>
+                        <Text className="text-caption font-din text-description">Lamb Level</Text>
+                      </View>
+                      <View className="items-center">
+                        <Text className="text-h3 font-feather text-textPrimary">{prayerBuddy.totalReadingDays}</Text>
+                        <Text className="text-caption font-din text-description">Total Days</Text>
+                      </View>
+                    </View>
+
+
+                    {/* Send Prayer Nudge Button */}
+                    <PrimaryButton
+                      onPress={() => handleSendNudge(prayerBuddy.friendId, prayerBuddy.friendDisplayName)}
+                      buttonType="blue"
+                      buttonHeight={52}
+                      width="100%"
+                      title="Send Prayer Nudge"
+
+                      />
+                  </View>
+                );
+              })()}
+            </View>
+          )}
         </View>
       )}
 

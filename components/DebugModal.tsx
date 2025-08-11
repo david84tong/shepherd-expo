@@ -23,6 +23,7 @@ import { useCheckInStore } from '~/app/stores/checkInStore';
 import dayjs from 'dayjs';
 import { appLog } from '~/app/helper/helper';
 import EvolutionScreen from './EvolutionScreen';
+import { testFriendConnection } from '../app/utils/friendConnectionSimulator';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -1153,6 +1154,40 @@ export function DebugButton() {
                   </Text>
                   <Text className="font-din text-sm text-[#5B8A6A] mt-1">
                     Display current app route
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Friend Connection Testing Section */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">🤝 Friend Connection Testing</Text>
+                
+                <TouchableOpacity
+                  className="bg-[#E6F3FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={async () => {
+                    try {
+                      await testFriendConnection();
+                      Toast.show({
+                        type: 'success',
+                        text1: 'Friend Connection Simulated! 🎉',
+                        text2: 'Check console for usernames and test nudges',
+                        position: 'top',
+                        visibilityTime: 5000,
+                      });
+                    } catch (error) {
+                      appLog('Error in friend connection simulation:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Simulation Failed',
+                        text2: String(error),
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Simulate Friend Connection</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Create 2 test users with unique usernames and connect them as prayer buddies
                   </Text>
                 </TouchableOpacity>
               </View>

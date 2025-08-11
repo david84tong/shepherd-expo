@@ -204,6 +204,7 @@ const initialState: UserDoc = {
   completedReadings: [],
   ageRange: '',
   username: '',
+  fcmToken: '',
   isProFromOnboarding: false,
   hasSeenWidgetModal: false,
   hasSeenBibleReaderTutorial: false,
