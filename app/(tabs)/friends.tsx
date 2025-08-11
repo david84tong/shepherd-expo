@@ -311,12 +311,13 @@ export default function FriendsScreen() {
       hapticLight();
       appLog('[FriendsScreen] Sending nudge to friend:', friendId);
       
-      // Simulate nudge for dev purposes
+      // Simulate nudge for dev purposes in connected state
       if (__DEV__ && viewState === 'connected') {
         simulateNudgeSent(friendId, friendName);
         return;
       }
       
+      // Use real Firebase cloud function for actual friends
       const success = await sendPrayerBuddyNudge(friendId);
       
       if (success) {
@@ -326,15 +327,28 @@ export default function FriendsScreen() {
           userId: user.id
         });
         
-        // TODO: Show success toast/feedback
+        Alert.alert(
+          '🐑 Nudge Sent!',
+          `${friendName} will receive a notification encouraging them to spend time with the Shepherd.`,
+          [{ text: 'Great!', style: 'default' }]
+        );
+        
         appLog('[FriendsScreen] Nudge sent successfully');
       } else {
-        // TODO: Show error toast/feedback
+        Alert.alert(
+          'Unable to Send Nudge',
+          'There was a problem sending your prayer nudge. Please try again later.',
+          [{ text: 'OK', style: 'default' }]
+        );
         appLog('[FriendsScreen] Failed to send nudge');
       }
     } catch (error) {
       console.error('[FriendsScreen] Error sending nudge:', error);
-      // TODO: Show error toast/feedback
+      Alert.alert(
+        'Error',
+        'There was an error sending your prayer nudge. Please try again.',
+        [{ text: 'OK', style: 'default' }]
+      );
     }
   };
 
@@ -433,11 +447,13 @@ export default function FriendsScreen() {
   const simulateFriendshipCreated = () => {
     const uniqueId = Date.now();
     const randomNames = [
-      { display: 'Alex Rivera', username: `alex_devoted_${uniqueId}` },
-      { display: 'Emma Thompson', username: `emma_faithful_${uniqueId}` },
-      { display: 'David Kim', username: `david_walks_${uniqueId}` },
-      { display: 'Sofia Martinez', username: `sofia_prays_${uniqueId}` },
-      { display: 'Noah Wilson', username: `noah_believes_${uniqueId}` },
+      { display: 'Alex Rivera', username: `alex_devoted_${Math.random().toString(36).substring(2, 8)}` },
+      { display: 'Emma Thompson', username: `emma_faithful_${Math.random().toString(36).substring(2, 8)}` },
+      { display: 'David Kim', username: `david_walks_${Math.random().toString(36).substring(2, 8)}` },
+      { display: 'Sofia Martinez', username: `sofia_prays_${Math.random().toString(36).substring(2, 8)}` },
+      { display: 'Noah Wilson', username: `noah_believes_${Math.random().toString(36).substring(2, 8)}` },
+      { display: 'Grace Lee', username: `grace_seekers_${Math.random().toString(36).substring(2, 8)}` },
+      { display: 'Michael Chen', username: `michael_hope_${Math.random().toString(36).substring(2, 8)}` },
     ];
     
     const randomName = randomNames[Math.floor(Math.random() * randomNames.length)];
@@ -446,28 +462,33 @@ export default function FriendsScreen() {
       id: `sim_friend_${uniqueId}`,
       friendId: `user_${randomName.username}`,
       friendDisplayName: randomName.display,
-      friendUsername: randomName.username, // Unique username with timestamp
+      friendUsername: randomName.username, // Unique username 
       friendAvatar: null,
       status: 'accepted' as const,
-      lastActiveAt: new Date(),
-      streak: Math.floor(Math.random() * 10) + 1,
-      level: Math.floor(Math.random() * 5) + 1,
-      totalReadingDays: Math.floor(Math.random() * 20) + 1,
-      isPrayerBuddy: false,
+      lastActiveAt: new Date(Date.now() - Math.random() * 4 * 60 * 60 * 1000), // Active within last 4 hours
+      streak: Math.floor(Math.random() * 15) + 1,
+      level: Math.floor(Math.random() * 8) + 1,
+      totalReadingDays: Math.floor(Math.random() * 30) + 1,
+      isPrayerBuddy: simulatedFriends.length === 0, // First friend becomes prayer buddy
       lastNudgeReceived: null,
       lastNudgeSent: null,
-      fcmToken: `fake_fcm_token_${uniqueId}`,
+      fcmToken: `fake_fcm_token_${randomName.username}_${uniqueId}`,
       createdAt: { toDate: () => new Date() },
     };
 
+    // Simulate friendship creation flow between two users
+    console.log('🔵 [Friendship Flow] Simulating friendship creation...');
+    appLog(`[Friendship] User "${user?.displayName || 'You'}" (@${user?.username || 'your_username'}) and "${newFriend.friendDisplayName}" (@${newFriend.friendUsername}) became friends!`);
+    
+    // Add the new friend to the list
     setSimulatedFriends(prev => [...prev, newFriend]);
 
-    // Add friendship notification
+    // Simulate both users receiving friendship notifications
     const notification = {
       id: `friend_${uniqueId}`,
       type: 'friend_accepted' as const,
-      title: '🎉 New Prayer Buddy!',
-      message: `${newFriend.friendDisplayName} (@${newFriend.friendUsername}) is now your prayer buddy. Encourage each other on your faith journey!`,
+      title: '🎉 New Prayer Buddy Connected!',
+      message: `${newFriend.friendDisplayName} (@${newFriend.friendUsername}) accepted your invitation! You're now prayer buddies.`,
       timestamp: new Date(),
       friendName: newFriend.friendDisplayName,
       isRead: false,
@@ -475,11 +496,69 @@ export default function FriendsScreen() {
 
     setNotifications(prev => [notification, ...prev]);
 
+    // Simulate mutual FCM notifications that both users would receive
+    console.log('📱 [FCM Notification] Sending friendship notifications to both users...');
+    
+    // Notification that current user receives
+    const currentUserNotification = {
+      to: user?.fcmToken || 'current_user_fcm_token',
+      notification: {
+        title: '🎉 New Prayer Buddy!',
+        body: `${newFriend.friendDisplayName} (@${newFriend.friendUsername}) accepted your invitation. Start your faith journey together!`,
+        sound: 'default',
+        badge: 1,
+      },
+      data: {
+        type: 'friend_accepted',
+        friendId: newFriend.friendId,
+        friendUsername: newFriend.friendUsername,
+        timestamp: new Date().toISOString(),
+      }
+    };
+
+    // Notification that new friend receives  
+    const newFriendNotification = {
+      to: newFriend.fcmToken,
+      notification: {
+        title: '🎉 Welcome to Shepherd!',
+        body: `You're now connected with ${user?.displayName || 'your new prayer buddy'}! Encourage each other in your daily walk.`,
+        sound: 'default',
+        badge: 1,
+      },
+      data: {
+        type: 'friend_accepted',
+        friendId: user?.id || 'current_user',
+        friendUsername: user?.username || 'prayer_buddy',
+        timestamp: new Date().toISOString(),
+      }
+    };
+
+    console.log('📤 [FCM] Current user notification:', currentUserNotification);
+    console.log('📤 [FCM] New friend notification:', newFriendNotification);
+
+    // Show success message
     Alert.alert(
-      '🎉 New Friend Added!',
-      `${newFriend.friendDisplayName} (@${newFriend.friendUsername}) has joined your prayer circle! They'll receive a welcome notification.`,
-      [{ text: 'Awesome!', style: 'default' }]
+      '🎉 Friendship Created!',
+      `${newFriend.friendDisplayName} (@${newFriend.friendUsername}) is now your prayer buddy! Both of you received welcome notifications and can start sending prayer nudges to encourage each other.`,
+      [
+        { text: 'Awesome!', style: 'default' },
+        { 
+          text: 'Send Nudge', 
+          style: 'default',
+          onPress: () => handleSendNudge(newFriend.friendId, newFriend.friendDisplayName)
+        }
+      ]
     );
+
+    // Log analytics for both users
+    analytics.logEvent('friendship_created_simulation', {
+      user1Id: user?.id || 'current_user',
+      user1Username: user?.username || 'current_user',
+      user2Id: newFriend.friendId,
+      user2Username: newFriend.friendUsername,
+      isPrayerBuddy: newFriend.isPrayerBuddy,
+      timestamp: new Date().toISOString()
+    });
   };
 
   const simulateStreakMilestone = (friendName: string, streak: number) => {
@@ -508,7 +587,7 @@ export default function FriendsScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-surfaceCream px-6 pt-24" contentContainerStyle={{ paddingBottom: 56 }}>
+    <ScrollView className="flex-1 bg-surfaceCream px-6 pt-24" contentContainerStyle={{ paddingBottom: 170 }}>
       {/* Header with Gems */}
       <View className="flex-row items-center justify-between mb-4">
         <View>
@@ -525,7 +604,7 @@ export default function FriendsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Dev-only state switcher */}
+      {/* Dev-only state switcher and controls */}
       {__DEV__ && (
         <View className="mb-4">
           <View className="flex-row items-center justify-center mb-2 gap-2">
@@ -545,6 +624,21 @@ export default function FriendsScreen() {
             </TouchableOpacity>
           ))}
           </View>
+          
+          {/* Dev simulation controls */}
+          {
+            viewState === 'connected' && (
+              <View className="flex-row gap-2 mt-2">
+                <PrimaryButton
+                  onPress={simulateFriendshipCreated}
+                  buttonType="default"
+                  buttonHeight={52}
+                  width="100%"
+                  title="+ Add Friend"
+                />
+              </View>
+            )
+          }
         </View>
       )}
 
@@ -688,11 +782,6 @@ export default function FriendsScreen() {
                           @{prayerBuddy.friendUsername}
                         </Text>
                       </View>
-                      <View className="items-end">
-                        <Text className="text-caption font-din text-description">
-                          {prayerBuddy.lastActiveAt.getTime() > Date.now() - 60 * 60 * 1000 ? '🟢 Active now' : '🟡 Recently active'}
-                        </Text>
-                      </View>
                     </View>
                     
                     <View className="flex-row justify-between mb-4">
@@ -712,6 +801,8 @@ export default function FriendsScreen() {
 
 
                     {/* Send Prayer Nudge Button */}
+                    <View className="border-t border-pillBorder pt-4">
+                      
                     <PrimaryButton
                       onPress={() => handleSendNudge(prayerBuddy.friendId, prayerBuddy.friendDisplayName)}
                       buttonType="blue"
@@ -720,9 +811,95 @@ export default function FriendsScreen() {
                       title="Send Prayer Nudge"
 
                       />
+                      
+                      {/* Nudge Status */}
+                      {prayerBuddy.lastNudgeSent && (
+                        <Text className="text-caption font-din text-description text-center mt-2">
+                          Last nudge sent {new Date(prayerBuddy.lastNudgeSent).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                      )}
+                    </View>
                   </View>
                 );
               })()}
+            </View>
+          )}
+
+          {/* Other Friends Section */}
+          {simulatedFriends.filter(f => !f.isPrayerBuddy).length > 0 && (
+            <View className="mb-6">
+              <Text className="text-heading font-feather text-textPrimary mb-4">
+                Other Friends ({simulatedFriends.filter(f => !f.isPrayerBuddy).length})
+              </Text>
+              {simulatedFriends.filter(f => !f.isPrayerBuddy).map((friend) => (
+                <View key={friend.id} className="bg-surfaceCream rounded-card p-6 mb-3" style={Platform.select({
+                  ios: {
+                    shadowColor: 'rgba(0,0,0,0.08)',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 1,
+                    shadowRadius: 4,
+                  },
+                  android: {
+                    elevation: 2,
+                  },
+                })}>
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-1">
+                      <Text className="text-heading font-feather text-textPrimary">
+                        {friend.friendDisplayName}
+                      </Text>
+                      <Text className="text-body font-din text-description mt-1">
+                        @{friend.friendUsername}
+                      </Text>
+                      <View className="flex-row items-center mt-2">
+                        <Text className="text-caption font-din text-description">
+                          Friends since {friend.createdAt.toDate().toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  
+                  {/* Friend Stats */}
+                  <View className="flex-row justify-between mt-4 pt-4 border-t border-pillBorder">
+                    <View className="items-center">
+                      <Text className="text-body font-feather text-textPrimary">{friend.streak}</Text>
+                      <Text className="text-caption font-din text-description">Day Streak</Text>
+                    </View>
+                    <View className="items-center">
+                      <Text className="text-body font-feather text-textPrimary">LVL {friend.level}</Text>
+                      <Text className="text-caption font-din text-description">Level</Text>
+                    </View>
+                    <View className="items-center">
+                      <Text className="text-body font-feather text-textPrimary">{friend.totalReadingDays}</Text>
+                      <Text className="text-caption font-din text-description">Total Days</Text>
+                    </View>
+                  </View>
+
+                  {/* Send Nudge Button */}
+                  <View className="mt-4 pt-4 border-t border-pillBorder flex justify-center items-center">
+                    <PrimaryButton
+                      onPress={() => handleSendNudge(friend.friendId, friend.friendDisplayName)}
+                      buttonType="gold"
+                      buttonHeight={52}
+                      width="60%"
+                      title="Send Nudge"
+
+                    />
+                      
+                    
+                    {/* Nudge Status */}
+                    {friend.lastNudgeSent && (
+                      <Text className="text-caption font-din text-description text-center mt-2">
+                        Last nudge sent {new Date(friend.lastNudgeSent).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              ))}
             </View>
           )}
         </View>
