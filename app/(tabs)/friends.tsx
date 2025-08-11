@@ -9,6 +9,7 @@ import {
   Pressable,
   FlatList,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useUserStore } from '../stores/userStore';
 import { useFriendStore } from '../stores/friendStore';
@@ -32,14 +33,21 @@ const FriendItem: React.FC<FriendItemProps> = ({
   onDecline, 
   isIncomingRequest = false 
 }) => {
-  return (
-    <View className="bg-surfaceCream rounded-card p-6 mb-3" style={{
+  // Cross-platform shadow styles
+  const shadowStyle = Platform.select({
+    ios: {
       shadowColor: 'rgba(0,0,0,0.08)',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 1,
       shadowRadius: 4,
+    },
+    android: {
       elevation: 2,
-    }}>
+    },
+  });
+
+  return (
+    <View className="bg-surfaceCream rounded-card p-6 mb-3" style={shadowStyle}>
       <View className="flex-row items-center justify-between">
         <View className="flex-1">
           <Text className="text-heading font-feather text-textPrimary">
@@ -56,7 +64,11 @@ const FriendItem: React.FC<FriendItemProps> = ({
             </Text>
             {friend.createdAt && (
               <Text className="text-caption font-din text-description ml-1">
-                {new Date(friend.createdAt.toDate()).toLocaleDateString()}
+                {friend.createdAt.toDate().toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })}
               </Text>
             )}
           </View>
@@ -67,13 +79,17 @@ const FriendItem: React.FC<FriendItemProps> = ({
             <Pressable
               onPress={onAccept}
               className="bg-accentGold rounded-card px-4 py-2"
-              style={{
-                shadowColor: '#F7B500',
-                shadowOffset: { width: 0, height: 5 },
-                shadowOpacity: 1,
-                shadowRadius: 0,
-                elevation: 5,
-              }}
+              style={Platform.select({
+                ios: {
+                  shadowColor: '#F7B500',
+                  shadowOffset: { width: 0, height: 5 },
+                  shadowOpacity: 1,
+                  shadowRadius: 0,
+                },
+                android: {
+                  elevation: 5,
+                },
+              })}
             >
               <Text className="text-body font-feather text-textPrimary">Accept</Text>
             </Pressable>
@@ -241,13 +257,17 @@ export default function FriendsScreen() {
           <Pressable
             onPress={handleInviteFriends}
             className="bg-accentGold rounded-card px-6 py-3"
-            style={{
-              shadowColor: '#F7B500',
-              shadowOffset: { width: 0, height: 5 },
-              shadowOpacity: 1,
-              shadowRadius: 0,
-              elevation: 5,
-            }}
+            style={Platform.select({
+              ios: {
+                shadowColor: '#F7B500',
+                shadowOffset: { width: 0, height: 5 },
+                shadowOpacity: 1,
+                shadowRadius: 0,
+              },
+              android: {
+                elevation: 5,
+              },
+            })}
           >
             <Text className="text-body font-feather text-textPrimary text-center">+ Invite More Friends</Text>
           </Pressable>

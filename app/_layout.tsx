@@ -783,15 +783,55 @@ export default Sentry.wrap(function RootLayout() {
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {
       appLog('Deep link received:', event.url);
-      if (event.url === 'io.bytehouse://stay') {
-        // Navigate to the stay screen or handle the deep link as needed
+
+      // Normalize URL parsing across iOS/Android
+      const urlStr = event.url || '';
+      let parsed: URL | null = null;
+      try {
+        parsed = new URL(urlStr);
+      } catch (e) {
+        try {
+          parsed = new URL(urlStr, 'io.bytehouse://');
+        } catch {}
+      }
+
+      const host = parsed?.host || '';
+      const pathname = parsed?.pathname || '';
+      const scheme = urlStr.split('://')[0];
+
+      // 1) Handle explicit internal discount/stay routes
+      if (urlStr === 'io.bytehouse://stay') {
         router.replace('/(tabs)');
-      } else if (event.url === 'io.bytehouse://discount') {
-        // Handle discount deep link - trigger Adapty paywall
+        return;
+      }
+      if (urlStr === 'io.bytehouse://discount') {
         appLog('Discount deep link received, setting pending flag...');
-        // Navigate to tabs first, then set pending flag
         router.replace('/(tabs)');
         setPendingDiscountDeepLink(true);
+        return;
+      }
+
+      // 2) Handle invite links from either our scheme or AppsFlyer OneLink
+      // Examples:
+      // - io.bytehouse://invite?code=ABC
+      // - https://shepherd-bible-pet.onelink.me/... (AppsFlyer will also trigger SDK callback, but we support fallback)
+      const codeFromQuery = parsed ? parsed.searchParams.get('code') : null;
+      const inviteCodeFromQuery = parsed ? parsed.searchParams.get('invite_code') : null;
+      const looksLikeInvitePath = pathname?.toLowerCase().includes('invite');
+      const isOurScheme = scheme === 'io.bytehouse' || scheme === 'shepherd' || scheme === 'second.round.shepherd';
+      const isOneLink = host === 'shepherd-bible-pet.onelink.me';
+
+      if ((isOurScheme && (looksLikeInvitePath || codeFromQuery)) || (isOneLink && (codeFromQuery || inviteCodeFromQuery))) {
+        const inviteCode = codeFromQuery || inviteCodeFromQuery;
+        if (inviteCode) {
+          const friendStore = useFriendStore.getState();
+          friendStore.handleInviteFromDeepLink(inviteCode, { 
+            source: 'linking_listener',
+            deepLinkValue: 'invite'
+          });
+          router.replace('/(tabs)');
+          return;
+        }
       }
     };
 
@@ -800,13 +840,8 @@ export default Sentry.wrap(function RootLayout() {
 
     // Handle deep links when app is opened from a deep link
     Linking.getInitialURL().then((url) => {
-      if (url && url === 'io.bytehouse://stay') {
-        router.replace('/(tabs)');
-      } else if (url && url === 'io.bytehouse://discount') {
-        appLog('Initial discount deep link received, setting pending flag...');
-        router.replace('/(tabs)');
-        setPendingDiscountDeepLink(true);
-      }
+      if (!url) return;
+      handleDeepLink({ url });
     });
 
     return () => {

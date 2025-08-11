@@ -73,8 +73,9 @@ const InviteFriendsSheet = forwardRef<InviteFriendsSheetRef, Props>(({ onDismiss
         setInviteLink(appsflyerLink);
         appLog('[InviteFriendsSheet] Invite link generated:', appsflyerLink);
       } else {
-        // Fallback to direct OneLink
-        const fallbackLink = `https://shepherd-bible-pet.onelink.me/r9C1?invite_code=${inviteCode}&deep_link_value=${encodeURIComponent(`invite?code=${inviteCode}`)}`;
+        // Fallback to direct OneLink with explicit af_dp to our scheme
+        const deepLinkUrl = `io.bytehouse://invite?code=${inviteCode}`;
+        const fallbackLink = `https://shepherd-bible-pet.onelink.me/r9C1?invite_code=${inviteCode}&deep_link_value=invite&af_dp=${encodeURIComponent(deepLinkUrl)}`;
         setInviteLink(fallbackLink);
         appLog('[InviteFriendsSheet] Using fallback OneLink:', fallbackLink);
       }
@@ -87,7 +88,18 @@ const InviteFriendsSheet = forwardRef<InviteFriendsSheetRef, Props>(({ onDismiss
 
     } catch (error) {
       appLog('[InviteFriendsSheet] Error generating invite link:', error);
-      Alert.alert('Error', 'Failed to generate invite link. Please try again.');
+      
+      // More specific error message based on error type
+      let errorMessage = 'Failed to generate invite link. Please try again.';
+      if (error instanceof Error) {
+        if (error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.includes('auth')) {
+          errorMessage = 'Authentication error. Please sign in again.';
+        }
+      }
+      
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -111,9 +123,17 @@ const InviteFriendsSheet = forwardRef<InviteFriendsSheetRef, Props>(({ onDismiss
           userId: user.id
         });
 
-        // Track with AppsFlyer
-        const inviteCode = new URL(inviteLink).searchParams.get('invite_code') || 
-                          new URL(inviteLink).searchParams.get('code');
+        // Track with AppsFlyer - Safe URL parsing
+        let inviteCode: string | null = null;
+        try {
+          const url = new URL(inviteLink);
+          inviteCode = url.searchParams.get('invite_code') || url.searchParams.get('code');
+        } catch (error) {
+          // Try manual parsing as fallback
+          const codeMatch = inviteLink.match(/[&?](?:invite_code|code)=([^&]+)/);
+          inviteCode = codeMatch ? codeMatch[1] : null;
+        }
+        
         if (inviteCode) {
           await appsFlyerService.trackInviteShared(inviteCode, 'share_sheet');
         }
@@ -148,9 +168,17 @@ const InviteFriendsSheet = forwardRef<InviteFriendsSheetRef, Props>(({ onDismiss
         visibilityTime: 3000,
       });
 
-      // Track with AppsFlyer
-      const inviteCode = new URL(inviteLink).searchParams.get('invite_code') || 
-                        new URL(inviteLink).searchParams.get('code');
+      // Track with AppsFlyer - Safe URL parsing
+      let inviteCode: string | null = null;
+      try {
+        const url = new URL(inviteLink);
+        inviteCode = url.searchParams.get('invite_code') || url.searchParams.get('code');
+      } catch (error) {
+        // Try manual parsing as fallback
+        const codeMatch = inviteLink.match(/[&?](?:invite_code|code)=([^&]+)/);
+        inviteCode = codeMatch ? codeMatch[1] : null;
+      }
+      
       if (inviteCode) {
         await appsFlyerService.trackInviteShared(inviteCode, 'copy_link');
       }

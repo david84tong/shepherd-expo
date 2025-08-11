@@ -107,10 +107,16 @@ class AppsFlyerService {
 
   private async handleInviteFromInstall(data: any): Promise<void> {
     try {
-      const inviteCode = data.invite_code;
-      if (!inviteCode) return;
+      // According to UDL docs, for new users we should get deep_link_value and deep_link_sub1
+      const deepLinkValue = data.deep_link_value;
+      const inviteCode = data.deep_link_sub1 || data.invite_code;
+      
+      if (!inviteCode || deepLinkValue !== 'invite') {
+        appLog('[AppsFlyer] No invite code found in install data or not an invite deep link');
+        return;
+      }
 
-      appLog('[AppsFlyer] Handling invite from install:', { inviteCode });
+      appLog('[AppsFlyer] Handling invite from install:', { inviteCode, deepLinkValue });
 
       const friendStore = useFriendStore.getState();
       await friendStore.handleInviteFromDeepLink(inviteCode, {
@@ -118,6 +124,8 @@ class AppsFlyerService {
         mediaSource: data.media_source,
         campaign: data.campaign,
         installTime: data.install_time,
+        deepLinkValue: deepLinkValue,
+        deepLinkSub1: data.deep_link_sub1,
         isDeferred: true
       });
 
@@ -129,22 +137,35 @@ class AppsFlyerService {
   private async handleDeepLink(data: any): Promise<void> {
     try {
       const deepLinkValue = data.deep_link_value;
-      appLog('[AppsFlyer] Processing deep link:', deepLinkValue);
+      const deepLinkSub1 = data.deep_link_sub1; // This should contain our invite code
+      appLog('[AppsFlyer] Processing UDL deep link:', { deepLinkValue, deepLinkSub1, data });
 
-      let url: URL;
-      try {
-        url = new URL(deepLinkValue);
-      } catch {
-        url = new URL(deepLinkValue, 'https://shepherd-bible-pet.onelink.me');
+      // According to AppsFlyer UDL docs, invite_code should be in deep_link_sub1
+      let inviteCode: string | null = deepLinkSub1 || data.invite_code || null;
+
+      // Fallback: parse from deep_link_value if it looks like a URL with query
+      if (!inviteCode && typeof deepLinkValue === 'string') {
+        try {
+          let url: URL;
+          try {
+            url = new URL(deepLinkValue);
+          } catch {
+            url = new URL(deepLinkValue, 'https://shepherd-bible-pet.onelink.me');
+          }
+          inviteCode = url.searchParams.get('code');
+        } catch {
+          // ignore parsing errors
+        }
       }
-      const inviteCode = url.searchParams.get('code');
 
-      if (inviteCode) {
+      if (inviteCode && deepLinkValue === 'invite') {
         const friendStore = useFriendStore.getState();
         await friendStore.handleInviteFromDeepLink(inviteCode, {
           clickId: data.click_id,
           mediaSource: data.media_source,
           campaign: data.campaign,
+          deepLinkValue: deepLinkValue,
+          deepLinkSub1: deepLinkSub1,
           isDeferred: false
         });
       }
@@ -154,64 +175,82 @@ class AppsFlyerService {
     }
   }
 
+  // Set the OneLink ID for User Invite API - call this before generating links
+  async setAppInviteOneLinkID(oneLinkID: string): Promise<void> {
+    try {
+      appLog('[AppsFlyer] Setting App Invite OneLink ID:', oneLinkID);
+      
+      return new Promise((resolve, reject) => {
+        appsFlyer.setAppInviteOneLinkID(oneLinkID, (result: any) => {
+          appLog('[AppsFlyer] App Invite OneLink ID set successfully:', result);
+          resolve();
+        });
+      });
+    } catch (error) {
+      appLog('[AppsFlyer] Error setting App Invite OneLink ID:', error);
+      throw error;
+    }
+  }
+
   async createInviteLink(inviteData: InviteLinkData): Promise<string | null> {
     if (!this.isInitialized) {
       await this.initialize();
     }
 
     try {
-      appLog('[AppsFlyer] Creating invite link:', inviteData);
+      appLog('[AppsFlyer] Creating invite link using User Invite API:', inviteData);
 
-      // Create AppsFlyer OneLink URL
-      const oneLinkData = {
-        campaign: 'friend_invite',
-        source: 'friend_share',
-        medium: 'invite_link',
-        custom_parameters: {
-          invite_code: inviteData.inviteCode,
-          inviter_user_id: inviteData.inviterUserId,
-          inviter_name: inviteData.inviterDisplayName
-        }
-      };
+      // Set the OneLink ID first (required for User Invite API)
+      await this.setAppInviteOneLinkID('r9C1');
 
-      // Generate the deep link URL
-      const deepLinkValue = `invite?code=${inviteData.inviteCode}`;
-      
-      // Create OneLink URL with proper parameter structure
-      const oneLinkParams = new URLSearchParams({
-        pid: 'friend_invite',
-        c: 'friend_share',
-        af_force_deeplink: 'true',
-        af_dp: deepLinkValue,
-        invite_code: inviteData.inviteCode,
-        inviter_user_id: inviteData.inviterUserId,
-        inviter_name: inviteData.inviterDisplayName,
-        af_custom_data: JSON.stringify({
-          invite_code: inviteData.inviteCode,
-          inviter_user_id: inviteData.inviterUserId,
-          inviter_name: inviteData.inviterDisplayName
-        })
+      // Use the official AppsFlyer User Invite API
+      return new Promise((resolve, reject) => {
+        appsFlyer.generateInviteLink(
+          {
+            channel: 'friend_share',
+            campaign: 'friend_invite',
+            customerID: inviteData.inviterUserId,
+            userParams: {
+              deep_link_value: 'invite',
+              deep_link_sub1: inviteData.inviteCode,
+              invite_code: inviteData.inviteCode,
+              inviter_user_id: inviteData.inviterUserId,
+              inviter_name: inviteData.inviterDisplayName,
+              custom_param: 'friend_invite'
+            }
+          },
+          (result: any) => {
+            const link = result as string;
+            appLog('[AppsFlyer] User Invite link generated successfully:', link);
+
+            analytics.logEvent('appsflyer_invite_link_created', {
+              inviteCode: inviteData.inviteCode,
+              inviterUserId: inviteData.inviterUserId
+            });
+
+            // Track invite link creation (not sharing yet)
+            appsFlyer.logEvent('invite_link_created', {
+              invite_code: inviteData.inviteCode,
+              inviter_user_id: inviteData.inviterUserId,
+              inviter_name: inviteData.inviterDisplayName,
+              invite_url: link,
+              timestamp: Date.now()
+            });
+
+            resolve(link);
+          },
+          (error: any) => {
+            appLog('[AppsFlyer] Error generating User Invite link:', error);
+            
+            // Fallback to manual OneLink construction if User Invite API fails
+            const deepLinkUrl = `io.bytehouse://invite?code=${inviteData.inviteCode}`;
+            const fallbackLink = `https://shepherd-bible-pet.onelink.me/r9C1?invite_code=${inviteData.inviteCode}&deep_link_value=invite&af_dp=${encodeURIComponent(deepLinkUrl)}`;
+            
+            appLog('[AppsFlyer] Using fallback OneLink:', fallbackLink);
+            resolve(fallbackLink);
+          }
+        );
       });
-      
-      const inviteUrl = `https://shepherd-bible-pet.onelink.me/r9C1?${oneLinkParams.toString()}`;
-
-      appLog('[AppsFlyer] Generated invite link:', inviteUrl);
-
-      analytics.logEvent('appsflyer_invite_link_created', {
-        inviteCode: inviteData.inviteCode,
-        inviterUserId: inviteData.inviterUserId
-      });
-
-      appsFlyer.logEvent('invite_shared', {
-        invite_code: inviteData.inviteCode,
-        share_method: 'invite_link',
-        inviter_user_id: inviteData.inviterUserId,
-        inviter_name: inviteData.inviterDisplayName,
-        invite_url: inviteUrl,
-        timestamp: Date.now()
-      });
-
-      return inviteUrl;
 
     } catch (error) {
       appLog('[AppsFlyer] Error creating invite link:', error);

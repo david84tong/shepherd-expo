@@ -6,6 +6,7 @@ import auth from '@react-native-firebase/auth';
 import { Friend, InviteLink, FriendInvite } from '../models/Friend';
 import { appLog } from '../helper/helper';
 import analytics from '~/utils/analytics';
+import appsFlyerService from '../services/appsflyerService';
 
 interface FriendState {
   friends: Friend[];
@@ -77,25 +78,65 @@ export const useFriendStore = create<FriendState>()(
           const incomingInvites: Friend[] = [];
           const outgoingInvites: Friend[] = [];
 
-          // Process sent requests
-          friendsSnapshot.docs.forEach(doc => {
+          // Process sent requests and enrich with user data
+          for (const doc of friendsSnapshot.docs) {
             const friendData = { id: doc.id, ...doc.data() } as Friend;
+            
+            // Get friend's user data if not already stored
+            if (!friendData.friendDisplayName && friendData.friendId) {
+              try {
+                const friendUserDoc = await firestore()
+                  .collection(USERS_COLLECTION)
+                  .doc(friendData.friendId)
+                  .get();
+                
+                if (friendUserDoc.exists) {
+                  const userData = friendUserDoc.data();
+                  friendData.friendDisplayName = userData?.displayName;
+                  friendData.friendUsername = userData?.username;
+                  friendData.friendAvatar = userData?.avatar;
+                }
+              } catch (error) {
+                appLog('[FriendStore] Error loading friend user data:', error);
+              }
+            }
+            
             if (friendData.status === 'accepted') {
               friends.push(friendData);
             } else if (friendData.status === 'pending') {
               outgoingInvites.push(friendData);
             }
-          });
+          }
 
-          // Process received requests
-          receivedRequestsSnapshot.docs.forEach(doc => {
+          // Process received requests and enrich with user data  
+          for (const doc of receivedRequestsSnapshot.docs) {
             const friendData = { id: doc.id, ...doc.data() } as Friend;
+            
+            // Get inviter's user data if not already stored
+            if (!friendData.friendDisplayName && friendData.userId) {
+              try {
+                const inviterUserDoc = await firestore()
+                  .collection(USERS_COLLECTION)
+                  .doc(friendData.userId)
+                  .get();
+                
+                if (inviterUserDoc.exists) {
+                  const userData = inviterUserDoc.data();
+                  friendData.friendDisplayName = userData?.displayName;
+                  friendData.friendUsername = userData?.username;
+                  friendData.friendAvatar = userData?.avatar;
+                }
+              } catch (error) {
+                appLog('[FriendStore] Error loading inviter user data:', error);
+              }
+            }
+            
             if (friendData.status === 'accepted') {
               friends.push(friendData);
             } else if (friendData.status === 'pending') {
               incomingInvites.push(friendData);
             }
-          });
+          }
 
           // Load invite links
           const inviteLinksSnapshot = await firestore()
@@ -351,7 +392,22 @@ export const useFriendStore = create<FriendState>()(
             const existingFriendship = [...sentRequests.docs, ...receivedRequests.docs];
 
             if (existingFriendship.length > 0) {
-              appLog('[FriendStore] Users are already friends or have pending request');
+              const existingFriend = existingFriendship[0].data() as Friend;
+              appLog('[FriendStore] Users are already friends or have pending request', {
+                status: existingFriend.status,
+                inviteCode
+              });
+              
+              // If they're already friends, still return true but don't create duplicate
+              if (existingFriend.status === 'accepted') {
+                analytics.logEvent('invite_already_friends', {
+                  inviteCode,
+                  inviterUserId: inviteLink.userId,
+                  inviteeUserId: currentUser.uid
+                });
+                return true; // Consider this successful - they're already friends
+              }
+              
               return false;
             }
 
@@ -382,6 +438,11 @@ export const useFriendStore = create<FriendState>()(
               inviteeUserId: currentUser.uid,
               source: 'appsflyer'
             });
+
+            // Track with AppsFlyer
+            if (appsflyerData?.clickId) {
+              await appsFlyerService.trackInviteAccepted(inviteCode, inviteLink.userId);
+            }
 
             await get().loadFriends();
             return true;
@@ -520,27 +581,6 @@ export const useFriendStore = create<FriendState>()(
           await AsyncStorage.removeItem(name);
         },
       },
-      partialize: (state) => ({
-        friends: [],
-        incomingInvites: [],
-        outgoingInvites: [],
-        inviteLinks: [],
-        pendingInvite: state.pendingInvite,
-        isLoading: false,
-        error: null,
-        loadFriends: state.loadFriends,
-        sendFriendRequest: state.sendFriendRequest,
-        acceptFriendRequest: state.acceptFriendRequest,
-        declineFriendRequest: state.declineFriendRequest,
-        createInviteLink: state.createInviteLink,
-        getInviteLink: state.getInviteLink,
-        handleInviteFromDeepLink: state.handleInviteFromDeepLink,
-        setPendingInvite: state.setPendingInvite,
-        processPendingInvite: state.processPendingInvite,
-        clearPendingInvite: state.clearPendingInvite,
-        getFriendsCount: state.getFriendsCount,
-        resetStore: state.resetStore,
-      }),
     }
   )
 );
