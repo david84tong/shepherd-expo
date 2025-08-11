@@ -12,6 +12,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import auth from '@react-native-firebase/auth';
 import { useUserStore } from '../stores/userStore';
 import { useFriendStore } from '../stores/friendStore';
 import { useUIStore } from '../stores/uiStore';
@@ -311,6 +312,17 @@ export default function FriendsScreen() {
       hapticLight();
       appLog('[FriendsScreen] Sending nudge to friend:', friendId);
       
+      // Check authentication first
+      const currentUser = auth().currentUser;
+      if (!currentUser) {
+        Alert.alert(
+          'Authentication Required',
+          'Please sign in to send prayer nudges to your friends.',
+          [{ text: 'OK', style: 'default' }]
+        );
+        return;
+      }
+      
       // Simulate nudge for dev purposes in connected state
       if (__DEV__ && viewState === 'connected') {
         simulateNudgeSent(friendId, friendName);
@@ -344,11 +356,21 @@ export default function FriendsScreen() {
       }
     } catch (error) {
       console.error('[FriendsScreen] Error sending nudge:', error);
-      Alert.alert(
-        'Error',
-        'There was an error sending your prayer nudge. Please try again.',
-        [{ text: 'OK', style: 'default' }]
-      );
+      
+      // Handle specific authentication errors
+      if (error instanceof Error && error.message.includes('UNAUTHENTICATED')) {
+        Alert.alert(
+          'Authentication Error',
+          'Your session has expired. Please sign in again to send prayer nudges.',
+          [{ text: 'OK', style: 'default' }]
+        );
+      } else {
+        Alert.alert(
+          'Error',
+          'There was an error sending your prayer nudge. Please try again.',
+          [{ text: 'OK', style: 'default' }]
+        );
+      }
     }
   };
 
