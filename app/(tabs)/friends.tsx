@@ -545,30 +545,6 @@ export default function FriendsScreen() {
             </TouchableOpacity>
           ))}
           </View>
-          
-          {/* Simulation buttons */}
-          {viewState === 'connected' && (
-            <View className="flex-row items-center justify-center gap-2 flex-wrap">
-              <TouchableOpacity
-                onPress={simulateFriendshipCreated}
-                className="bg-forestGreen50 border border-forestGreen80 px-2 py-1 rounded-lg"
-              >
-                <Text className="font-din text-forestGreen80 text-xs">+ Add Friend</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => simulateStreakMilestone('Sarah Chen', 20)}
-                className="bg-amber-100 border border-amber-400 px-2 py-1 rounded-lg"
-              >
-                <Text className="font-din text-amber-600 text-xs">🔥 Streak Alert</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setNotifications([])}
-                className="bg-gray-100 border border-gray-300 px-2 py-1 rounded-lg"
-              >
-                <Text className="font-din text-gray-600 text-xs">Clear Notifs</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
       )}
 
@@ -677,35 +653,7 @@ export default function FriendsScreen() {
       {/* Connected state - Simulated Friends */}
       {viewState === 'connected' && (
         <View className="flex-1">
-          {/* Notifications Feed */}
-          {notifications.length > 0 && (
-            <View className="mb-6">
-              <Text className="text-heading font-feather text-textPrimary mb-4">
-                Recent Activity ({notifications.length})
-              </Text>
-              {notifications.slice(0, 3).map((notification) => (
-                <View key={notification.id} className="bg-surfaceCreamLight rounded-card p-4 mb-3 border border-pillBorder">
-                  <View className="flex-row items-start justify-between">
-                    <View className="flex-1">
-                      <Text className="text-body font-feather text-textPrimary">
-                        {notification.title}
-                      </Text>
-                      <Text className="text-caption font-din text-description mt-1">
-                        {notification.message}
-                      </Text>
-                      <Text className="text-caption font-din text-description mt-2">
-                        {notification.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </Text>
-                    </View>
-                    {!notification.isRead && (
-                      <View className="w-2 h-2 bg-accentGold rounded-full mt-1" />
-                    )}
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-
+    
           {/* Prayer Buddy Section */}
           {simulatedFriends.find(f => f.isPrayerBuddy) && (
             <View className="mb-6">
