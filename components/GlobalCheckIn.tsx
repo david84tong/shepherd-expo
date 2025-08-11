@@ -5,7 +5,8 @@ import BottomSheet, {
 } from '@gorhom/bottom-sheet';
 import { Ionicons, FontAwesome6 } from '@expo/vector-icons';
 import React, { useCallback, useRef, useImperativeHandle, useState, useEffect } from 'react';
-import { View, Text, Pressable, Animated, Dimensions, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, Pressable, Animated, Dimensions, Image, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Rive, { RiveRef } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
 
@@ -41,7 +42,7 @@ interface GlobalCheckInProps {
   checkInRef: React.RefObject<GlobalCheckInRef>;
 }
 
-type CheckInScreen = 'mood' | 'focus' | 'struggle' | 'success';
+type CheckInScreen = 'mood' | 'heart' | 'focus' | 'struggle' | 'success';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -135,6 +136,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
   // Local state for UI feedback
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
+  const [selectedHeart, setSelectedHeart] = useState<string | null>(null);
   const [selectedFocus, setSelectedFocus] = useState<string | null>(null);
   const [selectedStruggle, setSelectedStruggle] = useState<string | null>(null);
 
@@ -144,6 +146,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
   // Animation values for each screen
   const moodAnim = useRef(new Animated.Value(0)).current;
+  const heartAnim = useRef(new Animated.Value(screenWidth)).current;
   const focusAnim = useRef(new Animated.Value(screenWidth)).current;
   const struggleAnim = useRef(new Animated.Value(screenWidth)).current;
   const successAnim = useRef(new Animated.Value(screenWidth)).current;
@@ -159,8 +162,43 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   // Load Rive assets
   const [riveAssets] = useAssets([require('../assets/riveAnimations/success_lamb.riv')]);
 
-  // Dynamic snap points based on current screen
-  const snapPoints = currentScreen === 'success' ? ['65%'] : ['65%'];
+  // Full-screen sheet for an immersive flow
+  const snapPoints = ['100%'];
+
+  const insets = useSafeAreaInsets();
+
+  // Dynamic header copy per step
+  const getStepCopy = (screen: CheckInScreen) => {
+    switch (screen) {
+      case 'mood':
+        return {
+          title: i18n.t('checkin_how_are_you_feeling'),
+          subtitle: i18n.t('checkin_select_mood_help'),
+        };
+      case 'heart':
+        return {
+          title: "What's on your heart today?",
+          subtitle: "Select what brings you here",
+        };
+      case 'focus':
+        return {
+          title: i18n.t('checkin_what_focus_on'),
+          subtitle: i18n.t('checkin_select_focus_help'),
+        };
+      case 'struggle':
+        return {
+          title: i18n.t('checkin_what_struggling_with'),
+          subtitle: i18n.t('checkin_select_struggle_help'),
+        };
+      case 'success':
+        return {
+          title: i18n.t('checkin_complete'),
+          subtitle: '',
+        };
+      default:
+        return { title: 'Daily Check‑In', subtitle: '' };
+    }
+  };
 
   // Log when component mounts/unmounts
   useEffect(() => {
@@ -244,6 +282,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     setTimeout(() => {
       setCurrentScreen('mood');
       setSelectedMood(null);
+      setSelectedHeart(null);
       setSelectedFocus(null);
       setSelectedStruggle(null);
       clearCurrentSession(); // Clear store session
@@ -253,6 +292,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       setShowRewardAnimation(false); // Reset reward animation
       // Reset animations
       moodAnim.setValue(0);
+      heartAnim.setValue(screenWidth);
       focusAnim.setValue(screenWidth);
       struggleAnim.setValue(screenWidth);
       successAnim.setValue(screenWidth);
@@ -445,6 +485,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         setShowRewardAnimation(false);
         // Reset animations
         moodAnim.setValue(0);
+        heartAnim.setValue(screenWidth);
         focusAnim.setValue(screenWidth);
         struggleAnim.setValue(screenWidth);
         successAnim.setValue(screenWidth);
@@ -609,6 +650,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           setShowRewardAnimation(false);
           // Reset animations
           moodAnim.setValue(0);
+          heartAnim.setValue(screenWidth);
           focusAnim.setValue(screenWidth);
           struggleAnim.setValue(screenWidth);
           successAnim.setValue(screenWidth);
@@ -638,11 +680,27 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     (screen: CheckInScreen) => {
       const animations: Animated.CompositeAnimation[] = [];
 
-      if (screen === 'focus') {
-        // Slide mood out to left, focus in from right
+      if (screen === 'heart') {
+        // Slide mood out to left, heart in from right
         animations.push(
           Animated.parallel([
             Animated.timing(moodAnim, {
+              toValue: -screenWidth,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(heartAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+          ])
+        );
+      } else if (screen === 'focus') {
+        // Slide heart out to left, focus in from right
+        animations.push(
+          Animated.parallel([
+            Animated.timing(heartAnim, {
               toValue: -screenWidth,
               duration: 300,
               useNativeDriver: true,
@@ -693,7 +751,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         setCurrentScreen(screen);
       });
     },
-    [moodAnim, focusAnim, struggleAnim, successAnim]
+    [moodAnim, heartAnim, focusAnim, struggleAnim, successAnim]
   );
 
   // Update snap points when screen changes
@@ -736,6 +794,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         // Reset to initial state when opening
         setCurrentScreen('mood');
         setSelectedMood(null);
+        setSelectedHeart(null);
         setSelectedFocus(null);
         setSelectedStruggle(null);
         clearCurrentSession();
@@ -744,6 +803,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         setGemsAwarded(false);
         setShowRewardAnimation(false);
         moodAnim.setValue(0);
+        heartAnim.setValue(screenWidth);
         focusAnim.setValue(screenWidth);
         struggleAnim.setValue(screenWidth);
         successAnim.setValue(screenWidth);
@@ -796,7 +856,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         });
       },
     }),
-    [moodAnim, focusAnim, struggleAnim, successAnim, clearCurrentSession, isSheetVisible, isClosing]
+    [moodAnim, heartAnim, focusAnim, struggleAnim, successAnim, clearCurrentSession, isSheetVisible, isClosing]
   );
 
   // Mood options with corresponding lamb images
@@ -1005,13 +1065,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           paddingTop: RPH(2),
           transform: [{ translateX: moodAnim }],
         }}>
-        <Text className="font-feather text-2xl text-textPrimary mb-2 text-center px-2">
-          {i18n.t('checkin_how_are_you_feeling')}
-        </Text>
-        <Text className="font-feather text-xl mb-6 text-center px-1 text-textPrimary/70">
-          {i18n.t('checkin_select_mood_help')}
-        </Text>
-        <View className="flex-1 w-full flex-row flex-wrap justify-center items-center gap-2  px-2">
+        <View className="flex-1 w-full flex-row flex-wrap justify-center items-center gap-3 px-4">
           {moods.map((mood) => (
             <Pressable
               key={mood.value}
@@ -1021,10 +1075,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 hapticMedium();
                 analytics.logEvent('checkin_mood_selected', { mood: mood.value });
                 setTimeout(() => {
-                  animateToScreen('focus');
+                  animateToScreen('heart');
                 }, 200);
               }}
-              className={`w-[30%] rounded-3xl border-[2.5px] items-center justify-center
+              className={`w-[30%] rounded-[22px] border-[2.5px] items-center justify-center py-2
                 ${
                   selectedMood === mood.value
                     ? 'border-orange bg-white/90'
@@ -1044,6 +1098,111 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     );
   };
 
+  const renderHeartScreen = () => {
+    const heartOptions = [
+      {
+        id: 'struggling',
+        icon: 'sad-outline',
+        iconType: 'ionicon',
+        color: '#E64132',
+        bgColor: 'bg-lightRed',
+        title: "I'm struggling with...",
+        description: "I need help working through challenges",
+      },
+      {
+        id: 'focus',
+        icon: 'leaf-outline',
+        iconType: 'ionicon',
+        color: '#24CA17',
+        bgColor: 'bg-lightGreen',
+        title: "I want to focus on...",
+        description: "I want to grow in a specific area",
+      },
+      {
+        id: 'ask-god',
+        icon: 'hands-praying',
+        iconType: 'fontawesome6',
+        color: '#7B2BFF',
+        bgColor: 'bg-lightPurple',
+        title: "I want to ask God for...",
+        description: "I have a prayer request or need",
+      },
+    ];
+
+    return (
+      <Animated.View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          paddingHorizontal: 20,
+          paddingTop: RPH(2),
+          transform: [{ translateX: heartAnim }],
+        }}>
+        <View className="flex-1 w-full space-y-4 mt-8">
+          {heartOptions.map((option) => (
+            <Pressable
+              key={option.id}
+              onPress={() => {
+                setSelectedHeart(option.id);
+                hapticMedium();
+                analytics.logEvent('checkin_heart_selected', { heart: option.id });
+                
+                // Navigate based on selection
+                setTimeout(() => {
+                  if (option.id === 'struggling') {
+                    animateToScreen('struggle');
+                  } else if (option.id === 'focus') {
+                    animateToScreen('focus');
+                  } else if (option.id === 'ask-god') {
+                    // Skip to success for prayer requests
+                    setTimeout(async () => {
+                      await handleCompleteCheckIn();
+                      animateToScreen('success');
+                    }, 100);
+                  }
+                }, 100);
+              }}
+              style={{ height: RPH(9.5) }}
+              className={`bg-white rounded-[22px] border-[2.5px] border-accentGold px-4 flex-row items-center shadow-buttonShadow ${
+                selectedHeart === option.id ? 'border-orange bg-white/90' : ''
+              }`}>
+              <View className={`${option.bgColor} rounded-xl p-3`}>
+                {option.iconType === 'fontawesome6' ? (
+                  <FontAwesome6 name={option.icon as any} size={RPH(2.6)} color={option.color} />
+                ) : (
+                  <Ionicons name={option.icon as any} size={RPH(2.6)} color={option.color} />
+                )}
+              </View>
+              <View className="ml-4 flex-1">
+                <Text className="font-feather text-lg text-textPrimary">{option.title}</Text>
+                <Text className="font-din text-md text-description mt-1">
+                  {option.description}
+                </Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Skip button */}
+        <View className="w-full px-4 pb-4 mt-8">
+          <Pressable
+            onPress={() => {
+              hapticMedium();
+              analytics.logEvent('checkin_heart_skipped');
+              setTimeout(async () => {
+                await handleCompleteCheckIn();
+                animateToScreen('success');
+              }, 100);
+            }}>
+            <Text className="font-din text-base text-gray-600 text-center underline">
+              Skip this step
+            </Text>
+          </Pressable>
+        </View>
+      </Animated.View>
+    );
+  };
+
   const renderFocusScreen = () => {
     const dimensions = getResponsiveCardDimensions();
     const iconSize = dimensions.isSmallDevice ? RPH(2.8) : RPH(3.5);
@@ -1057,17 +1216,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           paddingTop: RPH(2),
           transform: [{ translateX: focusAnim }],
         }}>
-        <Text className="font-feather text-2xl text-textPrimary mb-2 text-center px-2">
-          {i18n.t('checkin_what_focus_on')}
-        </Text>
-        <Text className="font-feather text-xl mb-6 text-center px-1 text-textPrimary/70">
-          {i18n.t('checkin_select_focus_help')}
-        </Text>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: RPH(2) }}
-          className="flex-1 w-full">
-          <View className="flex-row flex-wrap justify-center gap-3 px-2">
+        <View className="flex-1 w-full">
+          <View className="flex-row flex-wrap justify-center gap-3 px-4">
             {focusAreas.map((focus) => (
               <Pressable
                 key={focus.value}
@@ -1080,7 +1230,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                     animateToScreen('struggle');
                   }, 100);
                 }}
-                className={`w-[31%] rounded-3xl border-[2.5px] items-center justify-center p-2
+                className={`w-[31%] rounded-[22px] border-[2.5px] items-center justify-center p-2.5
                   ${
                     selectedFocus === focus.value
                       ? 'border-orange bg-white/90'
@@ -1099,7 +1249,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               </Pressable>
             ))}
           </View>
-        </ScrollView>
+        </View>
         <View className="w-full px-4 pb-4">
           <Pressable
             onPress={() => {
@@ -1130,17 +1280,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           flex: 1,
           alignItems: 'center',
           paddingHorizontal: 2,
-          justifyContent: 'center',
+          paddingTop: RPH(2),
           transform: [{ translateX: struggleAnim }],
         }}>
-        <Text className="font-feather text-2xl text-textPrimary text-center px-2 mb-2 mt-4">
-          {i18n.t('checkin_what_struggling_with')}
-        </Text>
-        <Text className="font-feather text-xl text-center mb-6 text-textPrimary/70">
-          {i18n.t('checkin_select_struggle_help')}
-        </Text>
-
-        <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+        <View className="flex-1 px-4">
           <View className="flex-row flex-wrap justify-center gap-3">
             {struggleAreas.map((struggle) => (
               <Pressable
@@ -1155,7 +1298,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                     animateToScreen('success');
                   }, 100);
                 }}
-                className={`w-[28%] rounded-3xl border-[2.5px] items-center justify-center p-2
+                className={`w-[28%] rounded-[22px] border-[2.5px] items-center justify-center p-2.5
                   ${
                     selectedStruggle === struggle.value
                       ? 'border-orange bg-white/90'
@@ -1179,7 +1322,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               </Pressable>
             ))}
           </View>
-        </ScrollView>
+        </View>
 
         <View className="px-4 pb-4">
           <Pressable
@@ -1391,6 +1534,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 setTimeout(() => {
                   setCurrentScreen('mood');
                   setSelectedMood(null);
+                  setSelectedHeart(null);
                   setSelectedFocus(null);
                   setSelectedStruggle(null);
                   clearCurrentSession();
@@ -1399,6 +1543,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   setShowRewardAnimation(false);
                   // Reset animations
                   moodAnim.setValue(0);
+                  heartAnim.setValue(screenWidth);
                   focusAnim.setValue(screenWidth);
                   struggleAnim.setValue(screenWidth);
                   successAnim.setValue(screenWidth);
@@ -1500,6 +1645,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 setTimeout(() => {
                   setCurrentScreen('mood');
                   setSelectedMood(null);
+                  setSelectedHeart(null);
                   setSelectedFocus(null);
                   setSelectedStruggle(null);
                   clearCurrentSession();
@@ -1509,6 +1655,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   setShowRewardAnimation(false);
                   // Reset animations
                   moodAnim.setValue(0);
+                  heartAnim.setValue(screenWidth);
                   focusAnim.setValue(screenWidth);
                   struggleAnim.setValue(screenWidth);
                   successAnim.setValue(screenWidth);
@@ -1536,14 +1683,14 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       enablePanDownToClose
       backgroundStyle={{
         backgroundColor: '#FFF4D9',
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0,
       }}
       handleIndicatorStyle={{
-        backgroundColor: '#DCB280',
-        height: 6,
-        width: 60,
-        borderRadius: 3,
+        backgroundColor: 'transparent',
+        height: 0,
+        width: 0,
+        borderRadius: 0,
       }}
       backdropComponent={renderBackdrop}
       onChange={(index) => {
@@ -1563,6 +1710,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           setTimeout(() => {
             setCurrentScreen('mood');
             setSelectedMood(null);
+            setSelectedHeart(null);
             setSelectedFocus(null);
             setSelectedStruggle(null);
             clearCurrentSession();
@@ -1572,6 +1720,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             setShowRewardAnimation(false);
             // Reset animations
             moodAnim.setValue(0);
+            heartAnim.setValue(screenWidth);
             focusAnim.setValue(screenWidth);
             struggleAnim.setValue(screenWidth);
             successAnim.setValue(screenWidth);
@@ -1585,7 +1734,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         style={{
           width: '100%',
           height: '100%',
-          paddingTop: 16,
+          paddingTop: Math.max(16, insets.top + 8),
           overflow: 'hidden',
         }}>
         <View style={{ flex: 1, position: 'relative' }}>
@@ -1593,8 +1742,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           <Pressable
             style={{
               position: 'absolute',
-              top: -15,
-              right: 20,
+              top: 0,
+              right: 16,
               width: 36,
               height: 36,
               backgroundColor: 'rgba(0, 0, 0, 0.1)',
@@ -1608,27 +1757,51 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             <FontAwesome6 name="xmark" size={18} color="#634012" />
           </Pressable>
 
+          {/* Header */}
+          <View style={{ paddingTop: 56, paddingHorizontal: 32 }}>
+            <Text className="font-feather text-h1 text-textPrimary text-center mb-1">
+              {getStepCopy(currentScreen).title}
+            </Text>
+            {getStepCopy(currentScreen).subtitle ? (
+              <Text className="font-din text-textPrimary/60 text-center mb-1 mt-4">
+                {getStepCopy(currentScreen).subtitle}
+              </Text>
+            ) : null}
+          </View>
+
           {/* All screens are rendered but with proper touch handling */}
-          <View
-            style={{ position: 'absolute', width: '100%', height: '100%' }}
-            pointerEvents={currentScreen === 'mood' ? 'auto' : 'none'}>
-            {renderMoodScreen()}
-          </View>
-          <View
-            style={{ position: 'absolute', width: '100%', height: '100%' }}
-            pointerEvents={currentScreen === 'focus' ? 'auto' : 'none'}>
-            {renderFocusScreen()}
-          </View>
-          <View
-            style={{ position: 'absolute', width: '100%', height: '100%' }}
-            pointerEvents={currentScreen === 'struggle' ? 'auto' : 'none'}>
-            {renderStruggleScreen()}
-          </View>
-          <View
-            style={{ position: 'absolute', width: '100%', height: '100%' }}
-            pointerEvents={currentScreen === 'success' ? 'auto' : 'none'}>
-            {renderSuccessScreen()}
-          </View>
+          {currentScreen === 'mood' && (
+            <View
+              style={{ position: 'absolute', width: '100%', height: '100%', top: 200 }}>
+              {renderMoodScreen()}
+            </View>
+          )}
+          {currentScreen === 'heart' && (
+            <View
+              style={{ position: 'absolute', width: '100%', height: '100%', top: 200 }}>
+              {renderHeartScreen()}
+            </View>
+          )}
+          {currentScreen === 'focus' && (
+            <View
+              style={{ position: 'absolute', width: '100%', height: '100%', top: 200 }}>
+              {renderFocusScreen()}
+            </View>
+          )}
+          {currentScreen === 'struggle' && (
+            <View
+              style={{ position: 'absolute', width: '100%', height: '100%', top: 200 }}>
+              {renderStruggleScreen()}
+            </View>
+          )}
+          {currentScreen === 'success' && (
+            <View
+              style={{ position: 'absolute', width: '100%', height: '100%', top: 140 }}>
+              {renderSuccessScreen()}
+            </View>
+          )}
+          {/* Bottom padding to avoid safe-area overlap */}
+          <View style={{ height: Math.max(20, insets.bottom + 8) }} />
         </View>
       </BottomSheetView>
     </BottomSheet>

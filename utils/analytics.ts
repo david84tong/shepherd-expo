@@ -55,19 +55,29 @@ class Analytics {
     }
 
     try {
+      // Ensure every event includes platform for clean breakdowns
+      const mergedProperties: Record<string, any> = {
+        ...(properties || {}),
+        platform: properties?.platform ?? Platform.OS,
+      };
       console.log(
-        `🐾 Tracking event: ${eventName}${properties ? `, ${JSON.stringify(properties)}` : ''}`
+        `🐾 Tracking event: ${eventName}${mergedProperties ? `, ${JSON.stringify(mergedProperties)}` : ''}`
       );
 
       if (this.mixpanel) {
-        this.mixpanel.track(eventName, properties);
+        this.mixpanel.track(eventName, mergedProperties);
       }
 
-      amplitudeTrack(eventName, properties);
+      amplitudeTrack(eventName, mergedProperties);
     } catch (error) {
       console.error('❌ Error tracking event:', eventName, error);
       Sentry.captureException(error);
     }
+  }
+
+  // Backwards-compat alias used in some components
+  logEvent(eventName: string, properties?: Record<string, any>) {
+    this.trackEvent(eventName, properties);
   }
 
   async identifyUser(userId: string, userProperties?: Record<string, any>) {
@@ -91,7 +101,11 @@ class Analytics {
       amplitudeSetUserId(userId);
       if (userProperties) {
         const identify = new Identify();
-        Object.entries(userProperties).forEach(([key, value]) => {
+        const mergedUserProps: Record<string, any> = {
+          ...userProperties,
+          platform: userProperties.platform ?? Platform.OS,
+        };
+        Object.entries(mergedUserProps).forEach(([key, value]) => {
           identify.set(key, value);
         });
         amplitudeIdentify(identify);
