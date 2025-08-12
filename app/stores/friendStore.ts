@@ -321,6 +321,7 @@ export const useFriendStore = create<FriendState>()(
       },
 
       handleInviteFromDeepLink: async (inviteCode: string, appsflyerData?: any) => {
+        appLog('[FriendStore] Starting invite processing:', { inviteCode, appsflyerData });
         const currentUser = auth().currentUser;
         appLog('[FriendStore] Handling invite from deep link:', { 
           inviteCode, 

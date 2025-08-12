@@ -824,9 +824,10 @@ export default Sentry.wrap(function RootLayout() {
       const inviteCodeFromQuery = parsed ? parsed.searchParams.get('invite_code') : null;
       const looksLikeInvitePath = pathname?.toLowerCase().includes('invite');
       const isOurScheme = scheme === 'io.bytehouse' || scheme === 'shepherd' || scheme === 'second.round.shepherd';
+      const isOurUniversalLink = scheme === 'https' && (host === 'io.tryshepherd.app' || host === 'shepherd-bible-pet.onelink.me');
       const isOneLink = host === 'shepherd-bible-pet.onelink.me';
 
-      if ((isOurScheme && (looksLikeInvitePath || codeFromQuery)) || (isOneLink && (codeFromQuery || inviteCodeFromQuery))) {
+      if ((isOurScheme && (looksLikeInvitePath || codeFromQuery)) || (isOurUniversalLink && (looksLikeInvitePath || codeFromQuery || inviteCodeFromQuery))) {
         const inviteCode = codeFromQuery || inviteCodeFromQuery;
         if (inviteCode) {
           const friendStore = useFriendStore.getState();

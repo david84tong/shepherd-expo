@@ -28,6 +28,20 @@
         <data android:scheme="shepherd"/>
         <data android:scheme="second.round.shepherd"/>
         <data android:scheme="exp+shepherd"/>
+        <data android:scheme="io.bytehouse"/>
+      </intent-filter>
+      <!-- Universal/App Links pour ouverture directe -->
+      <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="https" android:host="io.tryshepherd.app"/>
+      </intent-filter>
+      <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="https" android:host="shepherd-bible-pet.onelink.me"/>
       </intent-filter>
     </activity>
   </application>

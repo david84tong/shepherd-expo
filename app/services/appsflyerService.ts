@@ -22,9 +22,16 @@ class AppsFlyerService {
   constructor() {
     this.config = {
       devKey: process.env.EXPO_PUBLIC_APPSFLYER_DEV_KEY || 'C43LbYriLHEuMFtNv7zhJT',
-      appId: 'io.bytehouse',
+      appId: 'second.round.shepherd',
       isDebug: __DEV__
     };
+    
+    // Log configuration for debugging
+    appLog('[AppsFlyer] Configuration:', {
+      devKey: this.config.devKey,
+      appId: this.config.appId,
+      isDebug: this.config.isDebug
+    });
   }
 
   async initialize(): Promise<void> {
@@ -243,10 +250,11 @@ class AppsFlyerService {
             appLog('[AppsFlyer] Error generating User Invite link:', error);
             
             // Fallback to manual OneLink construction if User Invite API fails
-            const deepLinkUrl = `io.bytehouse://invite?code=${inviteData.inviteCode}`;
+            // Utilise Universal Link au lieu du custom scheme pour forcer l'ouverture directe
+            const deepLinkUrl = `https://io.tryshepherd.app/invite?code=${inviteData.inviteCode}`;
             const fallbackLink = `https://shepherd-bible-pet.onelink.me/r9C1?invite_code=${inviteData.inviteCode}&deep_link_value=invite&af_dp=${encodeURIComponent(deepLinkUrl)}`;
             
-            appLog('[AppsFlyer] Using fallback OneLink:', fallbackLink);
+            appLog('[AppsFlyer] Using fallback OneLink with Universal Link:', fallbackLink);
             resolve(fallbackLink);
           }
         );
@@ -321,6 +329,43 @@ class AppsFlyerService {
         resolve(data);
       });
     });
+  }
+
+  // Simulator testing utility
+  async simulateDeepLink(inviteCode: string): Promise<void> {
+    if (!__DEV__) {
+      appLog('[AppsFlyer] Simulator testing only available in development mode');
+      return;
+    }
+
+    appLog('[AppsFlyer] Simulating deep link for testing in simulator');
+    
+    // Simulate AppsFlyer deep link data
+    const simulatedData = {
+      deep_link_value: 'invite',
+      deep_link_sub1: inviteCode,
+      invite_code: inviteCode,
+      click_id: `sim_${Date.now()}`,
+      media_source: 'simulator_test',
+      campaign: 'friend_invite_test',
+      af_status: 'Non-organic',
+      is_first_launch: false
+    };
+
+    appLog('[AppsFlyer] Simulated data:', simulatedData);
+
+    // Process the simulated deep link
+    await this.handleDeepLink(simulatedData);
+  }
+
+  // Test invite flow (for development/testing)
+  async testInviteFlow(): Promise<void> {
+    if (!__DEV__) return;
+    
+    appLog('[AppsFlyer] Testing invite flow...');
+    
+    // Test with a sample invite code
+    await this.simulateDeepLink('test123');
   }
 }
 

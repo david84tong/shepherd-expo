@@ -17,6 +17,7 @@ import analytics from '~/utils/analytics';
 import { appLog } from '../helper/helper';
 import Toast from 'react-native-toast-message';
 
+
 export interface InviteFriendsSheetRef {
   show: () => void;
   hide: () => void;
@@ -140,7 +141,7 @@ const InviteFriendsSheet = forwardRef<InviteFriendsSheetRef, Props>(({ onDismiss
 
         Toast.show({
           type: 'success',
-          text1: 'Invite Sent!',
+          text1: 'Share Invite Sent!',
           text2: 'Your friend will automatically be added when they join.',
           visibilityTime: 3000,
         });
@@ -209,7 +210,7 @@ const InviteFriendsSheet = forwardRef<InviteFriendsSheetRef, Props>(({ onDismiss
   return (
     <BottomSheetModal
       ref={bottomSheetRef}
-      snapPoints={['50%']}
+      snapPoints={['53%']}
       backgroundStyle={{
         backgroundColor: '#FFF4D9',
         borderTopLeftRadius: 32,
@@ -229,7 +230,7 @@ const InviteFriendsSheet = forwardRef<InviteFriendsSheetRef, Props>(({ onDismiss
       <BottomSheetView className="flex-1 p-6" style={{ paddingBottom: insets.bottom + 20 }}>
         <View className="items-center mb-8">
           <Text className="text-h1 font-feather text-textPrimary mb-3">
-            Invite Friends 🐑
+            Invite Prayer Buddies 
           </Text>
           <Text className="text-body font-din text-description text-center leading-6">
             Share Shepherd with your friends and they'll automatically be added to your flock!
@@ -249,7 +250,7 @@ const InviteFriendsSheet = forwardRef<InviteFriendsSheetRef, Props>(({ onDismiss
             {inviteLink && (
               <View className="bg-surfaceCream border border-pillBorder rounded-card p-4 mb-6">
                 <Text className="text-caption font-din text-description mb-2">Your Invite Link:</Text>
-                <Text className="text-body font-din text-textPrimary" numberOfLines={2}>
+                <Text className="text-body font-din text-textPrimary" numberOfLines={1}>
                   {inviteLink}
                 </Text>
               </View>
@@ -272,7 +273,7 @@ const InviteFriendsSheet = forwardRef<InviteFriendsSheetRef, Props>(({ onDismiss
                 }}
               >
                 <Text className="text-heading font-feather text-textPrimary">
-                  📱 Share Invite Link
+                  Share Invite Link
                 </Text>
               </Pressable>
 
