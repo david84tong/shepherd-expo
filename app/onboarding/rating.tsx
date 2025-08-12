@@ -135,7 +135,7 @@ const Rating = () => {
     position: 'absolute',
     left: 24,
     right: 24,
-    bottom: Math.max(insets.bottom + 20, isIPhoneSE ? 60 : 40),
+    bottom: Math.max(insets.bottom + 20, isIPhoneSE ? 60 : 60),
   }));
 
   const handleRateApp = async () => {
