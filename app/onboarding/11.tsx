@@ -386,7 +386,7 @@ export default function SaveProgressScreen() {
           state: COVENANT_STATES.NOT_STARTED,
         },
         customDevotionals: [],
-        streakFreezes: 0,
+        streakFreezes: 2,
         streakFreezeUsedDates: [],
         customDevotionalsLeft: 0,
       };
