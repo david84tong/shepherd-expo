@@ -5,13 +5,13 @@ import BottomSheet, {
 } from '@gorhom/bottom-sheet';
 import { Ionicons, FontAwesome6 } from '@expo/vector-icons';
 import React, { useCallback, useRef, useImperativeHandle, useState, useEffect } from 'react';
-import { View, Text, Pressable, Animated, Dimensions, Image, Alert } from 'react-native';
+import { View, Text, Pressable, Animated, Dimensions, Image, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Rive, { RiveRef } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
 
 import PrimaryButton from './PrimaryButton';
-import { hapticMedium, hapticSuccess } from '~/utils/haptics';
+import { hapticMedium } from '~/utils/haptics';
 import { appLog, RPH } from '~/app/helper/helper';
 import analytics from '~/utils/analytics';
 import { useCheckInStore } from '~/app/stores/checkInStore';
@@ -40,9 +40,10 @@ export type GlobalCheckInRef = {
 
 interface GlobalCheckInProps {
   checkInRef: React.RefObject<GlobalCheckInRef>;
+  onNavigate?: (path: string) => void; // Optional navigation callback
 }
 
-type CheckInScreen = 'mood' | 'heart' | 'focus' | 'struggle' | 'success';
+type CheckInScreen = 'mood' | 'heart' | 'focus' | 'struggle' | 'success' | 'custom';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -103,8 +104,9 @@ const getResponsiveCardDimensions = () => {
   };
 };
 
-const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
+const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate }) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
   const [currentScreen, setCurrentScreen] = useState<CheckInScreen>('mood');
   const [isGenerating, setIsGenerating] = useState(false);
   const [checkInSaved, setCheckInSaved] = useState(false);
@@ -117,8 +119,27 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const { setCustomDevotional, setIsFromCheckIn, createCustomDevotionalFromCheckIn } =
     useDevotionalStore();
   const { readingCompleted } = useHomeStore();
-  const { addCheckIn, getGens, setGens,customDevotionalsLeft,setCustomDevotionalsLeft } = useUserStore();
-  const { playChestOpeningSound } = useSoundStore();
+  const { addCheckIn, getGens, setGens, customDevotionalsLeft } = useUserStore();
+  const { playChestOpeningSound, playButtonSound } = useSoundStore();
+
+  // Safe navigation helper
+  const navigateToPath = useCallback((path: string) => {
+    if (onNavigate) {
+      // Use callback if provided
+      onNavigate(path);
+      return true;
+    } else {
+      // Fallback to router with error handling
+      try {
+        router.push(path as any);
+        return true;
+      } catch (error) {
+        console.warn('Navigation error - closing modal instead:', error);
+        bottomSheetRef.current?.close();
+        return false;
+      }
+    }
+  }, [onNavigate, router]);
 
   // Use CheckIn store
   const {
@@ -134,22 +155,17 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     clearCurrentSession,
   } = useCheckInStore();
 
-  // Local state for UI feedback
-  const [selectedMood, setSelectedMood] = useState<string | null>(null);
-  const [selectedHeart, setSelectedHeart] = useState<string | null>(null);
-  const [selectedFocus, setSelectedFocus] = useState<string | null>(null);
-  const [selectedStruggle, setSelectedStruggle] = useState<string | null>(null);
+  // Local state for UI feedback (removed selected states since we only use tap animations now)
+  
+  // State for tracking pressed buttons (for tap animations)
+  const [pressedMood, setPressedMood] = useState<string | null>(null);
+  const [pressedHeart, setPressedHeart] = useState<string | null>(null);
+  const [pressedFocus, setPressedFocus] = useState<string | null>(null);
+  const [pressedStruggle, setPressedStruggle] = useState<string | null>(null);
 
   // State for gem reward
   const [gemsAwarded, setGemsAwarded] = useState(false);
   const [showRewardAnimation, setShowRewardAnimation] = useState(false);
-
-  // Animation values for each screen
-  const moodAnim = useRef(new Animated.Value(0)).current;
-  const heartAnim = useRef(new Animated.Value(screenWidth)).current;
-  const focusAnim = useRef(new Animated.Value(screenWidth)).current;
-  const struggleAnim = useRef(new Animated.Value(screenWidth)).current;
-  const successAnim = useRef(new Animated.Value(screenWidth)).current;
 
   // Animation values for rewards
   const rewardCardOpacity = useRef(new Animated.Value(0)).current;
@@ -173,31 +189,46 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       case 'mood':
         return {
           title: i18n.t('checkin_how_are_you_feeling'),
-          subtitle: i18n.t('checkin_select_mood_help'),
+          subtitle: "",
         };
       case 'heart':
         return {
           title: "What's on your heart today?",
-          subtitle: "Select what brings you here",
+          subtitle: "",
         };
       case 'focus':
         return {
           title: i18n.t('checkin_what_focus_on'),
-          subtitle: i18n.t('checkin_select_focus_help'),
+          subtitle: "",
         };
       case 'struggle':
         return {
           title: i18n.t('checkin_what_struggling_with'),
-          subtitle: i18n.t('checkin_select_struggle_help'),
+          subtitle: "",
         };
       case 'success':
         return {
           title: i18n.t('checkin_complete'),
           subtitle: '',
         };
+      case 'custom':
+        return {
+          title: 'Generate a custom devotional from your check-in?',
+          subtitle: '',
+        };
       default:
         return { title: 'Daily Check‑In', subtitle: '' };
     }
+  };
+
+  // Screen indices for scroll navigation
+  const screenIndices = {
+    mood: 0,
+    heart: 1,
+    focus: 2,
+    struggle: 3,
+    success: 4,
+    custom: 5
   };
 
   // Log when component mounts/unmounts
@@ -206,6 +237,22 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     return () => {
       appLog('[GlobalCheckIn] Component unmounted at:', new Date().toISOString());
     };
+  }, []);
+
+  // Animate to screen by scrolling
+  const animateToScreen = useCallback((screen: CheckInScreen) => {
+    const targetIndex = screenIndices[screen];
+    const targetX = targetIndex * screenWidth;
+    
+    scrollViewRef.current?.scrollTo({
+      x: targetX,
+      animated: true,
+    });
+    
+    // Update current screen after animation
+    setTimeout(() => {
+      setCurrentScreen(screen);
+    }, 300);
   }, []);
 
   // Complete check-in and save to both stores
@@ -281,122 +328,61 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     // Reset everything after sheet closes
     setTimeout(() => {
       setCurrentScreen('mood');
-      setSelectedMood(null);
-      setSelectedHeart(null);
-      setSelectedFocus(null);
-      setSelectedStruggle(null);
       clearCurrentSession(); // Clear store session
       setIsGenerating(false); // Reset generating state
       setCheckInSaved(false); // Reset saved flag
       setGemsAwarded(false); // Reset gems awarded flag
       setShowRewardAnimation(false); // Reset reward animation
-      // Reset animations
-      moodAnim.setValue(0);
-      heartAnim.setValue(screenWidth);
-      focusAnim.setValue(screenWidth);
-      struggleAnim.setValue(screenWidth);
-      successAnim.setValue(screenWidth);
+      // Reset scroll position
+      scrollViewRef.current?.scrollTo({ x: 0, animated: false });
       rewardCardOpacity.setValue(0);
       rewardCardScale.setValue(0.8);
       gemTextOpacity.setValue(0);
     }, 300);
     hapticMedium();
-  }, [
-    moodAnim,
-    focusAnim,
-    struggleAnim,
-    successAnim,
-    clearCurrentSession,
-    rewardCardOpacity,
-    rewardCardScale,
-    gemTextOpacity,
-  ]);
+  }, [clearCurrentSession, rewardCardOpacity, rewardCardScale, gemTextOpacity]);
 
-  // Handle custom devotional purchase with gem confirmation
+  // Handle custom devotional access based on availability
   const handleCustomDevotionalPurchase = useCallback(async () => {
     appLog('[GlobalCheckIn] handleCustomDevotionalPurchase started');
     
-    const { getGens, setGens, customDevotionalsLeft, setCustomDevotionalsLeft } = useUserStore.getState();
-    const currentGems = getGens();
-    const gemCost = 200;
+    const { customDevotionalsLeft, setCustomDevotionalsLeft } = useUserStore.getState();
     
-    // Check if user has enough gems
-    if (currentGems < gemCost) {
-      appLog('[GlobalCheckIn] Not enough gems for custom devotional, showing free trial');
-      analytics.logEvent('checkin_custom_devotional_insufficient_gems', {
-        currentGems,
-        requiredGems: gemCost,
-      });
+    // Check if user has any custom devotionals left
+    if (customDevotionalsLeft > 0) {
+      appLog('[GlobalCheckIn] User has custom devotionals left, generating');
       
-      // Show free trial paywall
-      await safelyPresentPaywall('free');
+      // Deduct the custom devotional immediately
+      setCustomDevotionalsLeft(customDevotionalsLeft - 1);
+      
+      // Set navigation flag to prevent check-in from showing during navigation
+      const { setIsNavigating } = useCheckInStore.getState();
+      setIsNavigating(true);
+      
+      // Close the sheet immediately without showing success screen
+      bottomSheetRef.current?.close();
+      
+      // Navigate immediately to loading screen without delay
+      setTimeout(() => {
+        navigateToPath('/devotionalLoading');
+      }, 100);
+      
+      // Generate the custom devotional in the background
+      setTimeout(() => {
+        handleGenerateCustomDevotionalInBackground();
+      }, 200);
+      
       return;
     }
     
-    // Show confirmation alert
-    Alert.alert(
-      'Purchase Custom Devotional',
-      `Are you sure you want to create a custom devotional for 200 gems?\n\nYou currently have ${currentGems} gems.`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => {
-            appLog('[GlobalCheckIn] Custom devotional purchase cancelled');
-            analytics.logEvent('checkin_custom_devotional_purchase_cancelled', {
-              currentGems,
-              gemCost,
-            });
-          },
-        },
-        {
-          text: 'Purchase',
-          style: 'default',
-          onPress: async () => {
-            try {
-              // Deduct gems immediately
-              const newGems = currentGems - gemCost;
-              setGens(newGems);
-              
-              appLog('[GlobalCheckIn] Custom devotional purchased successfully', {
-                newGems,
-              });
-              
-              // Haptic feedback
-              hapticSuccess();
-              
-              // Log analytics
-              analytics.logEvent('checkin_custom_devotional_purchased', {
-                gemCost,
-                newGems,
-              });
-              
-              // Navigate to loading screen immediately since we have enough gems
-              // Set navigation flag to prevent check-in from showing during navigation
-              const { setIsNavigating } = useCheckInStore.getState();
-              setIsNavigating(true);
-              
-              // Close the sheet
-              bottomSheetRef.current?.close();
-              
-              // Navigate immediately to loading screen
-              router.push('/devotionalLoading' as any);
-              
-              // Generate the custom devotional in the background
-              handleGenerateCustomDevotionalInBackground();
-              
-            } catch (error) {
-              console.error('[GlobalCheckIn] Error purchasing custom devotional:', error);
-              Alert.alert(
-                'Purchase Failed',
-                'There was an error processing your purchase. Please try again.',
-                [{ text: 'OK' }]
-              );
-            }
-          },
-        },
-      ]
-    );
+    // User has no custom devotionals left, show free trial paywall
+    appLog('[GlobalCheckIn] User has no custom devotionals left, showing free trial');
+    analytics.logEvent('checkin_custom_devotional_no_devotionals_left', {
+      customDevotionalsLeft,
+    });
+    
+    // Show free trial paywall
+    await safelyPresentPaywall('free');
   }, []);
 
   // Handle custom devotional generation in background (for immediate navigation after gem purchase)
@@ -475,20 +461,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       // Reset state after generation
       setTimeout(() => {
         setCurrentScreen('mood');
-        setSelectedMood(null);
-        setSelectedFocus(null);
-        setSelectedStruggle(null);
         clearCurrentSession();
         setIsGenerating(false);
         setCheckInSaved(false);
         setGemsAwarded(false);
         setShowRewardAnimation(false);
-        // Reset animations
-        moodAnim.setValue(0);
-        heartAnim.setValue(screenWidth);
-        focusAnim.setValue(screenWidth);
-        struggleAnim.setValue(screenWidth);
-        successAnim.setValue(screenWidth);
+        scrollViewRef.current?.scrollTo({ x: 0, animated: false });
         rewardCardOpacity.setValue(0);
         rewardCardScale.setValue(0.8);
         gemTextOpacity.setValue(0);
@@ -505,10 +483,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     currentStruggle,
     setCustomDevotional,
     handleCompleteCheckIn,
-    moodAnim,
-    focusAnim,
-    struggleAnim,
-    successAnim,
     rewardCardOpacity,
     rewardCardScale,
     gemTextOpacity,
@@ -630,7 +604,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
       // Navigate after sheet closes
       setTimeout(() => {
-        router.push('/devotionalLoading' as any);
+        navigateToPath('/devotionalLoading');
 
         // Reset navigation flag after a delay
         setTimeout(() => {
@@ -640,20 +614,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         // Reset state after navigation
         setTimeout(() => {
           setCurrentScreen('mood');
-          setSelectedMood(null);
-          setSelectedFocus(null);
-          setSelectedStruggle(null);
           clearCurrentSession();
           setIsGenerating(false);
           setCheckInSaved(false);
           setGemsAwarded(false);
           setShowRewardAnimation(false);
-          // Reset animations
-          moodAnim.setValue(0);
-          heartAnim.setValue(screenWidth);
-          focusAnim.setValue(screenWidth);
-          struggleAnim.setValue(screenWidth);
-          successAnim.setValue(screenWidth);
+          scrollViewRef.current?.scrollTo({ x: 0, animated: false });
           rewardCardOpacity.setValue(0);
           rewardCardScale.setValue(0.8);
           gemTextOpacity.setValue(0);
@@ -670,96 +636,9 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     currentStruggle,
     setCustomDevotional,
     handleCompleteCheckIn,
-    handleDismiss,
     router,
     customDevotionalsLeft,
   ]);
-
-  // Animate screen transitions
-  const animateToScreen = useCallback(
-    (screen: CheckInScreen) => {
-      const animations: Animated.CompositeAnimation[] = [];
-
-      if (screen === 'heart') {
-        // Slide mood out to left, heart in from right
-        animations.push(
-          Animated.parallel([
-            Animated.timing(moodAnim, {
-              toValue: -screenWidth,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            Animated.timing(heartAnim, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-          ])
-        );
-      } else if (screen === 'focus') {
-        // Slide heart out to left, focus in from right
-        animations.push(
-          Animated.parallel([
-            Animated.timing(heartAnim, {
-              toValue: -screenWidth,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            Animated.timing(focusAnim, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-          ])
-        );
-      } else if (screen === 'struggle') {
-        // Slide focus out to left, struggle in from right
-        animations.push(
-          Animated.parallel([
-            Animated.timing(focusAnim, {
-              toValue: -screenWidth,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            Animated.timing(struggleAnim, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-          ])
-        );
-      } else if (screen === 'success') {
-        // Slide struggle out to left, success in from right with easing
-        animations.push(
-          Animated.parallel([
-            Animated.timing(struggleAnim, {
-              toValue: -screenWidth,
-              duration: 350,
-              useNativeDriver: true,
-            }),
-            Animated.spring(successAnim, {
-              toValue: 0,
-              tension: 60,
-              friction: 10,
-              useNativeDriver: true,
-            }),
-          ])
-        );
-      }
-
-      Animated.sequence(animations).start(() => {
-        setCurrentScreen(screen);
-      });
-    },
-    [moodAnim, heartAnim, focusAnim, struggleAnim, successAnim]
-  );
-
-  // Update snap points when screen changes
-  useEffect(() => {
-    if (bottomSheetRef.current) {
-      bottomSheetRef.current.snapToIndex(0);
-    }
-  }, []);
 
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
@@ -793,20 +672,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         
         // Reset to initial state when opening
         setCurrentScreen('mood');
-        setSelectedMood(null);
-        setSelectedHeart(null);
-        setSelectedFocus(null);
-        setSelectedStruggle(null);
         clearCurrentSession();
         setCheckInSaved(false);
         setIsGenerating(false);
         setGemsAwarded(false);
         setShowRewardAnimation(false);
-        moodAnim.setValue(0);
-        heartAnim.setValue(screenWidth);
-        focusAnim.setValue(screenWidth);
-        struggleAnim.setValue(screenWidth);
-        successAnim.setValue(screenWidth);
+        scrollViewRef.current?.scrollTo({ x: 0, animated: false });
         rewardCardOpacity.setValue(0);
         rewardCardScale.setValue(0.8);
         gemTextOpacity.setValue(0);
@@ -856,7 +727,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         });
       },
     }),
-    [moodAnim, heartAnim, focusAnim, struggleAnim, successAnim, clearCurrentSession, isSheetVisible, isClosing]
+    [clearCurrentSession, isSheetVisible, isClosing]
   );
 
   // Mood options with corresponding lamb images
@@ -1052,25 +923,36 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     },
   ];
 
+  // Helper functions to get selected check-in items
+  const getSelectedMood = () => {
+    return moods.find(mood => mood.value === currentMood);
+  };
+
+  const getSelectedFocus = () => {
+    return focusAreas.find(focus => focus.value === currentFocus);
+  };
+
+  const getSelectedStruggle = () => {
+    return struggleAreas.find(struggle => struggle.value === currentStruggle);
+  };
+
   const renderMoodScreen = () => {
-    const dimensions = getResponsiveCardDimensions();
     const imageSize = RPH(8); // Responsive image size
     
     return (
-      <Animated.View
+      <View
         style={{
+          width: screenWidth,
           flex: 1,
           alignItems: 'center',
           paddingHorizontal: 20,
           paddingTop: RPH(2),
-          transform: [{ translateX: moodAnim }],
         }}>
         <View className="flex-1 w-full flex-row flex-wrap justify-center items-center gap-3 px-4">
           {moods.map((mood) => (
             <Pressable
               key={mood.value}
               onPress={() => {
-                setSelectedMood(mood.value);
                 setMood(mood.value);
                 hapticMedium();
                 analytics.logEvent('checkin_mood_selected', { mood: mood.value });
@@ -1078,12 +960,13 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   animateToScreen('heart');
                 }, 200);
               }}
-              className={`w-[30%] rounded-[22px] border-[2.5px] items-center justify-center py-2
-                ${
-                  selectedMood === mood.value
-                    ? 'border-orange bg-white/90'
-                    : 'border-accentGold bg-white/60'
-                }`}>
+              onPressIn={() => {
+                playButtonSound?.();
+                setPressedMood(mood.value);
+              }}
+              onPressOut={() => setPressedMood(null)}
+              className={`w-[30%] rounded-[22px] border-[2.5px] border-accentGold bg-white items-center justify-center py-2 shadow-buttonShadow
+                ${pressedMood === mood.value ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}`}>
               <Image
                 source={mood.image}
                 style={{ width: imageSize, height: imageSize }}
@@ -1094,7 +977,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             </Pressable>
           ))}
         </View>
-      </Animated.View>
+      </View>
     );
   };
 
@@ -1130,20 +1013,19 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     ];
 
     return (
-      <Animated.View
+      <View
         style={{
+          width: screenWidth,
           flex: 1,
           alignItems: 'center',
           paddingHorizontal: 20,
           paddingTop: RPH(2),
-          transform: [{ translateX: heartAnim }],
         }}>
-        <View className="flex-1 w-full space-y-4 mt-8">
+        <View className="flex-1 w-full space-y-4 mt-4">
           {heartOptions.map((option) => (
             <Pressable
               key={option.id}
               onPress={() => {
-                setSelectedHeart(option.id);
                 hapticMedium();
                 analytics.logEvent('checkin_heart_selected', { heart: option.id });
                 
@@ -1162,10 +1044,14 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   }
                 }, 100);
               }}
+              onPressIn={() => {
+                playButtonSound?.();
+                setPressedHeart(option.id);
+              }}
+              onPressOut={() => setPressedHeart(null)}
               style={{ height: RPH(9.5) }}
-              className={`bg-white rounded-[22px] border-[2.5px] border-accentGold px-4 flex-row items-center shadow-buttonShadow ${
-                selectedHeart === option.id ? 'border-orange bg-white/90' : ''
-              }`}>
+              className={`mb-6 bg-white rounded-[22px] border-[2.5px] border-accentGold px-4 flex-row items-center shadow-buttonShadow 
+                ${pressedHeart === option.id ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}`}>
               <View className={`${option.bgColor} rounded-xl p-3`}>
                 {option.iconType === 'fontawesome6' ? (
                   <FontAwesome6 name={option.icon as any} size={RPH(2.6)} color={option.color} />
@@ -1193,28 +1079,29 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 await handleCompleteCheckIn();
                 animateToScreen('success');
               }, 100);
-            }}>
+            }}
+            onPressIn={() => playButtonSound?.()}>
             <Text className="font-din text-base text-gray-600 text-center underline">
               Skip this step
             </Text>
           </Pressable>
         </View>
-      </Animated.View>
+      </View>
     );
   };
 
   const renderFocusScreen = () => {
     const dimensions = getResponsiveCardDimensions();
-    const iconSize = dimensions.isSmallDevice ? RPH(2.8) : RPH(3.5);
+    const iconSize = dimensions.isSmallDevice ? RPH(2) : RPH(3);
     
     return (
-      <Animated.View
+      <View
         style={{
+          width: screenWidth,
           flex: 1,
           alignItems: 'center',
           paddingHorizontal: 16,
           paddingTop: RPH(2),
-          transform: [{ translateX: focusAnim }],
         }}>
         <View className="flex-1 w-full">
           <View className="flex-row flex-wrap justify-center gap-3 px-4">
@@ -1222,7 +1109,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               <Pressable
                 key={focus.value}
                 onPress={() => {
-                  setSelectedFocus(focus.value);
                   setFocus(focus.value);
                   hapticMedium();
                   analytics.logEvent('checkin_focus_selected', { focus: focus.value });
@@ -1230,13 +1116,14 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                     animateToScreen('struggle');
                   }, 100);
                 }}
-                className={`w-[31%] rounded-[22px] border-[2.5px] items-center justify-center p-2.5
-                  ${
-                    selectedFocus === focus.value
-                      ? 'border-orange bg-white/90'
-                      : 'border-accentGold bg-white/60'
-                  }`}>
-                <View className={`${focus.bgColor} rounded-2xl p-3`}>
+                onPressIn={() => {
+                  playButtonSound?.();
+                  setPressedFocus(focus.value);
+                }}
+                onPressOut={() => setPressedFocus(null)}
+                className={`w-[31%] rounded-[22px] border-[2.5px] border-accentGold bg-white items-center justify-center p-3 shadow-buttonShadow
+                  ${pressedFocus === focus.value ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}`}>
+                <View className={`${focus.bgColor} rounded-2xl p-5`}>
                   {focus.iconType === 'fontawesome6' ? (
                     <FontAwesome6 name={focus.icon as any} size={iconSize} color={focus.color} />
                   ) : (
@@ -1260,28 +1147,29 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 animateToScreen('struggle');
               }, 100);
             }}
+            onPressIn={() => playButtonSound?.()}
             className="border-accentGold/40">
             <Text className="font-din text-base text-gray-600 text-center underline">
               {i18n.t('checkin_skip_this_step')}
             </Text>
           </Pressable>
         </View>
-      </Animated.View>
+      </View>
     );
   };
 
   const renderStruggleScreen = () => {
     const dimensions = getResponsiveCardDimensions();
-    const iconSize = dimensions.isSmallDevice ? RPH(4.2) : RPH(3.7);
+    const iconSize = dimensions.isSmallDevice ? RPH(2) : RPH(3);
     
     return (
-      <Animated.View
+      <View
         style={{
+          width: screenWidth,
           flex: 1,
           alignItems: 'center',
           paddingHorizontal: 2,
           paddingTop: RPH(2),
-          transform: [{ translateX: struggleAnim }],
         }}>
         <View className="flex-1 px-4">
           <View className="flex-row flex-wrap justify-center gap-3">
@@ -1289,7 +1177,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               <Pressable
                 key={struggle.value}
                 onPress={() => {
-                  setSelectedStruggle(struggle.value);
                   setStruggle(struggle.value);
                   hapticMedium();
                   analytics.logEvent('checkin_struggle_selected', { struggle: struggle.value });
@@ -1298,13 +1185,14 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                     animateToScreen('success');
                   }, 100);
                 }}
-                className={`w-[28%] rounded-[22px] border-[2.5px] items-center justify-center p-2.5
-                  ${
-                    selectedStruggle === struggle.value
-                      ? 'border-orange bg-white/90'
-                      : 'border-accentGold bg-white/60'
-                  }`}>
-                <View className={`${struggle.bgColor} rounded-2xl p-2.5 mb-1.5`}>
+                onPressIn={() => {
+                  playButtonSound?.();
+                  setPressedStruggle(struggle.value);
+                }}
+                onPressOut={() => setPressedStruggle(null)}
+                className={`w-[28%] rounded-[22px] border-[2.5px] border-accentGold bg-white items-center justify-center p-2.5 shadow-buttonShadow
+                  ${pressedStruggle === struggle.value ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}`}>
+                <View className={`${struggle.bgColor} rounded-2xl p-5 mb-1.5`}>
                   {struggle.iconType === 'fontawesome6' ? (
                     <FontAwesome6
                       name={struggle.icon as any}
@@ -1335,13 +1223,14 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 animateToScreen('success');
               }, 100);
             }}
+            onPressIn={() => playButtonSound?.()}
             className="border-accentGold/40">
             <Text className="font-din text-base text-gray-600 text-center underline">
               {i18n.t('checkin_skip_this_step')}
             </Text>
           </Pressable>
         </View>
-      </Animated.View>
+      </View>
     );
   };
 
@@ -1393,18 +1282,16 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   }, [currentScreen, showRewardAnimation]);
 
   const renderSuccessScreen = () => (
-    <Animated.View
+    <View
       style={{
+        width: screenWidth,
         flex: 1,
         paddingHorizontal: 20,
         paddingTop: RPH(2),
-        transform: [{ translateX: successAnim }],
       }}>
-      <Text className="font-feather text-2xl text-textPrimary text-center px-4">
-        {i18n.t('checkin_complete')}
-      </Text>
+  
       {showRewardAnimation && riveAssets ? (
-        <View className="w-full items-center justify-center" style={{ height: RPH(20) }}>
+        <View className="w-full items-center justify-center" style={{ height: RPH(20), marginTop: RPH(-4) }}>
           {IS_ANDROID ? (
             <Rive
               ref={riveRef}
@@ -1434,7 +1321,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       {showRewardAnimation && (
         <View className="items-center">
           <Animated.View
-            className="bg-white/80 rounded-[28px] px-8 py-6 border-[2.5px] border-accentGold w-[85%] max-w-sm"
+            className="bg-white/80 rounded-[28px] px-8 py-4 border-[2.5px] border-accentGold w-[85%] max-w-sm"
             style={{
               opacity: rewardCardOpacity,
               transform: [{ scale: rewardCardScale }],
@@ -1445,14 +1332,123 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             <Animated.View
               className="flex-row items-center justify-center"
               style={{ opacity: gemTextOpacity }}>
-              <Image source={gemIcon} style={{ width: RPH(4), height: RPH(4) }} className="mr-3" />
-              <Text className="font-din text-textPrimary text-3xl font-bold">{i18n.t('checkin_gems_awarded')}</Text>
+              <Image source={gemIcon} style={{ width: RPH(3), height: RPH(3) }} className="mr-3" />
+              <Text className="font-din text-textPrimary text-xl font-bold">{i18n.t('checkin_gems_awarded')}</Text>
             </Animated.View>
           </Animated.View>
         </View>
       )}
+   
+      <View className="w-full flex-1 justify-end px-4 pb-8">
+        <PrimaryButton
+          title="Continue"
+          onPress={() => {
+            hapticMedium();
+            setTimeout(() => {
+              animateToScreen('custom');
+            }, 100);
+          }}
+          style="w-full"
+          buttonType="gold"
+          hasGemsInside={false}
+        />
 
-      <View className="w-full space-y-3 mt-2 px-4 pb-8 gap-3">
+      </View>
+    </View>
+  );
+
+  const renderCustomScreen = () => (
+    <View
+      style={{
+        width: screenWidth,
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingTop: RPH(2),
+      }}>
+      
+      {/* Custom devotional icon */}
+      <View className="w-full items-center justify-center mb-6" style={{ marginTop: RPH(1) }}>
+        <Image 
+          source={require('../assets/images/customDevotionalIcon.png')} 
+          style={{ width: RPH(12), height: RPH(12) }} 
+          resizeMode="contain"
+        />
+      </View>
+      
+      {/* Check-in Summary Card */}
+      <View className="mx-4 mb-6 bg-white rounded-[22px] border-[2.5px] border-accentGold p-4 shadow-buttonShadow">
+        <Text className="font-feather text-lg text-textPrimary text-center mb-3">
+          Your Check-in Summary
+        </Text>
+        
+        {/* Mood */}
+        {(() => {
+          const selectedMood = getSelectedMood();
+          if (selectedMood) {
+            return (
+              <View className="flex-row items-center mb-3">
+                <View className="w-8 h-8 items-center justify-center">
+                  <Text className="text-xl">{selectedMood.emoji}</Text>
+                </View>
+                <View className="ml-3 flex-1">
+                  <Text className="font-din text-sm text-gray-500">Feeling</Text>
+                  <Text className="font-din text-base text-textPrimary">{selectedMood.label}</Text>
+                </View>
+              </View>
+            );
+          }
+          return null;
+        })()}
+        
+        {/* Focus */}
+        {(() => {
+          const selectedFocus = getSelectedFocus();
+          if (selectedFocus && currentFocus !== '') {
+            return (
+              <View className="flex-row items-center mb-3">
+                <View className={`w-8 h-8 rounded-lg ${selectedFocus.bgColor} items-center justify-center`}>
+                  {selectedFocus.iconType === 'fontawesome6' ? (
+                    <FontAwesome6 name={selectedFocus.icon as any} size={14} color={selectedFocus.color} />
+                  ) : (
+                    <Ionicons name={selectedFocus.icon as any} size={14} color={selectedFocus.color} />
+                  )}
+                </View>
+                <View className="ml-3 flex-1">
+                  <Text className="font-din text-sm text-gray-500">Focusing on</Text>
+                  <Text className="font-din text-base text-textPrimary">{selectedFocus.label}</Text>
+                </View>
+              </View>
+            );
+          }
+          return null;
+        })()}
+        
+        {/* Struggle */}
+        {(() => {
+          const selectedStruggle = getSelectedStruggle();
+          if (selectedStruggle && currentStruggle !== '') {
+            return (
+              <View className="flex-row items-center mb-1">
+                <View className={`w-8 h-8 rounded-lg ${selectedStruggle.bgColor} items-center justify-center`}>
+                  {selectedStruggle.iconType === 'fontawesome6' ? (
+                    <FontAwesome6 name={selectedStruggle.icon as any} size={14} color={selectedStruggle.color} />
+                  ) : (
+                    <Ionicons name={selectedStruggle.icon as any} size={14} color={selectedStruggle.color} />
+                  )}
+                </View>
+                <View className="ml-3 flex-1">
+                  <Text className="font-din text-sm text-gray-500">Struggling with</Text>
+                  <Text className="font-din text-base text-textPrimary">{selectedStruggle.label}</Text>
+                </View>
+              </View>
+            );
+          }
+          return null;
+        })()}
+      </View>
+      
+      <View className="w-full space-y-3 px-4 pb-8 gap-3">
+        
         <PrimaryButton
           title={
             currentFocus !== '' || currentStruggle !== ''
@@ -1469,11 +1465,11 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   
                   // If user has custom devotionals left, show normal text
                   if (customDevotionalsLeft > 0) {
-                    return i18n.t('checkin_generate_custom_devotional');
+                    return `Start Custom Devotional (${customDevotionalsLeft}/2)`;
                   }
                   
-                  // If user is not pro and has no custom devotionals left, show with gem cost
-                  return `${i18n.t('checkin_generate_custom_devotional_for_gems')} (-200)`;
+                  // If user is not pro and has no custom devotionals left, show devotional count
+                  return `Start Custom Devotional (${customDevotionalsLeft}/2)`;
                 })()
               : i18n.t('checkin_start_todays_devotional')
           }
@@ -1499,7 +1495,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 // User has custom devotionals left - generate directly (skip pro check)
                 appLog('[GlobalCheckIn] User has custom devotionals left, generating');
                 await handleGenerateCustomDevotional(true);
-                setCustomDevotionalsLeft(customDevotionalsLeft > 0 ? customDevotionalsLeft - 1 : 0);
                 return;
               }
               
@@ -1523,7 +1518,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
               // Navigate after sheet closes
               setTimeout(() => {
-                router.push('/(tabs)');
+                navigateToPath('/(tabs)');
 
                 // Reset navigation flag after a delay
                 setTimeout(() => {
@@ -1533,20 +1528,11 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 // Reset state after navigation
                 setTimeout(() => {
                   setCurrentScreen('mood');
-                  setSelectedMood(null);
-                  setSelectedHeart(null);
-                  setSelectedFocus(null);
-                  setSelectedStruggle(null);
                   clearCurrentSession();
                   setIsGenerating(false);
                   setGemsAwarded(false);
                   setShowRewardAnimation(false);
-                  // Reset animations
-                  moodAnim.setValue(0);
-                  heartAnim.setValue(screenWidth);
-                  focusAnim.setValue(screenWidth);
-                  struggleAnim.setValue(screenWidth);
-                  successAnim.setValue(screenWidth);
+                  scrollViewRef.current?.scrollTo({ x: 0, animated: false });
                   rewardCardOpacity.setValue(0);
                   rewardCardScale.setValue(0.8);
                   gemTextOpacity.setValue(0);
@@ -1557,29 +1543,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           style="w-full"
           buttonType="gold"
           disabled={isGenerating}
-          hasGemsInside={
-            currentFocus !== '' || currentStruggle !== ''
-              ? (() => {
-                  // Check if user is pro
-                  const { isProMember } = useSubscriptionStore.getState();
-                  const { getUser, customDevotionalsLeft } = useUserStore.getState();
-                  const user = getUser();
-                  
-                  // If user is pro, don't show gem icon
-                  if (isProMember || user?.isPro || user?.isProWithReferral) {
-                    return false;
-                  }
-                  
-                  // If user has custom devotionals left, don't show gem icon
-                  if (customDevotionalsLeft > 0) {
-                    return false;
-                  }
-                  
-                  // If user is not pro and has no custom devotionals left, show gem icon
-                  return true;
-                })()
-              : false
-          }
+          hasGemsInside={false}
         />
 
         {isGenerating && (
@@ -1588,91 +1552,24 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           </Text>
         )}
 
-        {!readingCompleted && (
-          <Pressable
-            onPress={async () => {
-              hapticMedium();
-              analytics.logEvent('checkin_start_worldwide_devotional_tapped', {
-                mood: currentMood,
-                focus: currentFocus,
-                struggle: currentStruggle,
-              });
-
-              // Log the check-in completion
-              appLog('Starting worldwide devotional check-in completion...');
-
-              // Check-in already saved when struggle was selected/skipped
-
-              // Verify the check-in was saved
-              const checkInState = useCheckInStore.getState();
-              appLog('Check-in state after completion:', {
-                lastCheckInTime: checkInState.lastCheckInTime,
-                hasBeenOneHour: checkInState.hasBeenOneHourSinceLastCheckIn(),
-              });
-
-              // Log analytics
-              analytics.logEvent('checkin_completed', {
-                mood: currentMood,
-                focus: currentFocus,
-                struggle: currentStruggle,
-                source: 'start_worldwide_devotional',
-              });
-
-              // Set navigation flag to prevent check-in from showing during navigation
-              const { setIsNavigating } = useCheckInStore.getState();
-              setIsNavigating(true);
-
-              // Close the sheet first
-              bottomSheetRef.current?.close();
-
-              // Wait a bit for sheet to start closing, then trigger devotional
-              setTimeout(() => {
-                // Trigger the daily bread devotional
-                const triggerDailyBread = (global as any).triggerDailyBread;
-                if (triggerDailyBread && typeof triggerDailyBread === 'function') {
-                  appLog('Triggering daily bread from check-in...');
-                  triggerDailyBread();
-                } else {
-                  console.error('triggerDailyBread function not found on global');
-                }
-
-                // Reset navigation flag after a delay
-                setTimeout(() => {
-                  setIsNavigating(false);
-                }, 2000);
-
-                // Reset check-in state after triggering devotional
-                setTimeout(() => {
-                  setCurrentScreen('mood');
-                  setSelectedMood(null);
-                  setSelectedHeart(null);
-                  setSelectedFocus(null);
-                  setSelectedStruggle(null);
-                  clearCurrentSession();
-                  setIsGenerating(false);
-                  setCheckInSaved(false);
-                  setGemsAwarded(false);
-                  setShowRewardAnimation(false);
-                  // Reset animations
-                  moodAnim.setValue(0);
-                  heartAnim.setValue(screenWidth);
-                  focusAnim.setValue(screenWidth);
-                  struggleAnim.setValue(screenWidth);
-                  successAnim.setValue(screenWidth);
-                  rewardCardOpacity.setValue(0);
-                  rewardCardScale.setValue(0.8);
-                  gemTextOpacity.setValue(0);
-                }, 300);
-              }, 300); // Reduced wait time for better UX
-            }}
-            className=" border-accentGold/40">
-            <Text className="font-din text-base text-gray-600 text-center underline">
-              {i18n.t('checkin_start_worldwide_devotional')}
-            </Text>
-          </Pressable>
-        )}
+        <Pressable
+          onPress={() => {
+            hapticMedium();
+            analytics.logEvent('checkin_go_home_tapped', {
+              mood: currentMood,
+              focus: currentFocus,
+              struggle: currentStruggle,
+            });
+            handleDismiss();
+          }}
+          onPressIn={() => playButtonSound?.()}
+          className=" border-accentGold/40">
+          <Text className="font-din text-base text-gray-600 text-center underline">
+            Go Home
+          </Text>
+        </Pressable>
       </View>
-    </Animated.View>
+    </View>
   );
 
   return (
@@ -1709,21 +1606,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           // Reset states after close
           setTimeout(() => {
             setCurrentScreen('mood');
-            setSelectedMood(null);
-            setSelectedHeart(null);
-            setSelectedFocus(null);
-            setSelectedStruggle(null);
             clearCurrentSession();
             setIsGenerating(false);
             setCheckInSaved(false);
             setGemsAwarded(false);
             setShowRewardAnimation(false);
-            // Reset animations
-            moodAnim.setValue(0);
-            heartAnim.setValue(screenWidth);
-            focusAnim.setValue(screenWidth);
-            struggleAnim.setValue(screenWidth);
-            successAnim.setValue(screenWidth);
+            scrollViewRef.current?.scrollTo({ x: 0, animated: false });
             rewardCardOpacity.setValue(0);
             rewardCardScale.setValue(0.8);
             gemTextOpacity.setValue(0);
@@ -1737,7 +1625,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           paddingTop: Math.max(16, insets.top + 8),
           overflow: 'hidden',
         }}>
-        <View style={{ flex: 1, position: 'relative' }}>
+        <View style={{ flex: 1 }}>
           {/* Top Right Close Button */}
           <Pressable
             style={{
@@ -1758,7 +1646,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           </Pressable>
 
           {/* Header */}
-          <View style={{ paddingTop: 56, paddingHorizontal: 32 }}>
+          <View style={{ paddingTop: 56, paddingHorizontal: 32, paddingBottom: 20 }}>
             <Text className="font-feather text-h1 text-textPrimary text-center mb-1">
               {getStepCopy(currentScreen).title}
             </Text>
@@ -1769,37 +1657,24 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             ) : null}
           </View>
 
-          {/* All screens are rendered but with proper touch handling */}
-          {currentScreen === 'mood' && (
-            <View
-              style={{ position: 'absolute', width: '100%', height: '100%', top: 200 }}>
-              {renderMoodScreen()}
-            </View>
-          )}
-          {currentScreen === 'heart' && (
-            <View
-              style={{ position: 'absolute', width: '100%', height: '100%', top: 200 }}>
-              {renderHeartScreen()}
-            </View>
-          )}
-          {currentScreen === 'focus' && (
-            <View
-              style={{ position: 'absolute', width: '100%', height: '100%', top: 200 }}>
-              {renderFocusScreen()}
-            </View>
-          )}
-          {currentScreen === 'struggle' && (
-            <View
-              style={{ position: 'absolute', width: '100%', height: '100%', top: 200 }}>
-              {renderStruggleScreen()}
-            </View>
-          )}
-          {currentScreen === 'success' && (
-            <View
-              style={{ position: 'absolute', width: '100%', height: '100%', top: 140 }}>
-              {renderSuccessScreen()}
-            </View>
-          )}
+          {/* Horizontal scrolling screens container */}
+          <ScrollView
+            ref={scrollViewRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            scrollEnabled={false} // Disable manual scrolling, only programmatic
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+          >
+            {renderMoodScreen()}
+            {renderHeartScreen()}
+            {renderFocusScreen()}
+            {renderStruggleScreen()}
+            {renderSuccessScreen()}
+            {renderCustomScreen()}
+          </ScrollView>
+
           {/* Bottom padding to avoid safe-area overlap */}
           <View style={{ height: Math.max(20, insets.bottom + 8) }} />
         </View>
