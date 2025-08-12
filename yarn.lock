@@ -3191,6 +3191,43 @@
   dependencies:
     "@sinonjs/commons" "^3.0.0"
 
+"@statsig/client-core@3.21.1":
+  version "3.21.1"
+  resolved "https://registry.yarnpkg.com/@statsig/client-core/-/client-core-3.21.1.tgz#636fd20b567ab3731c95ea35fb6c69d9fa49fb18"
+  integrity sha512-687cE8CuZ/jkDqpRynrPoDutE76McT58+igEaL+0CFHp9V5gNCRRUYMeclh+xdcUapKgMJIHBATyyPHoXsqpaw==
+
+"@statsig/js-client@3.21.1":
+  version "3.21.1"
+  resolved "https://registry.yarnpkg.com/@statsig/js-client/-/js-client-3.21.1.tgz#e93783d2c256e3fc5a6149f396d92574360fa1d5"
+  integrity sha512-C4ZM4diE1Fcczh7Wk3/5hyZ8KUDUuFmAfj4JJBbHUSFsj/q8qjSgJk1rqunX0sBAfAerGUR6I8DEqyfO2G2gCQ==
+  dependencies:
+    "@statsig/client-core" "3.21.1"
+
+"@statsig/react-bindings@3.21.1":
+  version "3.21.1"
+  resolved "https://registry.yarnpkg.com/@statsig/react-bindings/-/react-bindings-3.21.1.tgz#23a1f2c201e628a1bcc6aac0f3c4b6defb18104d"
+  integrity sha512-ySOVUujWp/Px7yBLZRUKeAw797am6jGoUNES2+93iKyPQ9fPvg2kuR2obToJ2qEEfdA+8bFAdBSKLr0Fse4Yzw==
+  dependencies:
+    "@statsig/client-core" "3.21.1"
+    "@statsig/js-client" "3.21.1"
+
+"@statsig/react-native-bindings@^3.21.1":
+  version "3.21.1"
+  resolved "https://registry.yarnpkg.com/@statsig/react-native-bindings/-/react-native-bindings-3.21.1.tgz#08dc6466f39a047fd4e46f7b22432aca086a3652"
+  integrity sha512-kkQtXlUsRef7/u3g2w/dwRx/8hFIVOWZh3Kd4FJbJ+IZw3x4qbxDFJqzwINeRUEQVonmREMgBnHfDiHcACu7wA==
+  dependencies:
+    "@statsig/client-core" "3.21.1"
+    "@statsig/js-client" "3.21.1"
+    "@statsig/react-bindings" "3.21.1"
+    "@statsig/react-native-core" "3.21.1"
+
+"@statsig/react-native-core@3.21.1":
+  version "3.21.1"
+  resolved "https://registry.yarnpkg.com/@statsig/react-native-core/-/react-native-core-3.21.1.tgz#4257005d77385ac74f744983ff010aa99977fb88"
+  integrity sha512-aV/6WZ3QbFnUEOYHubAWqvbobmKWsXj+iFEfaadrV8Hdo/k+11HJn+SAROMugWPBl7DZDalW+1yRvgEPmo+WXw==
+  dependencies:
+    "@statsig/client-core" "3.21.1"
+
 "@szmarczak/http-timer@^4.0.5":
   version "4.0.6"
   resolved "https://registry.npmjs.org/@szmarczak/http-timer/-/http-timer-4.0.6.tgz"
@@ -9236,6 +9273,11 @@ react-native-css-interop@0.1.22:
     debug "^4.3.7"
     lightningcss "^1.27.0"
     semver "^7.6.3"
+
+react-native-device-info@10.14.0:
+  version "10.14.0"
+  resolved "https://registry.yarnpkg.com/react-native-device-info/-/react-native-device-info-10.14.0.tgz#3530ea7e09a0841d568fec987b8c6ae16deee763"
+  integrity sha512-9NnTGfhEU4UgQtz4p6COk2Gbqly0dpSWrJtp+dw5rNAi96KtYbaNnO5yoOHDlJ1SVIzh8+hFu3WxVbnWkFU9gA==
 
 react-native-gesture-handler@~2.20.2:
   version "2.20.2"

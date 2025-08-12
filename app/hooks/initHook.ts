@@ -8,6 +8,7 @@ import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
 import { initializeAnalytics, trackEvent } from '../../utils/analytics';
 import { appLog } from '../helper/helper';
+import { initializeStatsig } from '../utils/statsig';
 // This function can be called after init or when app comes to foreground
 export const onAppForegroundOrInit = async () => {
   appLog('onAppForegroundOrInit=====>', onAppForegroundOrInit);
@@ -15,6 +16,10 @@ export const onAppForegroundOrInit = async () => {
   // Initialize analytics if not already initialized
   appLog('🔧 Initializing analytics on app foreground...');
   await initializeAnalytics();
+
+  // Initialize Statsig if not already initialized
+  appLog('🧪 Initializing Statsig on app foreground...');
+  await initializeStatsig();
 
   const getUser = useUserStore.getState().getUser;
   const setSelectedPath = usePathStore.getState().setSelectedPath;
@@ -180,6 +185,11 @@ export const useAppInitialization = () => {
         await initializeAnalytics();
         appLog('✅ Analytics initialized successfully');
         setIsAnalyticsReady(true);
+
+        // Initialize Statsig for experiments
+        appLog('🧪 Initializing Statsig...');
+        await initializeStatsig();
+        appLog('✅ Statsig initialized successfully');
 
         // Test analytics integration
         trackEvent('test_analytics_integration', {

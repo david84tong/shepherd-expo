@@ -16,6 +16,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases from 'react-native-purchases';
 import Rive from 'rive-react-native';
 import '../global.css';
+import { StatsigProviderRN, STATSIG_CLIENT_KEY, getStatsigUser } from './utils/statsig';
+import StatsigAnalyticsInitializer from './components/StatsigAnalyticsInitializer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppLoading from '../components/AppLoading';
 import { DebugButton } from '../components/DebugModal';
@@ -926,7 +928,13 @@ export default Sentry.wrap(function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
-      <BottomSheetModalProvider>
+      <StatsigProviderRN 
+        sdkKey={STATSIG_CLIENT_KEY}
+        user={getStatsigUser()}
+        loadingComponent={<View />}
+      >
+        <StatsigAnalyticsInitializer>
+          <BottomSheetModalProvider>
         {visibleForceUpdate ? (
           <ForceUpdateModal visible={visibleForceUpdate} />
         ) : (
@@ -1021,7 +1029,9 @@ export default Sentry.wrap(function RootLayout() {
             {(hasEnteredCreateCode || __DEV__) && <DebugButton />}
           </>
         )}
-      </BottomSheetModalProvider>
+          </BottomSheetModalProvider>
+        </StatsigAnalyticsInitializer>
+      </StatsigProviderRN>
       {visibleForceUpdate && isInitialized ? (
         <ForceUpdateModal visible={visibleForceUpdate} />
       ) : null}

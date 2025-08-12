@@ -10,6 +10,28 @@ import {
 } from '@amplitude/analytics-react-native';
 import { Platform } from 'react-native';
 
+// Import Statsig event logging
+let statsigClient: any = null;
+
+// Function to set Statsig client (called from components that have access to the hook)
+export const setStatsigClient = (client: any) => {
+  statsigClient = client;
+};
+
+// Function to log events to Statsig
+const logToStatsig = (eventName: string, value?: any, metadata?: Record<string, any>) => {
+  try {
+    if (statsigClient) {
+      statsigClient.logEvent(eventName, value, metadata);
+      console.log(`🧪 Logged to Statsig: ${eventName}`, { value, metadata });
+    } else {
+      console.log(`🧪 Statsig client not available for event: ${eventName}`);
+    }
+  } catch (error) {
+    console.error('❌ Error logging to Statsig:', error);
+  }
+};
+
 // Mixpanel token
 const MIXPANEL_TOKEN = '7178bfcd1e0972001d3e6c066e8fb18b';
 
@@ -69,6 +91,9 @@ class Analytics {
       }
 
       amplitudeTrack(eventName, mergedProperties);
+      
+      // Also log to Statsig
+      logToStatsig(eventName, eventName, mergedProperties);
     } catch (error) {
       console.error('❌ Error tracking event:', eventName, error);
       Sentry.captureException(error);

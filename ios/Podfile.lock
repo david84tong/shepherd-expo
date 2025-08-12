@@ -3516,6 +3516,8 @@ PODS:
     - Yoga
   - RNDateTimePicker (8.2.0):
     - React-Core
+  - RNDeviceInfo (10.14.0):
+    - React-Core
   - RNFBAnalytics (21.14.0):
     - Firebase/Analytics (= 11.11.0)
     - React-Core
@@ -3854,6 +3856,7 @@ DEPENDENCIES:
   - "RNCClipboard (from `../node_modules/@react-native-clipboard/clipboard`)"
   - "RNCMaskedView (from `../node_modules/@react-native-masked-view/masked-view`)"
   - "RNDateTimePicker (from `../node_modules/@react-native-community/datetimepicker`)"
+  - RNDeviceInfo (from `../node_modules/react-native-device-info`)
   - "RNFBAnalytics (from `../node_modules/@react-native-firebase/analytics`)"
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
   - "RNFBAuth (from `../node_modules/@react-native-firebase/auth`)"
@@ -4155,6 +4158,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-masked-view/masked-view"
   RNDateTimePicker:
     :path: "../node_modules/@react-native-community/datetimepicker"
+  RNDeviceInfo:
+    :path: "../node_modules/react-native-device-info"
   RNFBAnalytics:
     :path: "../node_modules/@react-native-firebase/analytics"
   RNFBApp:
@@ -4348,6 +4353,7 @@ SPEC CHECKSUMS:
   RNCClipboard: 4411a880506f11fbcbdc03b5093eb8ffb246d900
   RNCMaskedView: affff96123106435ddc9799a57a8ba8edf17fe27
   RNDateTimePicker: 40ffda97d071a98a10fdca4fa97e3977102ccd14
+  RNDeviceInfo: 59344c19152c4b2b32283005f9737c5c64b42fba
   RNFBAnalytics: f78787fc57b14f5bd1ca885fd31586fc837f83db
   RNFBApp: b67ded6e4b0a6c0fee5e4f8e75e3a31567949a08
   RNFBAuth: 6aabe6440ba66c82b3c87fc8ebf70d921e5156dd
