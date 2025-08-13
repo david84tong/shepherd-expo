@@ -33,6 +33,7 @@ interface CheckInState {
   setMood: (mood: string) => void;
   setFocus: (focus: string) => void;
   setStruggle: (struggle: string) => void;
+  setReflection: (reflection: string) => void;
   skipFocus: () => void;
   skipStruggle: () => void;
   completeCheckIn: () => void;
@@ -131,6 +132,7 @@ export const useCheckInStore = create<CheckInState>()(
           currentMood: '',
           currentFocus: '',
           currentStruggle: '',
+          currentReflection: '',
         });
       },
 
@@ -160,7 +162,7 @@ export const useCheckInStore = create<CheckInState>()(
         if (!todaysCheckIn) return false;
         
         // Show custom devotional if either focus or struggle is not empty
-        return todaysCheckIn.focus !== '' || todaysCheckIn.struggle !== '';
+        return todaysCheckIn.focus !== '' || todaysCheckIn.struggle !== '' || todaysCheckIn.reflection !== '';
       },
       
       hasBeenOneHourSinceLastCheckIn: () => {
@@ -186,6 +188,7 @@ export const useCheckInStore = create<CheckInState>()(
           currentMood: '',
           currentFocus: '',
           currentStruggle: '',
+          currentReflection: '',
           todaysCheckIn: null,
           checkInHistory: [],
           lastCheckInTime: null,

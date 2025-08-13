@@ -160,9 +160,11 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
     currentMood,
     currentFocus,
     currentStruggle,
+    currentReflection,
     setMood,
     setFocus,
     setStruggle,
+    setReflection,
     skipFocus,
     skipStruggle,
     completeCheckIn,
@@ -292,6 +294,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       mood: currentMood,
       focus: currentFocus,
       struggle: currentStruggle,
+      reflection: currentReflection,
     });
 
     try {
@@ -1692,7 +1695,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
             multiline
             textAlignVertical="top"
             value={journalText}
-            onChangeText={setJournalText}
+            onChangeText={(text) => {
+              setJournalText(text);
+              setReflection(text);
+            }}
             style={{
               fontSize: 16,
               lineHeight: 24,

@@ -236,6 +236,7 @@ export default function ProfileScreen() {
         if (checkIn.mood) parts.push(`Mood: ${checkIn.mood}`);
         if (checkIn.focus) parts.push(`Focus: ${checkIn.focus}`);
         if (checkIn.struggle) parts.push(`Struggle: ${checkIn.struggle}`);
+        if (checkIn.reflection) parts.push(`Reflection: ${checkIn.reflection.slice(0, 30)}...`);
         
         return {
           type: 'checkin' as const,
