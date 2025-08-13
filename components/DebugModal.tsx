@@ -2,26 +2,24 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter, usePathname } from 'expo-router';
 import React, { useState, useRef, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert, TextInput, NativeModules } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert, TextInput } from 'react-native';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
-import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { useUserStore } from '../app/stores/userStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useDevotionalStore } from '../app/stores/devotionalStore';
-import { useNotificationStore } from '../app/stores/notificationStore';
 import { useAuth, isSignedIn } from '../app/hooks/authHook';
 import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
 import { HalfModalType } from '../app/halfModal';
 import { calculateExpForLevel } from '../utils/levelUtils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
-import WidgetHowToSheet from './WidgetHowToSheet';
 import { useCheckInStore } from '~/app/stores/checkInStore';
 import dayjs from 'dayjs';
 import { appLog } from '~/app/helper/helper';
 import EvolutionScreen from './EvolutionScreen';
+import { getStatsigClient } from '../utils/analytics';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -71,6 +69,396 @@ const toastConfig: ToastConfig = {
   ),
 };
 
+// ExperimentCard component to display Statsig experiment data
+interface ExperimentCardProps {
+  experimentName: string;
+}
+
+function ExperimentCard({ experimentName }: ExperimentCardProps) {
+  // Initialize experiment data with proper error handling
+  const [experimentData, setExperimentData] = useState({
+    value: null,
+    groupName: 'unknown',
+    allocated: false,
+    error: null as string | null
+  });
+
+  // Get experiment data in useEffect to avoid hooks rules violations
+  React.useEffect(() => {
+    const getExperimentData = async () => {
+      try {
+        // Try to access Statsig client through multiple methods
+        let statsigExperiment = null;
+        let experimentValue = null;
+        let groupName = 'unknown';
+        let ruleID = null;
+        
+        // Method 1: Try to access through global scope and analytics module
+        const globalStatsig = (global as any)?.statsigClient || 
+                            (window as any)?.statsigClient || 
+                            null;
+        
+        // Method 1b: Try to access through analytics module (should be set by StatsigAnalyticsInitializer)
+        const analyticsStatsigClient = getStatsigClient();
+        appLog('🧪 [STATSIG] Analytics module Statsig client available:', !!analyticsStatsigClient);
+        if (analyticsStatsigClient) {
+          appLog('🧪 [STATSIG] Analytics Statsig client methods:', Object.getOwnPropertyNames(analyticsStatsigClient));
+        }
+        
+        // Use whichever client is available
+        const availableStatsigClient = globalStatsig || analyticsStatsigClient;
+        
+        if (availableStatsigClient) {
+          try {
+            statsigExperiment = availableStatsigClient.getExperiment(experimentName);
+            appLog(`🧪 [STATSIG] Raw experiment object for ${experimentName}:`, statsigExperiment);
+            
+            if (statsigExperiment) {
+              // Check what methods are available on the experiment object
+              appLog(`🧪 [STATSIG] Experiment object methods:`, Object.getOwnPropertyNames(statsigExperiment));
+              
+              // Try different ways to get the value
+              if (typeof statsigExperiment.getValue === 'function') {
+                experimentValue = statsigExperiment.getValue();
+              } else if (typeof statsigExperiment.get === 'function') {
+                // Try .get() method instead - for path_feature, get the specific parameter
+                if (experimentName === 'path_feature') {
+                  experimentValue = statsigExperiment.get('path_shown', false);
+                } else {
+                  experimentValue = statsigExperiment.get('value', null);
+                }
+              } else if (statsigExperiment.value !== undefined) {
+                // Direct value property - for path_feature, extract path_shown
+                if (experimentName === 'path_feature' && statsigExperiment.value.path_shown !== undefined) {
+                  experimentValue = statsigExperiment.value.path_shown;
+                } else {
+                  experimentValue = statsigExperiment.value;
+                }
+              } else {
+                // For path_feature, try to get the specific parameter
+                if (experimentName === 'path_feature') {
+                  experimentValue = statsigExperiment.path_shown ?? null;
+                }
+              }
+              
+              // Try different ways to get group name
+              if (typeof statsigExperiment.getGroupName === 'function') {
+                groupName = statsigExperiment.getGroupName();
+              } else if (statsigExperiment.groupName) {
+                groupName = statsigExperiment.groupName;
+              } else if (statsigExperiment.allocation) {
+                groupName = statsigExperiment.allocation;
+              }
+              
+              ruleID = statsigExperiment.getRuleID?.() || statsigExperiment.ruleID || null;
+              
+              appLog(`🧪 [STATSIG] Got experiment data for ${experimentName}:`, {
+                experimentValue,
+                groupName,
+                ruleID,
+                statsigExperiment
+              });
+            }
+          } catch (statsigError) {
+            appLog(`🧪 [STATSIG] Error accessing global experiment ${experimentName}:`, statsigError);
+          }
+        }
+        
+        // If we found experiment data, set it
+        if (experimentValue !== null || groupName !== 'unknown') {
+          setExperimentData({
+            value: experimentValue,
+            groupName,
+            allocated: true,
+            error: null
+          });
+          return;
+        }
+        
+        // Method 2: For path_feature, try to access via useHomeScreen context (only as fallback)
+        if (experimentName === 'path_feature' && !statsigExperiment) {
+          // We know this experiment is implemented in useHomeScreen hook
+          // but we can't access it directly from here due to React hooks rules
+          appLog(`🧪 [STATSIG] path_feature is implemented in useHomeScreen hook but client unavailable`);
+          appLog(`  - Check useHomeScreen.ts line 64: useExperiment("path_feature")`);
+          appLog(`  - Returns: pathFeatureExperiment.value controls showCustomPathButton`);
+          experimentValue = null; // Unknown - need to check implementation
+          groupName = 'unknown_check_needed';
+        }
+        
+        // Fallback to hardcoded experiment data for known experiments
+        if (experimentName === 'path_feature') {
+          // For path_feature, we know it's implemented but can't access the value directly
+          setExperimentData({
+            value: null,
+            groupName: 'unknown_check_needed',
+            allocated: true,
+            error: null
+          });
+        } else {
+          // Unknown experiment
+          setExperimentData({
+            value: null,
+            groupName: 'unknown',
+            allocated: false,
+            error: 'Experiment not found in Statsig'
+          });
+        }
+      } catch (error) {
+        appLog('❌ Error in getExperimentData:', error);
+        setExperimentData(prev => ({ 
+          ...prev, 
+          error: error instanceof Error ? error.message : 'Component error' 
+        }));
+      }
+    };
+    
+    getExperimentData();
+  }, [experimentName]);
+
+  const getStatusColor = () => {
+    if (experimentData.error) return 'bg-[#FFE0E0]'; // Light red for errors
+    
+    // Handle specific experiment logic 
+    if (experimentName === 'path_feature') {
+      // For path_feature: Control = path_shown:true (green), Test = path_shown:false (blue)
+      if (experimentData.value === true) return 'bg-[#E8F5E8]'; // Light green for control group (keep path)
+      if (experimentData.value === false) return 'bg-[#E3F2FD]'; // Light blue for test group (remove path)
+    } else {
+      // Generic experiment handling
+      if (experimentData.value === true) return 'bg-[#E3F2FD]'; // Light blue for test group
+      if (experimentData.value === false) return 'bg-[#E8F5E8]'; // Light green for control group
+    }
+    
+    if (!experimentData.allocated) return 'bg-[#FFEBEE]'; // Light red for not allocated
+    return 'bg-[#FFF8E1]'; // Light yellow for unknown/check needed
+  };
+
+  const getStatusText = () => {
+    if (experimentData.error) return '⚠️ Not Available';
+    
+    // Handle specific experiment logic based on Statsig configuration
+    if (experimentName === 'path_feature') {
+      // For path_feature: Control = path_shown:true (keep), Test = path_shown:false (remove)
+      if (experimentData.value === true) return '✅ Control Group';  // path_shown = true (keep path)
+      if (experimentData.value === false) return '🔄 Test Group';   // path_shown = false (remove path)
+      if (experimentData.groupName === 'unknown_check_needed') return '🔍 Check Home Screen';
+    }
+    
+    // Generic experiment handling
+    if (experimentData.value === true) return '✅ Test Group';
+    if (experimentData.value === false) return '🔄 Control Group';
+    if (experimentData.groupName && experimentData.groupName !== 'unknown') {
+      return `📋 ${experimentData.groupName}`;
+    }
+    if (!experimentData.allocated) return '🚫 Not Allocated';
+    return '❓ Unknown Status';
+  };
+
+  const getDescription = () => {
+    switch (experimentName) {
+      case 'path_feature':
+        return 'Controls custom path button visibility in home screen';
+      default:
+        return 'Experiment configuration';
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      className={`${getStatusColor()} p-3 rounded-lg border border-[#87CEEB] mb-2`}
+      onPress={() => {
+        try {
+          appLog(`🧪 [EXPERIMENT] ${experimentName} details:`, experimentData);
+          appLog(`  - Description: ${getDescription()}`);
+          appLog(`  - Group: ${experimentData.groupName}`);
+          appLog(`  - Value: ${experimentData.value}`);
+          appLog(`  - Allocated: ${experimentData.allocated}`);
+          
+          if (experimentName === 'path_feature') {
+            appLog(`  - To see the actual experiment value, check the useHomeScreen hook`);
+            appLog(`  - Look for showCustomPathButton in the home screen state`);
+            appLog(`  - The experiment controls whether the custom path button is visible`);
+          }
+          
+          let toastMessage = '';
+          if (experimentData.groupName === 'unknown_check_needed') {
+            toastMessage = 'Check Home screen for "Create Custom Path" button';
+          } else if (experimentData.value !== null) {
+            const statusText = getStatusText();
+            toastMessage = `${statusText} | Value: ${experimentData.value}`;
+          } else {
+            toastMessage = `Status: ${getStatusText()} | Allocated: ${experimentData.allocated}`;
+          }
+          
+          Toast.show({
+            type: 'info',
+            text1: `${experimentName} Experiment`,
+            text2: toastMessage,
+            position: 'top',
+            visibilityTime: 4000,
+          });
+        } catch (error) {
+          appLog('❌ Error accessing experiment data:', error);
+        }
+      }}>
+      <View className="flex-row justify-between items-center">
+        <Text className="font-din text-sm text-textPrimary font-semibold">{experimentName}</Text>
+        <View className="bg-[#4FB8FE] px-2 py-1 rounded-full">
+          <Text className="font-din text-xs text-white">EXPERIMENT</Text>
+        </View>
+      </View>
+      <Text className="font-din text-xs text-[#6A8A94] mt-1">{getDescription()}</Text>
+      
+      {/* Experiment Status */}
+      <View className="mt-2 flex-row items-center justify-between">
+        <Text className="font-din text-xs font-semibold text-[#4F7A8A]">
+          {getStatusText()}
+        </Text>
+        <Text className="font-din text-xs text-[#6A8A94]">
+          {experimentData.allocated ? `Allocated: ✅` : `Allocated: ❌`}
+        </Text>
+      </View>
+      
+      {/* Raw Value Display */}
+      <View className="mt-1 bg-black/5 px-2 py-1 rounded">
+        <Text className="font-din text-xs text-[#666]">
+          {experimentName === 'path_feature' ? 
+            `path_shown: ${experimentData.value === null ? 'unknown' : experimentData.value}` :
+            `Experiment value: ${JSON.stringify(experimentData.value)}`
+          }
+        </Text>
+      </View>
+
+      {/* Special instruction for path_feature */}
+   
+    </TouchableOpacity>
+  );
+}
+
+// FeatureGateCard component to display Statsig feature gate data
+interface FeatureGateCardProps {
+  gateName: string;
+}
+
+function FeatureGateCard({ gateName }: FeatureGateCardProps) {
+  const [gateData, setGateData] = useState({
+    enabled: false,
+    allocated: false,
+    error: null as string | null
+  });
+
+  React.useEffect(() => {
+    const getGateData = async () => {
+      try {
+        let gateEnabled = false;
+        let allocated = false;
+        
+        // Try to access Statsig client
+        const globalStatsig = (global as any)?.statsigClient || 
+                            (window as any)?.statsigClient || 
+                            null;
+        
+        const analyticsStatsigClient = getStatsigClient();
+        const availableStatsigClient = globalStatsig || analyticsStatsigClient;
+        
+        if (availableStatsigClient) {
+          try {
+            gateEnabled = availableStatsigClient.checkGate(gateName);
+            allocated = true;
+            appLog(`🚪 [STATSIG] Feature gate ${gateName}:`, gateEnabled);
+          } catch (statsigError) {
+            appLog(`🚪 [STATSIG] Error checking gate ${gateName}:`, statsigError);
+          }
+        }
+        
+        setGateData({
+          enabled: gateEnabled,
+          allocated,
+          error: null
+        });
+      } catch (error) {
+        appLog('❌ Error in getGateData:', error);
+        setGateData(prev => ({ 
+          ...prev, 
+          error: error instanceof Error ? error.message : 'Component error' 
+        }));
+      }
+    };
+    
+    getGateData();
+  }, [gateName]);
+
+  const getStatusColor = () => {
+    if (gateData.error) return 'bg-[#FFE0E0]'; // Light red for errors
+    if (!gateData.allocated) return 'bg-[#FFEBEE]'; // Light red for not allocated
+    return gateData.enabled ? 'bg-[#E8F5E8]' : 'bg-[#FFF8E1]'; // Green for enabled, yellow for disabled
+  };
+
+  const getStatusText = () => {
+    if (gateData.error) return '⚠️ Not Available';
+    if (!gateData.allocated) return '🚫 Not Allocated';
+    return gateData.enabled ? '✅ Enabled' : '🔄 Disabled';
+  };
+
+  const getDescription = () => {
+    switch (gateName) {
+      case 'path_feature_gate':
+        return 'Controls custom path feature availability';
+      default:
+        return 'Feature gate configuration';
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      className={`${getStatusColor()} p-3 rounded-lg border border-[#87CEEB] mb-2`}
+      onPress={() => {
+        try {
+          appLog(`🚪 [FEATURE GATE] ${gateName} details:`, gateData);
+          appLog(`  - Description: ${getDescription()}`);
+          appLog(`  - Enabled: ${gateData.enabled}`);
+          appLog(`  - Allocated: ${gateData.allocated}`);
+          
+          Toast.show({
+            type: 'info',
+            text1: `${gateName} Feature Gate`,
+            text2: `${getStatusText()} | Enabled: ${gateData.enabled}`,
+            position: 'top',
+            visibilityTime: 4000,
+          });
+        } catch (error) {
+          appLog('❌ Error accessing feature gate data:', error);
+        }
+      }}>
+      <View className="flex-row justify-between items-center">
+        <Text className="font-din text-sm text-textPrimary font-semibold">{gateName}</Text>
+        <View className="bg-[#9B59B6] px-2 py-1 rounded-full">
+          <Text className="font-din text-xs text-white">GATE</Text>
+        </View>
+      </View>
+      <Text className="font-din text-xs text-[#6A8A94] mt-1">{getDescription()}</Text>
+      
+      {/* Gate Status */}
+      <View className="mt-2 flex-row items-center justify-between">
+        <Text className="font-din text-xs font-semibold text-[#4F7A8A]">
+          {getStatusText()}
+        </Text>
+        <Text className="font-din text-xs text-[#6A8A94]">
+          {gateData.allocated ? `Allocated: ✅` : `Allocated: ❌`}
+        </Text>
+      </View>
+      
+      {/* Raw Value Display */}
+      <View className="mt-1 bg-black/5 px-2 py-1 rounded">
+        <Text className="font-din text-xs text-[#666]">
+          Gate enabled: {JSON.stringify(gateData.enabled)}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 // DebugButton component
 export function DebugButton() {
   // Export the component
@@ -78,12 +466,12 @@ export function DebugButton() {
   const pathname = usePathname();
   const [modalVisible, setModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const [showWidgetSheet, setShowWidgetSheet] = useState(false);
   const [isDebugButtonVisible, setIsDebugButtonVisible] = useState(true);
   const [devotionalUploadModalVisible, setDevotionalUploadModalVisible] = useState(false);
   const [devotionalJsonInput, setDevotionalJsonInput] = useState('');
   const [evolutionModalVisible, setEvolutionModalVisible] = useState(false);
   const [evolutionLevel, setEvolutionLevel] = useState(1);
+  const [activeTab, setActiveTab] = useState<'debug' | 'experiments'>('debug');
   const { signOut } = useAuth();
 
   // Reference to the success bottom sheet modal
@@ -316,43 +704,7 @@ export function DebugButton() {
     );
   }, []);
 
-  // Function to directly test the penalty system
-  const testPenaltyScenario = useCallback(() => {
-    const now = new Date();
 
-    // Set activity dates to 3 days ago to ensure "daysSince > 1" condition is met
-    const activityDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3);
-    const activityTimestamp = firestore.Timestamp.fromDate(activityDate);
-    useUserStore.getState().setLastActivityDate(activityTimestamp);
-    useUserStore.getState().setLastReadingDate(activityTimestamp);
-    useUserStore.getState().setLastPrayerDate(activityTimestamp);
-    useUserStore.getState().setLastReflectionDate(activityTimestamp);
-
-    // Set penalty dates to 1 day ago to ensure "daysSince > daysSincePenalty" condition is met
-    const penaltyDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-    const penaltyTimestamp = firestore.Timestamp.fromDate(penaltyDate);
-    useUserStore.getState().setLastReadingPenaltyDate(penaltyTimestamp);
-    useUserStore.getState().setLastPrayerPenaltyDate(penaltyTimestamp);
-    useUserStore.getState().setLastReflectionPenaltyDate(penaltyTimestamp);
-
-    Alert.alert(
-      'Penalty Test',
-      'Set up for penalty:\nActivity: 3 days ago\nPenalty: 1 day ago\nPenalties should trigger on next app open.'
-    );
-  }, []);
-
-  // Handler to set only penalty dates to N days ago
-  const setPenaltyDates = useCallback((daysAgo: number) => {
-    const now = new Date();
-    const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo);
-    const timestamp = firestore.Timestamp.fromDate(targetDate);
-    useUserStore.getState().setLastReadingPenaltyDate(timestamp);
-    useUserStore.getState().setLastPrayerPenaltyDate(timestamp);
-    useUserStore.getState().setLastReflectionPenaltyDate(timestamp);
-    // Also set lastActivityDate
-    useUserStore.getState().setLastActivityDate(timestamp);
-    Alert.alert('Set Dates', `Penalty dates & Last Activity set to ${daysAgo} day(s) ago.`);
-  }, []);
 
   // Handler to set lamb hearts to a specific value
   const setLambHearts = useCallback((hearts: number) => {
@@ -884,16 +1236,38 @@ export function DebugButton() {
         onRequestClose={() => setModalVisible(false)}>
         <SafeAreaView className="flex-1 bg-black/50">
           <View className="m-5 mt-[60px] bg-surfaceCream rounded-[20px] flex-1 shadow-lg">
-            <View className="flex-row items-center justify-between border-b border-b-buttonBorder p-4">
-              <Text className="font-feather text-xl text-textPrimary">Debug Menu</Text>
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                className="w-8 h-8 rounded-full bg-forestGreen80 items-center justify-center">
-                <Text className="text-white text-base font-bold">✕</Text>
-              </TouchableOpacity>
+            <View className="border-b border-b-buttonBorder">
+              <View className="flex-row items-center justify-between p-4">
+                <Text className="font-feather text-xl text-textPrimary">Debug Menu</Text>
+                <TouchableOpacity
+                  onPress={() => setModalVisible(false)}
+                  className="w-8 h-8 rounded-full bg-forestGreen80 items-center justify-center">
+                  <Text className="text-white text-base font-bold">✕</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {/* Tab Navigation */}
+              <View className="flex-row bg-lightCream/50">
+                <TouchableOpacity
+                  className={`flex-1 py-3 px-4 ${activeTab === 'debug' ? 'bg-surfaceCream border-b-2 border-forestGreen80' : ''}`}
+                  onPress={() => setActiveTab('debug')}>
+                  <Text className={`font-feather text-center ${activeTab === 'debug' ? 'text-forestGreen80 font-bold' : 'text-textSecondary'}`}>
+                    Debug
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={`flex-1 py-3 px-4 ${activeTab === 'experiments' ? 'bg-surfaceCream border-b-2 border-forestGreen80' : ''}`}
+                  onPress={() => setActiveTab('experiments')}>
+                  <Text className={`font-feather text-center ${activeTab === 'experiments' ? 'text-forestGreen80 font-bold' : 'text-textSecondary'}`}>
+                    Experiments
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <ScrollView className="p-4">
+              {activeTab === 'debug' && (
+                <>
                 {/* Sync Firestore Data Button */}
                 <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">Sync Firestore Data</Text>
@@ -924,224 +1298,189 @@ export function DebugButton() {
                   <Text className="font-din text-sm text-[#6A8A94] mt-1">Manually refresh recent devotionals</Text>
                 </TouchableOpacity>
               </View>
-              {/* Toast Message Section */}
+                </>
+              )}
+
+              {activeTab === 'experiments' && (
+                <>
+              {/* Statsig Experiments Section */}
               <View className="mb-4">
-                <Text className="font-feather text-lg text-textPrimary mb-3">Toast Messages</Text>
-                <View className="flex-row flex-wrap gap-2">
-                  <TouchableOpacity
-                    className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-darkGreen mb-1"
-                    onPress={showSuccessToast}>
-                    <Text className="font-din text-sm text-textPrimary">Success Toast</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    className="bg-[#FFEDED] px-3 py-2 rounded-lg border border-red mb-1"
-                    onPress={showErrorToast}>
-                    <Text className="font-din text-sm text-textPrimary">Error Toast</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-accentGold mb-1"
-                    onPress={showInfoToast}>
-                    <Text className="font-din text-sm text-textPrimary">Info Toast</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Notification Testing Section */}
-              <View className="mb-4">
-                <Text className="font-feather text-lg text-textPrimary mb-3">📱 Notification Testing</Text>
+                <Text className="font-feather text-lg text-textPrimary mb-3">Statsig Experiments</Text>
                 
-                {/* Notification Permission & Status */}
-                <TouchableOpacity
-                  className="bg-[#F0E6FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
-                  onPress={async () => {
-                    try {
-                      const { status } = await Notifications.getPermissionsAsync();
-                      const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
-                      
-                      appLog('📱 Notification Status:', {
-                        permission: status,
-                        scheduledCount: scheduledNotifications.length,
-                        scheduled: scheduledNotifications.map(n => ({
-                          id: n.identifier,
-                          title: n.content.title,
-                          body: n.content.body,
-                          trigger: n.trigger
-                        }))
-                      });
-                      
-                      Alert.alert(
-                        'Notification Status',
-                        `Permission: ${status}\n` +
-                        `Scheduled: ${scheduledNotifications.length} notifications\n\n` +
-                        `Check console for detailed list`
-                      );
-                    } catch (error) {
-                      appLog('Error checking notification status:', error);
-                      Toast.show({
-                        type: 'error',
-                        text1: 'Error checking notifications',
-                        text2: String(error),
-                        position: 'top',
-                        visibilityTime: 3000,
-                      });
-                    }
-                  }}>
-                  <Text className="font-feather text-base text-textPrimary">Check Notification Status</Text>
-                  <Text className="font-din text-sm text-[#7C6F94] mt-1">
-                    Check permissions & list scheduled notifications
-                  </Text>
-                </TouchableOpacity>
+                {/* Experiments */}
+                <View className="mb-3">
+                  <Text className="font-feather text-base text-textPrimary mb-2">🧪 Experiments</Text>
+                  
+                  {/* Path Feature Experiment */}
+                  <ExperimentCard experimentName="path_feature" />
+                </View>
 
-                {/* Test Immediate Notification */}
-                <TouchableOpacity
-                  className="bg-[#E8F3E0] p-4 rounded-xl my-1.5 border-l-4 border-l-[#A0D468]"
-                  onPress={async () => {
-                    try {
-                      await Notifications.scheduleNotificationAsync({
-                        content: {
-                          title: 'Test Notification 🧪',
-                          body: 'This is a test notification from debug menu',
-                          sound: true,
-                          data: { type: 'test' },
-                        },
-                        trigger: {
-                          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-                          seconds: 3,
-                        },
-                        identifier: 'debug-test-notification',
-                      });
-                      
-                      Toast.show({
-                        type: 'success',
-                        text1: 'Test Notification Scheduled! 📱',
-                        text2: 'Will appear in 3 seconds',
-                        position: 'top',
-                        visibilityTime: 3000,
-                      });
-                    } catch (error) {
-                      appLog('Error scheduling test notification:', error);
-                      Toast.show({
-                        type: 'error',
-                        text1: 'Failed to schedule test notification',
-                        text2: String(error),
-                        position: 'top',
-                        visibilityTime: 3000,
-                      });
-                    }
-                  }}>
-                  <Text className="font-feather text-base text-textPrimary">Test Immediate Notification</Text>
-                  <Text className="font-din text-sm text-[#7C927E] mt-1">
-                    Schedule test notification in 3 seconds
-                  </Text>
-                </TouchableOpacity>
+                {/* Feature Gates */}
+                <View className="mb-3">
+                  <Text className="font-feather text-base text-textPrimary mb-2">🚪 Feature Gates</Text>
+                  
+                  {/* Path Feature Gate */}
+                  <FeatureGateCard gateName="path_feature_gate" />
+                </View>
 
-                {/* Clear All Notifications */}
-                <TouchableOpacity
-                  className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
-                  onPress={async () => {
-                    try {
-                      await Notifications.cancelAllScheduledNotificationsAsync();
-                      
-                      Toast.show({
-                        type: 'success',
-                        text1: 'All Notifications Cleared! 🗑️',
-                        text2: 'All scheduled notifications have been cancelled',
-                        position: 'top',
-                        visibilityTime: 3000,
-                      });
-                      
-                      appLog('📱 All scheduled notifications cleared');
-                    } catch (error) {
-                      appLog('Error clearing notifications:', error);
-                      Toast.show({
-                        type: 'error',
-                        text1: 'Failed to clear notifications',
-                        text2: String(error),
-                        position: 'top',
-                        visibilityTime: 3000,
-                      });
-                    }
-                  }}>
-                  <Text className="font-feather text-base text-textPrimary">Clear All Notifications</Text>
-                  <Text className="font-din text-sm text-[#A57070] mt-1">
-                    Cancel all scheduled notifications
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                {/* Dynamic Configs */}
+                <View className="mb-3">
+                  <Text className="font-feather text-base text-textPrimary mb-2">⚙️ Dynamic Configs</Text>
+                  <View className="bg-[#F3E5F5] p-3 rounded-lg border border-[#BA68C8]">
+                    <Text className="font-din text-sm text-[#6A4A6E]">No dynamic configs configured yet</Text>
+                  </View>
+                </View>
 
-              <View className="mb-4">
-                <Text className="font-feather text-lg text-textPrimary mb-3">
-                  Animations & Modals
-                </Text>
-
-                {/* Success Animation Button */}
+                {/* Statsig Controls */}
                 <TouchableOpacity
-                  className="bg-[#E8F3E0] p-4 rounded-xl my-1.5 border-l-4 border-l-[#A0D468]"
-                  onPress={handleShowSuccessSheet}>
-                  <Text className="font-feather text-base text-textPrimary">
-                    Show Success Animation
-                  </Text>
-                  <Text className="font-din text-sm text-[#7C927E] mt-1">
-                    Native Bottom Sheet Animation
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Heart Penalty Modal Button */}
-                <TouchableOpacity
-                  className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
-                  onPress={handleShowPenaltyModal}>
-                  <Text className="font-feather text-base text-textPrimary">
-                    Test Heart Penalty Modal
-                  </Text>
-                  <Text className="font-din text-sm text-[#A57070] mt-1">
-                    Show penalty via /halfModal
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Prayer Modal Button */}
-                <TouchableOpacity
-                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
-                  onPress={handleShowPrayerModal}>
-                  <Text className="font-feather text-base text-textPrimary">Test Prayer Modal</Text>
-                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
-                    Show prayer input modal
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Check-In Modal Button */}
-                <TouchableOpacity
-                  className="bg-[#E8E0FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
+                  className="bg-[#E8F5E8] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4CAF50]"
                   onPress={() => {
-                    setModalVisible(false);
-                    setTimeout(() => {
-                      if (typeof global !== 'undefined' && (global as any).showCheckIn) {
-                        (global as any).showCheckIn();
+                    try {
+                      appLog('🧪 [STATSIG DEBUG] Current experiment information:');
+                      appLog('  - path_feature: Controls custom path button visibility');
+                      appLog('  - Implementation: Check useHomeScreen hook for useExperiment("path_feature")');
+                      appLog('  - Parameter: "path_shown" configured in Statsig dashboard');
+                      
+                      // Try to access Statsig client directly
+                      appLog('🔍 [DEBUG] Checking for Statsig client availability:');
+                      appLog('  - global.statsigClient:', !!(global as any)?.statsigClient);
+                      appLog('  - window.statsigClient:', !!(window as any)?.statsigClient);
+                      
+                      // Also try analytics module
+                      const analyticsStatsigClient = getStatsigClient();
+                      appLog('  - analytics.getStatsigClient():', !!analyticsStatsigClient);
+                      
+                      appLog('  - global object keys:', global ? Object.keys(global).filter(k => k.includes('statsig') || k.includes('Statsig')) : 'no global');
+                      
+                      const globalStatsig = (global as any)?.statsigClient || (window as any)?.statsigClient;
+                      const availableStatsigClient = globalStatsig || analyticsStatsigClient;
+                      
+                      if (availableStatsigClient) {
+                        try {
+                          const pathExperiment = availableStatsigClient.getExperiment('path_feature');
+                          if (pathExperiment) {
+                            const value = pathExperiment.getValue();
+                            const pathShown = pathExperiment.get('path_shown', false);
+                            const groupName = pathExperiment.getGroupName?.() || 'unknown';
+                            const ruleID = pathExperiment.getRuleID?.() || null;
+                            
+                            appLog('🎯 [LIVE EXPERIMENT DATA]:');
+                            appLog('  - Overall value:', value);
+                            appLog('  - path_shown parameter:', pathShown);
+                            appLog('  - Group name:', groupName);
+                            appLog('  - Rule ID:', ruleID);
+                            appLog('  - Full config:', pathExperiment);
+                            
+                            Toast.show({
+                              type: 'success',
+                              text1: `Experiment Live Data`,
+                              text2: `path_shown: ${pathShown}, Group: ${groupName}`,
+                              position: 'top',
+                              visibilityTime: 4000,
+                            });
+                          } else {
+                            appLog('⚠️ path_feature experiment not found in Statsig client');
+                            Toast.show({
+                              type: 'error',
+                              text1: 'Experiment Not Found',
+                              text2: 'path_feature not available in Statsig client',
+                              position: 'top',
+                              visibilityTime: 3000,
+                            });
+                          }
+                        } catch (experimentError) {
+                          appLog('❌ Error accessing experiment:', experimentError);
+                          Toast.show({
+                            type: 'error',
+                            text1: 'Experiment Error',
+                            text2: 'Could not read path_feature experiment',
+                            position: 'top',
+                            visibilityTime: 3000,
+                          });
+                        }
                       } else {
-                        appLog('showCheckIn not available on global object');
+                        appLog('⚠️ Statsig client not available globally');
+                        Toast.show({
+                          type: 'info',
+                          text1: 'Statsig Client Not Available',
+                          text2: 'Check console for implementation details',
+                          position: 'top',
+                          visibilityTime: 3000,
+                        });
                       }
-                    }, 300);
+                      
+                      // Try to get user store info for context
+                      const userStore = useUserStore.getState();
+                      appLog('  - Current user ID:', userStore.id);
+                      appLog('  - User authenticated:', !!userStore.id);
+                      
+                    } catch (error) {
+                      appLog('❌ Error accessing Statsig debug info:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Debug Error',
+                        text2: 'Could not access debug information',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
                   }}>
-                  <Text className="font-feather text-base text-textPrimary">Test Check-In Sheet</Text>
-                  <Text className="font-din text-sm text-[#7C6F94] mt-1">
-                    Show daily check-in flow
+                  <Text className="font-feather text-base text-textPrimary">Debug Statsig State</Text>
+                  <Text className="font-din text-sm text-[#2E7D32] mt-1">
+                    Log current experiments and configs to console
                   </Text>
                 </TouchableOpacity>
 
-                {/* Sitemap Button */}
                 <TouchableOpacity
-                  className="bg-[#E0F7E6] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FD675]"
-                  onPress={handleShowSitemap}>
-                  <Text className="font-feather text-base text-textPrimary">
-                    Show Current Route
-                  </Text>
-                  <Text className="font-din text-sm text-[#5B8A6A] mt-1">
-                    Display current app route
+                  className="bg-[#FFF3E0] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF9800]"
+                  onPress={() => {
+                    try {
+                      // Force refresh Statsig data
+                      const userStore = useUserStore.getState();
+                      const userId = userStore.id;
+                      
+                      if (!userId) {
+                        Toast.show({
+                          type: 'error',
+                          text1: 'No User ID',
+                          text2: 'User must be logged in to refresh Statsig',
+                          position: 'top',
+                          visibilityTime: 3000,
+                        });
+                        return;
+                      }
+
+                      appLog('🔄 [STATSIG] Forcing refresh for user:', userId);
+                      
+                      Toast.show({
+                        type: 'info',
+                        text1: 'Refreshing Statsig',
+                        text2: 'Fetching latest experiment configurations',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    } catch (error) {
+                      appLog('❌ Error refreshing Statsig:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Refresh Failed',
+                        text2: 'Could not refresh Statsig data',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Refresh Statsig</Text>
+                  <Text className="font-din text-sm text-[#F57C00] mt-1">
+                    Force fetch latest experiment configurations
                   </Text>
                 </TouchableOpacity>
               </View>
+                </>
+              )}
 
+              {activeTab === 'debug' && (
+                <>
               {/* Feature Screens Navigation */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">Feature Screens</Text>
@@ -1410,38 +1749,6 @@ export function DebugButton() {
                   </View>
                 </View>
 
-                {/* Set Streak Freezes Buttons */}
-                <View className="mb-4">
-                  <Text className="font-feather text-base text-textPrimary mb-2">
-                    Set Streak Freezes
-                  </Text>
-                  <View className="flex-row flex-wrap gap-2">
-                    {[0, 1, 2, 3, 5].map((freezes) => (
-                      <TouchableOpacity
-                        key={freezes}
-                        className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
-                        onPress={() => {
-                          const userStore = useUserStore.getState();
-                          userStore.setStreakFreezes(freezes);
-
-                          // Force sync to Firestore
-                          syncWithFirestore();
-
-                          appLog(`Debug: Set streak freezes to ${freezes}`);
-
-                          Toast.show({
-                            type: 'success',
-                            text1: 'Streak Freezes Set!',
-                            text2: `Streak freezes set to ${freezes} ❄️`,
-                            position: 'top',
-                            visibilityTime: 3000,
-                          });
-                        }}>
-                        <Text className="font-din text-sm text-textPrimary">{`${freezes} ❄️`}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
 
                 {/* Test Covenant Success */}
                 <View className="mb-4">
@@ -1474,147 +1781,8 @@ export function DebugButton() {
                   </View>
                 </View>
 
-                {/* Set Only Penalty Dates Buttons */}
-                <View className="mb-4">
-                  <Text className="font-feather text-base text-textPrimary mb-2">
-                    Set Penalty Dates
-                  </Text>
-                  <View className="flex-row flex-wrap gap-2">
-                    {[0, 1, 2, 3, 4, 5].map((n) => (
-                      <TouchableOpacity
-                        key={n}
-                        className="bg-[#FFE8E0] px-3 py-2 rounded-lg border border-[#FFA0A0] mb-1"
-                        onPress={() => setPenaltyDates(n)}>
-                        <Text className="font-din text-sm text-textPrimary">{`-${n} day${n !== 1 ? 's' : ''}`}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
 
-                {/* Test Penalty Scenario Button */}
-                <TouchableOpacity
-                  className="bg-[#FF8080] p-4 rounded-xl my-2 border-l-4 border-l-[#FF0000]"
-                  onPress={testPenaltyScenario}>
-                  <Text className="font-feather text-base text-white">Test Penalty System</Text>
-                  <Text className="font-din text-sm text-white/80 mt-1">
-                    Sets up guaranteed penalty trigger
-                  </Text>
-                </TouchableOpacity>
 
-                {/* Test Streak Freeze Modal Button */}
-                <TouchableOpacity
-                  className="bg-[#F0F8FF] p-4 rounded-xl my-2 border-l-4 border-l-[#87CEEB]"
-                  onPress={() => {
-                    setModalVisible(false);
-                    
-                    // Show streak freeze bottom sheet directly
-                    setTimeout(() => {
-                      if (typeof global !== 'undefined' && (global as any).showStreakFreezeModal) {
-                        (global as any).showStreakFreezeModal();
-                      } else {
-                        appLog('showStreakFreezeModal not available on global object');
-                        Toast.show({
-                          type: 'info',
-                          text1: 'Streak Freeze Sheet',
-                          text2: 'Global function not available yet',
-                          position: 'top',
-                          visibilityTime: 3000,
-                        });
-                      }
-                    }, 300);
-                  }}>
-                  <Text className="font-feather text-base text-textPrimary">Show Freeze Sheet</Text>
-                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
-                    Test the streak freeze bottom sheet
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Simulate Missed Day & Test Freeze Logic */}
-                <TouchableOpacity
-                  className="bg-[#FFE4B5] p-4 rounded-xl my-2 border-l-4 border-l-[#FFA500]"
-                  onPress={() => {
-                    setModalVisible(false);
-                    
-                    Alert.alert(
-                      'Test Missed Day Scenario',
-                      'This will simulate missing a day and trigger the freeze logic if you have freezes available.',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { 
-                          text: 'Simulate Missed Day', 
-                          onPress: async () => {
-                            try {
-                              const userStore = useUserStore.getState();
-                              
-                              // Check current state
-                              const currentStreak = userStore.getStreakCount();
-                              const currentFreezes = userStore.getStreakFreezes();
-                              
-                              appLog('🧪 [DEBUG TEST] Current state:', {
-                                streak: currentStreak,
-                                freezes: currentFreezes
-                              });
-                              
-                              
-                              // Simulate missed day by setting lastReadingDate to 2 days ago
-                              const twoDaysAgo = new Date();
-                              twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-                              const timestamp = require('@react-native-firebase/firestore').Timestamp.fromDate(twoDaysAgo);
-                              
-                              appLog('🧪 [DEBUG TEST] Setting lastReadingDate to 2 days ago:', twoDaysAgo.toISOString());
-                              userStore.setLastReadingDate(timestamp);
-                              
-                              // Also set lastActivityDate to trigger the logic
-                              userStore.setLastActivityDate(timestamp);
-                              
-                              // Wait a moment for state to update
-                              setTimeout(async () => {
-                                try {
-                                  // Now trigger the normal streak checking logic
-                                  const streakHook = require('../app/hooks/streakHook');
-                                  const result = await streakHook.checkStreakAndApplyPenalties();
-                                  
-                                  appLog('🧪 [DEBUG TEST] Streak check result:', result);
-                                  
-                                  if (result && result.streakFreezeUsed) {
-                                    // Show the freeze modal as it would normally appear
-                                    setTimeout(() => {
-                                      if (typeof global !== 'undefined' && (global as any).streakFreezeSheetRef) {
-                                        appLog('🧪 [DEBUG TEST] Showing freeze modal with remaining:', result.freezesRemaining);
-                                        (global as any).streakFreezeSheetRef.current?.show(true);
-                                      }
-                                    }, 500);
-                                    
-                                    Toast.show({
-                                      type: 'success',
-                                      text1: '❄️ Freeze Used!',
-                                      text2: `Streak saved! ${result.freezesRemaining} freezes left`,
-                                      position: 'top',
-                                      visibilityTime: 3000,
-                                    });
-                                  } else {
-                                    testPenaltyScenario();
-                                  }
-                                } catch (error) {
-                                  appLog('🧪 [DEBUG TEST] Error in streak check:', error);
-                                  Alert.alert('Test Error', 'Failed to run streak check: ' + (error instanceof Error ? error.message : String(error)));
-                                }
-                              }, 100);
-                              
-                            } catch (error) {
-                              appLog('🧪 [DEBUG TEST] Error setting up test:', error);
-                              Alert.alert('Setup Error', 'Failed to setup test scenario: ' + (error instanceof Error ? error.message : String(error)));
-                            }
-                          }
-                        }
-                      ]
-                    );
-                  }}>
-                  <Text className="font-feather text-base text-textPrimary">🧪 Test Missed Day</Text>
-                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
-                    Simulate missing a day & trigger freeze logic
-                  </Text>
-                </TouchableOpacity>
 
                 {/* Reset Test State */}
                 <TouchableOpacity
@@ -1660,120 +1828,8 @@ export function DebugButton() {
                   </Text>
                 </TouchableOpacity>
 
-                {/* Test Streak Freeze Visual Display */}
-                <TouchableOpacity
-                  className="bg-[#ADD8E6] p-4 rounded-xl my-2 border-l-4 border-l-white"
-                  onPress={() => {
-                    const userStore = useUserStore.getState();
-                    
-                    // Add some fake streak freeze used dates for testing
-                    const today = new Date();
-                    const yesterday = new Date(today);
-                    yesterday.setDate(yesterday.getDate() - 2);
-                    const twoDaysAgo = new Date(today);
-                    twoDaysAgo.setDate(twoDaysAgo.getDate() - 3);
-                    const fiveDaysAgo = new Date(today);
-                    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 6);
-                    
-                    const testFreezeUsedDates = [
-                      yesterday.toISOString().split('T')[0],
-                      fiveDaysAgo.toISOString().split('T')[0]
-                    ];
-                    
-                    userStore.setStreakFreezeUsedDates(testFreezeUsedDates);
-                    
-                    // Also set a current streak and remaining freezes
-                    userStore.setStreakCount(7);
-                    userStore.setStreakFreezes(1);
-                    
-                    // Force sync to Firestore
-                    syncWithFirestore();
-                    
-                    appLog('Debug: Added test streak freeze dates:', testFreezeUsedDates);
-                    
-                    Alert.alert(
-                      'Streak Freeze Visual Test',
-                      `Added freeze usage for:\n• ${yesterday.toLocaleDateString()}\n• ${fiveDaysAgo.toLocaleDateString()}\n\nGo to StreakScreen to see the light blue frozen days! ❄️`,
-                      [
-                        { text: 'OK' },
-                        { 
-                          text: 'Go to StreakScreen', 
-                          onPress: () => {
-                            setModalVisible(false);
-                            // Navigate to StreakScreen (assuming it can be navigated to)
-                            router.push('/streak');
-                          }
-                        }
-                      ]
-                    );
-                  }}>
-                  <Text className="font-feather text-base text-white">Test Freeze Visuals ❄️</Text>
-                  <Text className="font-din text-sm text-white mt-1">
-                    Add fake freeze dates to see light blue indicators
-                  </Text>
-                </TouchableOpacity>
 
-                {/* Clear Streak Freeze Test Data */}
-                <TouchableOpacity
-                  className="bg-[#FFF8DC] p-4 rounded-xl my-2 border-l-4 border-l-[#FFD700]"
-                  onPress={() => {
-                    const userStore = useUserStore.getState();
-                    userStore.setStreakFreezeUsedDates([]);
-                    
-                    // Force sync to Firestore
-                    syncWithFirestore();
-                    
-                    appLog('Debug: Cleared all streak freeze used dates');
-                    
-                    Toast.show({
-                      type: 'success',
-                      text1: 'Cleared Freeze Data',
-                      text2: 'All streak freeze visual indicators removed',
-                      position: 'top',
-                      visibilityTime: 3000,
-                    });
-                  }}>
-                  <Text className="font-feather text-base text-[#8B7D3A]">Clear Freeze Visuals</Text>
-                  <Text className="font-din text-sm text-[#8B7D3A] mt-1">
-                    Remove all freeze visual indicators
-                  </Text>
-                </TouchableOpacity>
 
-                {/* Test Streak Freeze Notification Button */}
-                <TouchableOpacity
-                  className="bg-[#E0F7FF] p-4 rounded-xl my-2 border-l-4 border-l-[#4FB8FE]"
-                  onPress={async () => {
-                    try {
-                      const notificationStore = useNotificationStore.getState();
-                      
-                      // Schedule a test freeze notification with 2 freezes remaining
-                      await notificationStore.scheduleStreakFreezeReminder(2);
-                      
-                      Toast.show({
-                        type: 'success',
-                        text1: 'Freeze Notification Scheduled! ❄️',
-                        text2: 'Will notify in 3 days at 9 AM about 2 freezes left',
-                        position: 'top',
-                        visibilityTime: 4000,
-                      });
-                      
-                      appLog('❄️ Test freeze notification scheduled for 3 days from now at 9 AM');
-                    } catch (error) {
-                      appLog('Error scheduling test freeze notification:', error);
-                      Toast.show({
-                        type: 'error',
-                        text1: 'Failed to schedule notification',
-                        text2: String(error),
-                        position: 'top',
-                        visibilityTime: 3000,
-                      });
-                    }
-                  }}>
-                  <Text className="font-feather text-base text-textPrimary">Test Freeze Notification</Text>
-                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
-                    Schedule freeze reminder for 3 days from now
-                  </Text>
-                </TouchableOpacity>
 
                 {/* Sync Activity/Penalty Dates Button */}
                 <TouchableOpacity
@@ -1978,97 +2034,8 @@ export function DebugButton() {
                   </Text>
                 </TouchableOpacity>
 
-                {/* Refresh Widget Data Button */}
-                <TouchableOpacity
-                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
-                  onPress={() => {
-                    appLog('📱 DEBUG: Manual widget refresh triggered from DebugModal');
-                    const devotionalStore = useDevotionalStore.getState();
-                    devotionalStore.refreshWidgetData();
-                    Toast.show({
-                      type: 'success',
-                      text1: 'Widget Refreshed',
-                      text2: 'Widget data has been updated',
-                      position: 'top',
-                      visibilityTime: 2000,
-                    });
-                  }}>
-                  <Text className="font-feather text-base text-textPrimary">
-                    Refresh Widget Data
-                  </Text>
-                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
-                    Manually refresh the daily verse widget
-                  </Text>
-                </TouchableOpacity>
 
-                {/* Show Widget Guide Button */}
-                <TouchableOpacity
-                  className="bg-[#F0E6FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
-                  onPress={() => {
-                    appLog('📱 DEBUG: Showing widget guide from DebugModal');
-                    setModalVisible(false);
-                    setShowWidgetSheet(true);
-                  }}>
-                  <Text className="font-feather text-base text-textPrimary">
-                    Show Widget Guide
-                  </Text>
-                  <Text className="font-din text-sm text-[#7C6A94] mt-1">
-                    Show how to add the daily verse widget
-                  </Text>
-                </TouchableOpacity>
 
-                {/* Test Widget Native Module Button */}
-                <TouchableOpacity
-                  className="bg-[#FFE0E8] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF80A0]"
-                  onPress={() => {
-                    appLog('📱 DEBUG: Testing WidgetDataSharer native module');
-                    appLog('📱 Available NativeModules:', Object.keys(NativeModules));
-
-                    try {
-                      const { WidgetDataSharer } = NativeModules;
-                      if (WidgetDataSharer) {
-                        appLog('📱 WidgetDataSharer found:', {
-                          hasUpdateVerseData: typeof WidgetDataSharer.updateVerseData === 'function',
-                          hasUpdateWidgetStatus: typeof WidgetDataSharer.updateWidgetStatus === 'function',
-                        });
-
-                        // Test calling the method
-                        WidgetDataSharer.updateWidgetStatus('noVerseAvailable');
-                        Toast.show({
-                          type: 'success',
-                          text1: 'Native Module Working',
-                          text2: 'WidgetDataSharer is available and functional',
-                          position: 'top',
-                          visibilityTime: 3000,
-                        });
-                      } else {
-                        appLog('📱 WidgetDataSharer not found in NativeModules');
-                        Toast.show({
-                          type: 'error',
-                          text1: 'Native Module Missing',
-                          text2: 'WidgetDataSharer not found - check console',
-                          position: 'top',
-                          visibilityTime: 3000,
-                        });
-                      }
-                    } catch (error) {
-                      console.error('📱 Error testing WidgetDataSharer:', error);
-                      Toast.show({
-                        type: 'error',
-                        text1: 'Native Module Error',
-                        text2: `Error: ${error}`,
-                        position: 'top',
-                        visibilityTime: 3000,
-                      });
-                    }
-                  }}>
-                  <Text className="font-feather text-base text-textPrimary">
-                    Test Widget Native Module
-                  </Text>
-                  <Text className="font-din text-sm text-[#B86A7C] mt-1">
-                    Check if WidgetDataSharer is properly linked
-                  </Text>
-                </TouchableOpacity>
 
                 {/* Clear Devotional Data Button */}
                 <TouchableOpacity
@@ -2403,6 +2370,8 @@ export function DebugButton() {
                   </TouchableOpacity>
                 </View>
               )}
+                </>
+              )}
             </ScrollView>
           </View>
         </SafeAreaView>
@@ -2439,8 +2408,6 @@ export function DebugButton() {
       {/* Register custom toast config */}
       <Toast config={toastConfig} />
 
-      {/* Widget How-To Sheet */}
-      <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
 
       {/* Devotional Upload Modal */}
       <Modal

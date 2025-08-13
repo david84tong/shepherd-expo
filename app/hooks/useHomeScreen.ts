@@ -35,6 +35,7 @@ import i18n from '../utils/i18n';
 import { useSoundStore } from '../stores/soundStore';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
 import { appLog } from '../helper/helper';
+import { useExperiment } from '@statsig/react-native-bindings';
 
 // Constants
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -58,6 +59,16 @@ export const useHomeScreen = () => {
   const { showDevotional } = useLocalSearchParams();
   
   const currentUser = auth().currentUser;
+
+  // Statsig experiment for custom path feature
+  const pathFeatureExperiment = useExperiment("path_feature");
+  
+  // Debug the experiment value
+  useEffect(() => {
+    appLog('🧪 [PATH_FEATURE] pathFeatureExperiment:', pathFeatureExperiment);
+    appLog('🧪 [PATH_FEATURE] pathFeatureExperiment.value:', pathFeatureExperiment?.value);
+    appLog('🧪 [PATH_FEATURE] showCustomPathButton:', pathFeatureExperiment?.value === true);
+  }, [pathFeatureExperiment]);
 
   // Refs
   const devotionalReaderRef = useRef<any>(null);
@@ -1588,6 +1599,9 @@ function resetOpenedDevotionalFromParam(){
     MAX_HEARTS,
     showDevotional,
     resetRiveToDefaultState,
+    
+    // Statsig experiments
+    showCustomPathButton: pathFeatureExperiment?.value === true,
   };
 };
 

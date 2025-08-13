@@ -9,6 +9,7 @@ import {
   reset as amplitudeReset,
 } from '@amplitude/analytics-react-native';
 import { Platform } from 'react-native';
+import { adapty } from 'react-native-adapty';
 
 // Import Statsig event logging
 let statsigClient: any = null;
@@ -16,6 +17,11 @@ let statsigClient: any = null;
 // Function to set Statsig client (called from components that have access to the hook)
 export const setStatsigClient = (client: any) => {
   statsigClient = client;
+};
+
+// Function to get Statsig client (for accessing experiment data in debug components)
+export const getStatsigClient = () => {
+  return statsigClient;
 };
 
 // Function to log events to Statsig
@@ -134,6 +140,26 @@ class Analytics {
           identify.set(key, value);
         });
         amplitudeIdentify(identify);
+      }
+
+      // Adapty integration with Mixpanel user ID
+      try {
+        await (adapty as any).setIntegrationIdentifier("mixpanel_user_id", userId);
+        console.log('✅ Adapty integration with Mixpanel user ID set successfully');
+      } catch (adaptyError) {
+        console.error('❌ Error setting Adapty integration identifier:', adaptyError);
+      }
+
+      // Statsig user identification
+      try {
+        if (statsigClient) {
+          statsigClient.updateUser({ userID: userId, ...userProperties });
+          console.log('✅ Statsig user identified successfully:', userId);
+        } else {
+          console.log('🧪 Statsig client not available for user identification');
+        }
+      } catch (statsigError) {
+        console.error('❌ Error identifying user in Statsig:', statsigError);
       }
 
       console.log('✅ User identified successfully');

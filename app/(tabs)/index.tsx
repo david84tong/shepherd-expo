@@ -305,6 +305,7 @@ export default function HomeScreen() {
     riveSkinInitialized,
     handleRivePlay,
     MAX_HEARTS,
+    showCustomPathButton,
   } = useHomeScreen();
 
   appLog('📍 useHomeScreen hook called successfully');
@@ -1376,7 +1377,7 @@ export default function HomeScreen() {
                         )}
 
                         {/* Custom Path Button - Show when reading is completed and not completed today */}
-                        {readingCompleted && !isCustomPathCompletedToday && (
+                        {readingCompleted && !isCustomPathCompletedToday && showCustomPathButton && (
                           <View
                             className="flex-row items-center "
                             style={{
@@ -1681,7 +1682,7 @@ export default function HomeScreen() {
 
                         {/* Custom Path Button - Show at bottom only when reading is NOT completed */}
                         {!readingCompleted &&
-                          !(prayerCompleted && readingCompleted && reflectionCompleted) && (
+                          !(prayerCompleted && readingCompleted && reflectionCompleted) && showCustomPathButton && (
                             <View
                               className="flex-row items-center "
                               style={{ marginTop: responsiveHeight(3) }}>
