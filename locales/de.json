@@ -496,8 +496,8 @@
     "custom_devotional": "Benutzerdefinierte Andacht",
     "custom_path": "Benutzerdefinierter Pfad",
     "journal_thoughts": "Schreibe deine Gedanken auf",
-    "reflect_daily": "Tägliche Reflexion",
-    "water_well": "Wasserbrunnen",
+    "reflect_daily": "Halte inne und begegne Gott",
+    "water_well": "Erfrische deinen Geist mit Gebet",
     "your_custom_devotional": "Deine personalisierte Andacht",
     "your_custom_path": "Dein personalisierter Leseplan",
     "praying": "Lebendiges Wasser – Beten",
@@ -571,5 +571,8 @@
     "unlock_phoenix_lamb": "Phoenix-Lamm freischalten",
     "covenant_success_gems_earned": "Du hast {{gems}} Edelsteine verdient",
     "report_bug_title": "Fehler melden",
-    "onboarding_streak_commitment_title": "Wähle dein Bibelstudium-Ziel"
+    "onboarding_streak_commitment_title": "Wähle dein Bibelstudium-Ziel",
+    "hearts_lost": "Herzen verloren!",
+    "lamb_lost_hearts_after_days": "Oh nein! {{lambName}} hat {{penalty}} Herzen nach {{daysMissed}} Tag(en) verloren.",
+    "lets_bounce_back": "Lass uns zurückkommen"
 }

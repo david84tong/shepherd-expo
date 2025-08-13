@@ -26,8 +26,6 @@ export default function OnboardingAgeRangeScreen() {
   const [selectedOption, setSelectedOption] = useState<OnboardingResponses['ageRange']>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingOption, setLoadingOption] = useState<string | undefined>(undefined);
 
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
@@ -88,22 +86,15 @@ export default function OnboardingAgeRangeScreen() {
     ageRange: OnboardingResponses['ageRange'],
     isDatePicker = false
   ) => {
-    if (isLoading) return;
-
-    setLoadingOption(ageRange as string);
-    setIsLoading(true);
-
     try {
       // Trigger light haptic feedback
       if (ageRange === 'under-18' && Platform.OS === 'android' && !isDatePicker) {
         setShowDatePicker(true);
-        setIsLoading(false);
-        setLoadingOption(undefined);
         return;
       }
 
       try {
-        await hapticLight();
+        hapticLight();
       } catch (error) {
         appLog('Haptics not available');
       }
@@ -113,23 +104,20 @@ export default function OnboardingAgeRangeScreen() {
       });
 
       setSelectedOption(ageRange);
-      await setResponse('ageRange', ageRange);
+      setResponse('ageRange', ageRange);
 
       // Save to user store
-      await setUser({ ageRange });
-      await adapty.updateProfile({
+      setUser({ ageRange });
+      adapty.updateProfile({
         codableCustomAttributes: {
           age_range: ageRange,
         },
       });
 
-      // Navigate to next screen
+      // Navigate to next screen immediately
       router.push('/onboarding/8' as any);
     } catch (error) {
       console.error('Error processing selection:', error);
-    } finally {
-      setIsLoading(false);
-      setLoadingOption(undefined);
     }
   };
 
@@ -215,25 +203,20 @@ export default function OnboardingAgeRangeScreen() {
             contentContainerStyle={{ paddingBottom: 130 }}
             showsVerticalScrollIndicator={false}>
             <View className="space-y-4">
-              {options.map((option) => {
-                const isOptionLoading = loadingOption === option.id;
-
-                return (
-                  <View key={option.id} className="relative">
-                    <PrimaryButton
-                      loading={isOptionLoading}
-                      title={option.title}
-                      onPress={() => handleSelection(option.id as OnboardingResponses['ageRange'])}
-                      isActive
-                      primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
-                      textColor={
-                        selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'
-                      }
-                      buttonHeight={RPH(7)}
-                    />
-                  </View>
-                );
-              })}
+              {options.map((option) => (
+                <View key={option.id} className="relative">
+                  <PrimaryButton
+                    title={option.title}
+                    onPress={() => handleSelection(option.id as OnboardingResponses['ageRange'])}
+                    isActive
+                    primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
+                    textColor={
+                      selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'
+                    }
+                    buttonHeight={RPH(7)}
+                  />
+                </View>
+              ))}
             </View>
           </ScrollView>
         </Animated.View>

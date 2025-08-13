@@ -497,8 +497,8 @@
     "custom_devotional": "Dévotion Personnalisée",
     "custom_path": "Chemin Personnalisé",
     "journal_thoughts": "Écris tes pensées",
-    "reflect_daily": "Réflexion Quotidienne",
-    "water_well": "Puits d'Eau",
+    "reflect_daily": "Pause et rencontre avec Dieu",
+    "water_well": "Rafraîchis ton esprit par la prière",
     "your_custom_devotional": "Votre dévotion personnalisée",
     "your_custom_path": "Votre plan de lecture personnalisé",
     "praying": "Eau Vive – Prier",
@@ -572,5 +572,8 @@
     "unlock_phoenix_lamb": "Débloquer l'Agneau Phoenix",
     "covenant_success_gems_earned": "Vous avez gagné {{gems}} gemmes",
     "report_bug_title": "Signaler un Bug",
-    "onboarding_streak_commitment_title": "Choisissez votre objectif d'étude biblique"
+    "onboarding_streak_commitment_title": "Choisissez votre objectif d'étude biblique",
+    "hearts_lost": "Cœurs Perdus !",
+    "lamb_lost_hearts_after_days": "Oh non ! {{lambName}} a perdu {{penalty}} cœurs après {{daysMissed}} jour(s) d'absence.",
+    "lets_bounce_back": "Reprenons-nous"
 }

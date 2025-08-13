@@ -310,7 +310,9 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   return (
     <Pressable
       onPress={handleCardPress}
-      className={`bg-surfaceCream rounded-3xl overflow-hidden mb-4 border ${isCustomDevotional ? '' : '  '}  border-2 shadow-card border-border`}>
+      className={`bg-surfaceCream rounded-3xl overflow-hidden mb-4 border ${isCustomDevotional ? '' : '  '}  border-2 shadow-lg border-lightBrown`}
+  
+      >
       <ImageBackground
         source={{ uri: devotional.imageURL }}
         style={{ 

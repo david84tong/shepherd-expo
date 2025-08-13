@@ -499,8 +499,8 @@
     "custom_devotional": "Aangepaste Devotie",
     "custom_path": "Aangepast Pad",
     "journal_thoughts": "Schrijf je gedachten op",
-    "reflect_daily": "Dagelijkse Reflectie",
-    "water_well": "Waterput",
+    "reflect_daily": "Pauzeer en ontmoet God",
+    "water_well": "Verfris je geest met gebed",
     "your_custom_devotional": "Jouw persoonlijke devotie",
     "your_custom_path": "Jouw persoonlijke leesplan",
     "praying": "Levend Water – Bidden",
@@ -571,5 +571,8 @@
     "unlock_phoenix_lamb": "Phoenix-Lam Ontgrendelen",
     "covenant_success_gems_earned": "Je hebt {{gems}} edelstenen verdiend",
     "report_bug_title": "Bug Melden",
-    "onboarding_streak_commitment_title": "Selecteer je bijbelstudie doel"
+    "onboarding_streak_commitment_title": "Selecteer je bijbelstudie doel",
+    "hearts_lost": "Harten Verloren!",
+    "lamb_lost_hearts_after_days": "Oh nee! {{lambName}} verloor {{penalty}} harten na {{daysMissed}} dag(en) weg.",
+    "lets_bounce_back": "Laten we terugveren"
 }

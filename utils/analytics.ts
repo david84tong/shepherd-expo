@@ -144,7 +144,7 @@ class Analytics {
 
       // Adapty integration with Mixpanel user ID
       try {
-        await (adapty as any).setIntegrationIdentifier("mixpanel_user_id", userId);
+        await adapty.updateAttribution({ mixpanel_user_id: userId }, 'custom');
         console.log('✅ Adapty integration with Mixpanel user ID set successfully');
       } catch (adaptyError) {
         console.error('❌ Error setting Adapty integration identifier:', adaptyError);
@@ -152,8 +152,8 @@ class Analytics {
 
       // Statsig user identification
       try {
-        if (statsigClient) {
-          statsigClient.updateUser({ userID: userId, ...userProperties });
+        if (statsigClient && statsigClient.updateUserSync) {
+          statsigClient.updateUserSync({ userID: userId, ...userProperties });
           console.log('✅ Statsig user identified successfully:', userId);
         } else {
           console.log('🧪 Statsig client not available for user identification');
