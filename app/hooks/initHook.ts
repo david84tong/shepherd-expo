@@ -6,20 +6,28 @@ import { PATH_OPTIONS, PathOption } from '../models/Path';
 import { checkStreakAndApplyPenalties } from './streakHook';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
-import { initializeAnalytics, trackEvent } from '../../utils/analytics';
+import importAnalytics, { initializeAnalytics, trackEvent } from '../../utils/analytics';
 import { appLog } from '../helper/helper';
 import { initializeStatsig } from '../utils/statsig';
 // This function can be called after init or when app comes to foreground
 export const onAppForegroundOrInit = async () => {
   appLog('onAppForegroundOrInit=====>', onAppForegroundOrInit);
 
-  // Initialize analytics if not already initialized
+  // Initialize analytics if not already initialized (idempotent)
   appLog('🔧 Initializing analytics on app foreground...');
-  await initializeAnalytics();
+  try {
+    await initializeAnalytics();
+  } catch (e) {
+    appLog('Analytics already initialized or failed softly:', e);
+  }
 
-  // Initialize Statsig if not already initialized
+  // Initialize Statsig via provider (noop here). Keep idempotent and fast.
   appLog('🧪 Initializing Statsig on app foreground...');
-  await initializeStatsig();
+  try {
+    await initializeStatsig();
+  } catch (e) {
+    appLog('Statsig already initialized or handled by provider:', e);
+  }
 
   const getUser = useUserStore.getState().getUser;
   const setSelectedPath = usePathStore.getState().setSelectedPath;
@@ -67,8 +75,8 @@ export const onAppForegroundOrInit = async () => {
       (global as any).streakFreezeSheetRef.current?.show(true);
       
       // Log analytics
-      const analytics = require('../../utils/analytics').default;
-      analytics.logEvent('streak_freeze_used_foreground', {
+      // Use top-level import to satisfy linter
+      importAnalytics.logEvent('streak_freeze_used_foreground', {
         freezesRemaining: result.freezesRemaining,
         streakFreezeUsed: result.streakFreezeUsed,
         daysMissed: result.daysMissed,

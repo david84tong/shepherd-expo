@@ -496,8 +496,8 @@
     "custom_devotional": "Devocional Personalizado",
     "custom_path": "Caminho Personalizado",
     "journal_thoughts": "Escreva seus pensamentos",
-    "reflect_daily": "Reflexão Diária",
-    "water_well": "Poço de Água",
+    "reflect_daily": "Pausa e encontra com Deus",
+    "water_well": "Refresca teu espírito com oração",
     "your_custom_devotional": "Seu devocional personalizado",
     "your_custom_path": "Seu plano de leitura personalizado",
     "praying": "Água Viva – Orar",
@@ -572,5 +572,8 @@
     "unlock_phoenix_lamb": "Desbloquear Cordeiro Phoenix",
     "covenant_success_gems_earned": "Você ganhou {{gems}} gemas",
     "report_bug_title": "Relatar um Bug",
-    "onboarding_streak_commitment_title": "Selecione sua meta de estudo bíblico"
+    "onboarding_streak_commitment_title": "Selecione sua meta de estudo bíblico",
+    "hearts_lost": "Corações Perdidos!",
+    "lamb_lost_hearts_after_days": "Oh não! {{lambName}} perdeu {{penalty}} corações após {{daysMissed}} dia(s) fora.",
+    "lets_bounce_back": "Vamos nos recuperar"
 }

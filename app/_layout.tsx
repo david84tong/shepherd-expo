@@ -16,7 +16,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases from 'react-native-purchases';
 import Rive from 'rive-react-native';
 import '../global.css';
-import { StatsigProviderRN, STATSIG_CLIENT_KEY, getStatsigUser } from './utils/statsig';
+import { StatsigProviderRN, STATSIG_CLIENT_KEY } from './utils/statsig';
+import auth from '@react-native-firebase/auth';
+import { shallow } from 'zustand/shallow';
 import StatsigAnalyticsInitializer from './components/StatsigAnalyticsInitializer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppLoading from '../components/AppLoading';
@@ -174,6 +176,9 @@ export default Sentry.wrap(function RootLayout() {
   const [showRiveAnimation, setShowRiveAnimation] = useState(false);
   const [isRiveReady, setIsRiveReady] = useState(false);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+  const [authUid, setAuthUid] = useState<string>(auth().currentUser?.uid || 'anonymous');
+  const [authEmail, setAuthEmail] = useState<string | undefined>(auth().currentUser?.email || undefined);
+  const [authIsAnonymous, setAuthIsAnonymous] = useState<boolean>(!!auth().currentUser?.isAnonymous);
   const [pendingDiscountDeepLink, setPendingDiscountDeepLink] = useState(false);
 
   // Global modal state
@@ -207,6 +212,46 @@ export default Sentry.wrap(function RootLayout() {
   const covenantSuccessSheetRef = useRef<CovenantSuccessSheetRef>(null);
   const streakFreezeSheetRef = useRef<StreakFreezeBottomSheetRef>(null);
   const streakFreezes = useUserStore((state) => state.streakFreezes);
+  const statsigUserFields = useUserStore(
+    (state) => ({
+      proStatus: (state as any).proStatus || state.getProStatus?.() || 'free',
+      streak: (state as any).streak || state.getStreakCount?.() || 0,
+      xp: (state as any).xp || 0,
+      hearts: (state as any).hearts || state.getLambHearts?.() || 0,
+      level: (state as any).level || 1,
+      hasCompletedOnboarding: (state as any).hasCompletedOnboarding || false,
+      selectedPathId: (state as any).selectedPathId || null,
+      lambLevel: (state as any).lambLevel || 1,
+    }),
+    (a, b) =>
+      a.proStatus === b.proStatus &&
+      a.streak === b.streak &&
+      a.xp === b.xp &&
+      a.hearts === b.hearts &&
+      a.level === b.level &&
+      a.hasCompletedOnboarding === b.hasCompletedOnboarding &&
+      a.selectedPathId === b.selectedPathId &&
+      a.lambLevel === b.lambLevel
+  );
+
+  const statsigUser = useMemo(
+    () => ({
+      userID: authUid || 'anonymous',
+      email: authEmail || undefined,
+      custom: {
+        isAnonymous: authIsAnonymous,
+        proStatus: statsigUserFields.proStatus,
+        streakDays: statsigUserFields.streak,
+        totalXP: statsigUserFields.xp,
+        hearts: statsigUserFields.hearts,
+        currentLevel: statsigUserFields.level,
+        hasCompletedOnboarding: statsigUserFields.hasCompletedOnboarding,
+        selectedPathId: statsigUserFields.selectedPathId,
+        lambLevel: statsigUserFields.lambLevel,
+      },
+    }),
+    [authUid, authEmail, authIsAnonymous, statsigUserFields]
+  );
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
@@ -497,6 +542,9 @@ export default Sentry.wrap(function RootLayout() {
     const unsubscribe = auth().onAuthStateChanged((user: any) => {
       const isLoggedIn = !!user; // Include anonymous users as logged in
       setIsUserLoggedIn(isLoggedIn);
+      setAuthUid(user?.uid || 'anonymous');
+      setAuthEmail(user?.email || undefined);
+      setAuthIsAnonymous(!!user?.isAnonymous);
       appLog('[Auth] User auth state changed:', { 
         isLoggedIn, 
         isAnonymous: user?.isAnonymous,
@@ -930,7 +978,7 @@ export default Sentry.wrap(function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
       <StatsigProviderRN 
         sdkKey={STATSIG_CLIENT_KEY}
-        user={getStatsigUser()}
+        user={statsigUser}
         loadingComponent={<View />}
       >
         <StatsigAnalyticsInitializer>

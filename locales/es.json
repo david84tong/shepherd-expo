@@ -490,8 +490,8 @@
     "refresh_spirit_prayer": "Refresca tu espíritu con oración",
     "pause_meet_god": "Pausa y encuentra a Dios",
     "journal_thoughts": "Pensamientos del Diario",
-    "reflect_daily": "Reflexionar Diaria",
-    "water_well": "Pozo de Agua",
+    "reflect_daily": "Pausa y encontrarte con Dios",
+    "water_well": "Refresca tu espíritu con oración",
     "praying": "Agua Viva – Orar",
     "talk_to_god": "Refresca tu espíritu con oración",
     "reflecting": "Tiempo de Quietud – Reflexionar",
@@ -563,5 +563,8 @@
     "unlock_phoenix_lamb": "Desbloquear Cordero Phoenix",
     "covenant_success_gems_earned": "Has ganado {{gems}} gemas",
     "report_bug_title": "Reportar un Bug",
-    "onboarding_streak_commitment_title": "Selecciona tu meta de estudio bíblico"
+    "onboarding_streak_commitment_title": "Selecciona tu meta de estudio bíblico",
+    "hearts_lost": "¡Corazones Perdidos!",
+    "lamb_lost_hearts_after_days": "¡Oh no! {{lambName}} perdió {{penalty}} corazones después de {{daysMissed}} día(s) fuera.",
+    "lets_bounce_back": "Vamos a recuperarnos"
 }
