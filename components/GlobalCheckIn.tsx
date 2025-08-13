@@ -23,7 +23,7 @@ import auth from '@react-native-firebase/auth';
 import { useHomeStore } from '~/app/stores/homeStore';
 import { useUserStore } from '~/app/stores/userStore';
 import { Timestamp } from '@react-native-firebase/firestore';
-import { IS_ANDROID } from '~/app/utils/utils';
+import { IS_ANDROID, IS_IOS } from '~/app/utils/utils';
 import { useSoundStore } from '~/app/stores/soundStore';
 import useSubscriptionStore, { safelyPresentPaywall } from '~/app/stores/subscriptionStore';
 import dayjs from 'dayjs';
@@ -223,7 +223,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         };
       case 'journal':
         return {
-          title: 'What do you want to ask God for?',
+          title: 'Hi my child ! , I\'m here to help you',
           subtitle: '',
         };
       default:
@@ -1667,11 +1667,15 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       }}>
       
       {/* Prayer hands icon */}
-      <View className="w-full items-center justify-center mb-6" style={{ marginTop: RPH(1) }}>
+      {
+        (!journalResponse && IS_IOS) && (
+          <View className="w-full items-center justify-center mb-6" style={{ marginTop: RPH(1) }}>
         <View className="bg-lightPurple rounded-full p-6 border-[2.5px] border-accentGold">
           <FontAwesome6 name="hands-praying" size={RPH(4)} color="#7B2BFF" />
         </View>
       </View>
+        )
+      }
       
       {/* Journal input area */}
       {
@@ -1863,16 +1867,17 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           </Pressable>
 
           {/* Header */}
-          <View style={{ paddingTop: 56, paddingHorizontal: 32, paddingBottom: 20 }}>
-            <Text className="font-feather text-h1 text-textPrimary text-center mb-1">
-              {getStepCopy(currentScreen).title}
-            </Text>
-            {getStepCopy(currentScreen).subtitle ? (
-              <Text className="font-din text-textPrimary/60 text-center mb-1 mt-4">
-                {getStepCopy(currentScreen).subtitle}
+          
+              <View style={{ paddingTop: 56, paddingHorizontal: 32, paddingBottom: 20 }}>
+              <Text className="font-feather text-h1 text-textPrimary text-center mb-1">
+                {getStepCopy(currentScreen).title }
               </Text>
-            ) : null}
-          </View>
+              {getStepCopy(currentScreen).subtitle ? (
+                <Text className="font-din text-textPrimary/60 text-center mb-1 mt-4">
+                  {getStepCopy(currentScreen).subtitle}
+                </Text>
+              ) : null}
+            </View> 
 
           {/* Horizontal scrolling screens container */}
           <ScrollView
