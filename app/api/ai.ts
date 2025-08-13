@@ -25,6 +25,18 @@ interface CheckInData {
   mood: string;
   focus: string;
   struggle: string;
+  prayer?: string;
+}
+
+interface JournalReflectionData {
+  mood: string;
+  prayer: string;
+}
+
+export interface JournalResponseData {
+  response: string;
+  verse?: string;
+  bibleReference?: string;
 }
 
 export async function getBibleVerseAIResponse(
@@ -396,6 +408,10 @@ export async function createDevotionalFromCheckIn(
         promptContext += ` They are currently struggling with ${checkInData.struggle.toLowerCase()}.`;
       }
 
+      if (checkInData.prayer && checkInData.prayer.trim()) {
+        promptContext += ` They have shared this prayer with God: "${checkInData.prayer.trim()}".`;
+      }
+
       // Add user profile context
       let userContext = '';
       if (userName && userName !== 'Anonymous User') {
@@ -440,21 +456,21 @@ export async function createDevotionalFromCheckIn(
 
 ${promptContext}${userContext}
 
-Create a meaningful devotional that specifically addresses their current emotional state${checkInData.focus ? ', area of focus' : ''}${checkInData.struggle ? ', and struggle' : ''}, while being mindful of their spiritual background and experience level.
+Create a meaningful devotional that specifically addresses their current emotional state${checkInData.focus ? ', area of focus' : ''}${checkInData.struggle ? ', and struggle' : ''}${checkInData.prayer ? ', and personal prayer' : ''}, while being mindful of their spiritual background and experience level.
 
 Please respond with a JSON object containing exactly these fields:
-- "title": A compelling, short title (3-6 words) that relates to their mood${checkInData.focus ? ' and focus area' : ''}
-- "context": 4-5 sentences that acknowledge their feelings and provide biblical wisdom specific to their situation, written at an appropriate level for their Bible familiarity
+- "title": A compelling, short title (3-6 words) that relates to their mood${checkInData.focus ? ' and focus area' : ''}${checkInData.prayer ? ' and prayer request' : ''}
+- "context": 4-5 sentences that acknowledge their feelings${checkInData.prayer ? ' and prayer' : ''} and provide biblical wisdom specific to their situation, written at an appropriate level for their Bible familiarity
 - "verse": The actual Bible verse text (not the reference, but the full verse text)
 - "bibleReference": The Bible reference (e.g., "Philippians 4:13" or "Romans 8:28")
-- "prayer": A heartfelt prayer (2-3 sentences) that specifically addresses their mood${checkInData.focus ? ', focus area' : ''}${checkInData.struggle ? ', and struggle' : ''}
+- "prayer": A heartfelt prayer (2-3 sentences) that specifically addresses their mood${checkInData.focus ? ', focus area' : ''}${checkInData.struggle ? ', struggle' : ''}${checkInData.prayer ? ', and builds upon their personal prayer' : ''}
 - "reflectionPrompt": A thoughtful question or prompt (1-2 sentences) to help them process their emotions and find God's guidance
 
 Make sure your response is valid JSON format and is deeply personalized to their specific situation. The verse should be particularly relevant to their current emotional state and needs. Consider their denomination and Bible familiarity when choosing language and theological depth.`
             },
             {
               "role": "user",
-              "content": `Create a personalized devotional for someone who is feeling ${checkInData.mood.toLowerCase()}${checkInData.focus ? `, wants to focus on ${checkInData.focus.toLowerCase()}` : ''}${checkInData.struggle ? `, and is struggling with ${checkInData.struggle.toLowerCase()}` : ''}.`
+              "content": `Create a personalized devotional for someone who is feeling ${checkInData.mood.toLowerCase()}${checkInData.focus ? `, wants to focus on ${checkInData.focus.toLowerCase()}` : ''}${checkInData.struggle ? `, and is struggling with ${checkInData.struggle.toLowerCase()}` : ''}${checkInData.prayer ? `, and has prayed: "${checkInData.prayer.trim()}"` : ''}.`
             }
           ]
         }),
@@ -654,6 +670,13 @@ function createCheckInFallbackDevotional(checkInData: CheckInData): DevotionalAI
   if (checkInData.struggle) {
     baseDevotional.prayer = baseDevotional.prayer?.replace('Amen.', `Give me victory over ${checkInData.struggle.toLowerCase()}. Amen.`);
   }
+
+  // Add prayer-specific content if provided
+  if (checkInData.prayer && checkInData.prayer.trim()) {
+    const userPrayer = checkInData.prayer.trim();
+    baseDevotional.context += ` I hear your prayer: "${userPrayer.length > 100 ? userPrayer.substring(0, 100) + '...' : userPrayer}" Know that I am listening and responding to your heart.`;
+    baseDevotional.prayer = `Lord, I join with this prayer: "${userPrayer.length > 50 ? userPrayer.substring(0, 50) + '...' : userPrayer}" ${baseDevotional.prayer?.replace('Lord, ', '') || 'Amen.'}`;
+  }
   
   const result = {
     title: baseDevotional.title || 'God Meets You Today',
@@ -683,6 +706,309 @@ export async function checkNetworkConnectivity(): Promise<boolean> {
     appLog('[AI API] Network connectivity check failed:', error);
     return false;
   }
+}
+
+// Create AI response to journal reflection
+export async function createJournalResponse(
+  journalData: JournalReflectionData,
+  idToken: string
+): Promise<JournalResponseData> {
+  try {
+    appLog('[AI API] Creating journal response for:', {
+      mood: journalData.mood,
+      prayerLength: journalData.prayer.length
+    });
+
+    // Check network connectivity first
+    const isConnected = await checkNetworkConnectivity();
+    appLog('[AI API] Network connectivity check:', isConnected);
+    
+    if (!isConnected) {
+      appLog('[AI API] No network connectivity, using fallback journal response');
+      return createJournalFallbackResponse(journalData);
+    }
+
+    // Get user onboarding data from user store
+    const { useUserStore } = require('../stores/userStore');
+    const { useLanguageStore } = require('../stores/languageStore');
+    
+    const userStore = useUserStore.getState();
+    const languageStore = useLanguageStore.getState();
+    
+    // Extract user onboarding information
+    const userName = userStore.getDisplayName() || 'Friend';
+    const userAge = userStore.getAgeRange() || '';
+    const userDenomination = userStore.getDenomination() || '';
+    const userBibleFamiliarity = userStore.getExperienceLevel() || 'new';
+    const userLanguage = languageStore.language || 'en';
+    
+    appLog('[AI API] User context for journal response:', {
+      name: userName,
+      age: userAge,
+      denomination: userDenomination,
+      bibleFamiliarity: userBibleFamiliarity,
+      language: userLanguage
+    });
+
+    // Create an AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      appLog('[AI API] Request timeout after 30 seconds');
+      controller.abort();
+    }, 30000); // 30 second timeout
+
+    try {
+      appLog('[AI API] Making fetch request to API...');
+      
+      // Build user context for the prompt
+      let userContext = '';
+      if (userName && userName !== 'Anonymous User') {
+        userContext += ` Their name is ${userName}.`;
+      }
+      if (userAge) {
+        userContext += ` They are in the ${userAge} age range.`;
+      }
+      if (userDenomination) {
+        userContext += ` They identify as ${userDenomination}.`;
+      }
+      if (userBibleFamiliarity) {
+        const familiarityDescription = userBibleFamiliarity === 'new' ? 'new to the Bible' : 
+                                     userBibleFamiliarity === 'growing' ? 'growing in Bible knowledge' : 
+                                     userBibleFamiliarity === 'mature' ? 'mature in Bible knowledge' : 
+                                     'familiar with the Bible';
+        userContext += ` They are ${familiarityDescription}.`;
+      }
+      if (userLanguage && userLanguage !== 'en') {
+        const languageNames: Record<string, string> = {
+          'es': 'Spanish',
+          'fr': 'French',
+          'de': 'German',
+          'pt': 'Portuguese',
+          'nl': 'Dutch'
+        };
+        const languageName = languageNames[userLanguage] || userLanguage;
+        userContext += ` They primarily speak ${languageName}.`;
+      }
+
+      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-4.1-mini', {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          "messages": [
+            {
+              "role": "system",
+              "content": `You are a compassionate Christian spiritual advisor responding to someone's prayer and request. The person is feeling ${journalData.mood.toLowerCase()} and has shared this prayer with you: "${journalData.prayer}".${userContext}
+
+Respond as if God is speaking through you with compassion, wisdom, and biblical truth. Your response should:
+1. Acknowledge their feelings and prayer with empathy
+2. Offer biblical comfort, guidance, or encouragement specific to their request
+3. Include a relevant Bible verse that speaks to their situation
+4. Be warm, personal, and pastorally sensitive
+
+Please respond with a JSON object containing exactly these fields:
+- "response": A compassionate, biblical response (3-4 sentences) that directly addresses their prayer and emotional state
+- "verse": The actual Bible verse text (not the reference, but the full verse text)
+- "bibleReference": The Bible reference (e.g., "Philippians 4:13" or "Matthew 11:28")
+
+Make sure your response feels personal and directly relevant to their specific prayer and mood. Consider their denomination and Bible familiarity when choosing language and theological depth.`
+            },
+            {
+              "role": "user",
+              "content": `Please respond to this prayer from someone who is feeling ${journalData.mood.toLowerCase()}: "${journalData.prayer}"`
+            }
+          ]
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      appLog('[AI API] Fetch request completed');
+
+      appLog('[AI API] Response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[AI API] HTTP error:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText: errorText || 'No error details available'
+        });
+        
+        // If it's a 500 error, try to return a fallback instead of throwing
+        if (response.status === 500) {
+          appLog('[AI API] Server error (500) detected, using fallback journal response');
+          return createJournalFallbackResponse(journalData);
+        }
+        
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data: AIResponse = await response.json();
+      appLog('[AI API] Response received:', {
+        hasRole: !!data?.role,
+        hasContent: !!data?.content,
+        contentLength: data?.content?.length
+      });
+
+      // Validate response structure
+      if (!data || !data.role || typeof data.content !== 'string') {
+        console.error('Invalid AI response structure:', data);
+        throw new Error('Invalid AI response format');
+      }
+
+      // Parse the JSON response from AI
+      let journalResponseData: JournalResponseData;
+      try {
+        // Clean up the content - remove any potential whitespace or special characters
+        const cleanContent = data.content.trim();
+        
+        // Check if it looks like JSON
+        if (cleanContent && cleanContent.startsWith('{') && cleanContent.endsWith('}')) {
+          // Try to parse the JSON
+          journalResponseData = JSON.parse(cleanContent);
+          appLog('[AI API] Successfully parsed journal response JSON');
+        } else {
+          // Try to extract JSON from the content in case it's wrapped in other text
+          const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            journalResponseData = JSON.parse(jsonMatch[0]);
+            appLog('[AI API] Successfully extracted and parsed JSON from response');
+          } else {
+            throw new Error('AI response is not in valid JSON format');
+          }
+        }
+      } catch (parseError) {
+        console.error('[AI API] Failed to parse AI response as JSON. Parse error:', parseError);
+        console.error('[AI API] Raw content that failed to parse:', data.content);
+        // Fallback: use the raw content as response
+        journalResponseData = {
+          response: data.content,
+          verse: 'The Lord is near to all who call on him, to all who call on him in truth.',
+          bibleReference: 'Psalm 145:18'
+        };
+      }
+
+      // Validate the parsed data
+      if (!journalResponseData.response) {
+        throw new Error('AI response missing required response field');
+      }
+
+      appLog('[AI API] Journal response created successfully:', {
+        responseLength: journalResponseData.response.length,
+        hasVerse: !!journalResponseData.verse,
+        hasBibleReference: !!journalResponseData.bibleReference
+      });
+
+      return journalResponseData;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      console.error('[AI API] Fetch error:', fetchError);
+      throw fetchError;
+    }
+  } catch (error) {
+    console.error('[AI API] Error creating journal response:', error);
+    
+    // Check if it's a network error, timeout, or other network-related issue
+    if (error instanceof TypeError && error.message.includes('Network error')) {
+      appLog('[AI API] Network error detected, using fallback journal response');
+      return createJournalFallbackResponse(journalData);
+    } else if (error instanceof Error && error.name === 'AbortError') {
+      appLog('[AI API] Request timeout detected, using fallback journal response');
+      return createJournalFallbackResponse(journalData);
+    } else if (error instanceof Error && error.message.includes('fetch')) {
+      appLog('[AI API] Fetch error detected, using fallback journal response');
+      return createJournalFallbackResponse(journalData);
+    }
+    
+    throw error;
+  }
+}
+
+// Fallback journal response creation when API is unavailable
+function createJournalFallbackResponse(journalData: JournalReflectionData): JournalResponseData {
+  appLog('[AI API] Creating fallback journal response for:', journalData);
+  
+  // Create mood-specific responses
+  const moodResponses: Record<string, Partial<JournalResponseData>> = {
+    'Great': {
+      response: 'I hear the joy in your heart, and it brings Me great delight. Your gratitude and excitement are a beautiful offering. Continue to walk in this joy, sharing it with others and remembering that all good gifts come from above.',
+      verse: 'Every good gift and every perfect gift is from above, coming down from the Father of lights, with whom there is no variation or shadow due to change.',
+      bibleReference: 'James 1:17'
+    },
+    'good': {
+      response: 'I see your heart seeking Me, and I am pleased. In this good place you find yourself, remember to give thanks and to be a light to those around you. Your contentment is a testimony to My faithfulness.',
+      verse: 'Give thanks in all circumstances; for this is the will of God in Christ Jesus for you.',
+      bibleReference: '1 Thessalonians 5:18'
+    },
+    'meh': {
+      response: 'Even in the ordinary moments, I am with you. Your honest heart touches Me, and I want you to know that I see you in the mundane. Trust that I am working even when you cannot feel it.',
+      verse: 'And we know that for those who love God all things work together for good, for those who are called according to his purpose.',
+      bibleReference: 'Romans 8:28'
+    },
+    'meb': {
+      response: 'Even in the ordinary moments, I am with you. Your honest heart touches Me, and I want you to know that I see you in the mundane. Trust that I am working even when you cannot feel it.',
+      verse: 'And we know that for those who love God all things work together for good, for those who are called according to his purpose.',
+      bibleReference: 'Romans 8:28'
+    },
+    'bad': {
+      response: 'My heart aches with yours in this difficult time. You are not alone in your struggles - I am closer to you now than ever. Let Me carry your burdens and give you the peace that surpasses understanding.',
+      verse: 'Cast all your anxieties on him, because he cares for you.',
+      bibleReference: '1 Peter 5:7'
+    },
+    'veryBad': {
+      response: 'In your deepest pain, I am holding you close. Your tears are precious to Me, and I have not forgotten you. Even in this darkness, My love for you remains unchanging. Trust that this season will pass.',
+      verse: 'Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me; your rod and your staff, they comfort me.',
+      bibleReference: 'Psalm 23:4'
+    },
+    'angry': {
+      response: 'I understand your anger and frustration. Bring these feelings to Me without shame - I can handle your honest emotions. Let Me transform this energy into something that brings healing and justice.',
+      verse: 'Be angry and do not sin; do not let the sun go down on your anger.',
+      bibleReference: 'Ephesians 4:26'
+    }
+  };
+
+  // Get the base response for the mood
+  const moodKey = journalData.mood.toLowerCase();
+  const baseResponse = moodResponses[journalData.mood] || 
+                      moodResponses[moodKey] || 
+                      {
+                        response: 'Thank you for sharing your heart with Me. I hear every word of your prayer and I am with you in this moment. Trust that I am working all things together for your good.',
+                        verse: 'The Lord is near to all who call on him, to all who call on him in truth.',
+                        bibleReference: 'Psalm 145:18'
+                      };
+
+  // Customize the response based on specific prayer content if possible
+  const prayerLower = journalData.prayer.toLowerCase();
+  
+  if (prayerLower.includes('healing') || prayerLower.includes('health')) {
+    baseResponse.verse = 'But he was pierced for our transgressions; he was crushed for our iniquities; upon him was the chastisement that brought us peace, and with his wounds we are healed.';
+    baseResponse.bibleReference = 'Isaiah 53:5';
+  } else if (prayerLower.includes('strength') || prayerLower.includes('help')) {
+    baseResponse.verse = 'I can do all things through him who strengthens me.';
+    baseResponse.bibleReference = 'Philippians 4:13';
+  } else if (prayerLower.includes('peace') || prayerLower.includes('anxiety') || prayerLower.includes('worry')) {
+    baseResponse.verse = 'Peace I leave with you; my peace I give to you. Not as the world gives do I give to you. Let not your hearts be troubled, neither let them be afraid.';
+    baseResponse.bibleReference = 'John 14:27';
+  } else if (prayerLower.includes('forgiveness') || prayerLower.includes('forgive')) {
+    baseResponse.verse = 'If we confess our sins, he is faithful and just to forgive us our sins and to cleanse us from all unrighteousness.';
+    baseResponse.bibleReference = '1 John 1:9';
+  } else if (prayerLower.includes('guidance') || prayerLower.includes('direction') || prayerLower.includes('wisdom')) {
+    baseResponse.verse = 'Trust in the Lord with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths.';
+    baseResponse.bibleReference = 'Proverbs 3:5-6';
+  }
+
+  const result: JournalResponseData = {
+    response: baseResponse.response || 'Thank you for sharing your heart with Me. I hear you and I am with you.',
+    verse: baseResponse.verse || 'The Lord is near to all who call on him, to all who call on him in truth.',
+    bibleReference: baseResponse.bibleReference || 'Psalm 145:18'
+  };
+  
+  appLog('[AI API] Fallback journal response result:', result);
+  
+  return result;
 }
 
 // Default export for Expo Router compatibility

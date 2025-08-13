@@ -5,7 +5,7 @@ import BottomSheet, {
 } from '@gorhom/bottom-sheet';
 import { Ionicons, FontAwesome6 } from '@expo/vector-icons';
 import React, { useCallback, useRef, useImperativeHandle, useState, useEffect } from 'react';
-import { View, Text, Pressable, Animated, Dimensions, Image, ScrollView } from 'react-native';
+import { View, Text, Pressable, Animated, Dimensions, Image, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Rive, { RiveRef } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
@@ -15,7 +15,7 @@ import { hapticMedium } from '~/utils/haptics';
 import { appLog, RPH } from '~/app/helper/helper';
 import analytics from '~/utils/analytics';
 import { useCheckInStore } from '~/app/stores/checkInStore';
-import { createDevotionalFromCheckIn } from '~/app/api/ai';
+import { createDevotionalFromCheckIn, createJournalResponse, JournalResponseData } from '~/app/api/ai';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { useRouter } from 'expo-router';
 import { Devotional, devotionalBackgrounds } from '~/app/models/Devotional';
@@ -43,7 +43,7 @@ interface GlobalCheckInProps {
   onNavigate?: (path: string) => void; // Optional navigation callback
 }
 
-type CheckInScreen = 'mood' | 'heart' | 'focus' | 'struggle' | 'success' | 'custom';
+type CheckInScreen = 'mood' | 'heart' | 'focus' | 'struggle' | 'success' | 'custom' | 'journal';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -163,6 +163,11 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   const [pressedFocus, setPressedFocus] = useState<string | null>(null);
   const [pressedStruggle, setPressedStruggle] = useState<string | null>(null);
 
+  // State for journal
+  const [journalText, setJournalText] = useState('');
+  const [journalResponse, setJournalResponse] = useState<JournalResponseData | null>(null);
+  const [isLoadingJournalResponse, setIsLoadingJournalResponse] = useState(false);
+
   // State for gem reward
   const [gemsAwarded, setGemsAwarded] = useState(false);
   const [showRewardAnimation, setShowRewardAnimation] = useState(false);
@@ -216,6 +221,11 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           title: 'Generate a custom devotional from your check-in?',
           subtitle: '',
         };
+      case 'journal':
+        return {
+          title: 'What do you want to ask God for?',
+          subtitle: '',
+        };
       default:
         return { title: 'Daily Check‑In', subtitle: '' };
     }
@@ -228,7 +238,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
     focus: 2,
     struggle: 3,
     success: 4,
-    custom: 5
+    custom: 5,
+    journal: 6
   };
 
   // Log when component mounts/unmounts
@@ -281,6 +292,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         mood: currentMood,
         focus: currentFocus,
         struggles: currentStruggle,
+        prayer: journalText.trim() || undefined, // Only include if not empty
+        journalResponse: journalResponse ? {
+          response: journalResponse.response,
+          verse: journalResponse.verse,
+          bibleReference: journalResponse.bibleReference
+        } : undefined,
         timeStamp: Timestamp.now()
       };
 
@@ -325,20 +342,23 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   const handleDismiss = useCallback(() => {
     bottomSheetRef.current?.close();
     setIsSheetVisible(false);
-    // Reset everything after sheet closes
-    setTimeout(() => {
-      setCurrentScreen('mood');
-      clearCurrentSession(); // Clear store session
-      setIsGenerating(false); // Reset generating state
-      setCheckInSaved(false); // Reset saved flag
-      setGemsAwarded(false); // Reset gems awarded flag
-      setShowRewardAnimation(false); // Reset reward animation
-      // Reset scroll position
-      scrollViewRef.current?.scrollTo({ x: 0, animated: false });
-      rewardCardOpacity.setValue(0);
-      rewardCardScale.setValue(0.8);
-      gemTextOpacity.setValue(0);
-    }, 300);
+            // Reset everything after sheet closes
+        setTimeout(() => {
+          setCurrentScreen('mood');
+          clearCurrentSession(); // Clear store session
+          setIsGenerating(false); // Reset generating state
+          setCheckInSaved(false); // Reset saved flag
+          setGemsAwarded(false); // Reset gems awarded flag
+          setShowRewardAnimation(false); // Reset reward animation
+          setJournalText(''); // Reset journal text
+          setJournalResponse(null); // Reset journal response
+          setIsLoadingJournalResponse(false); // Reset loading state
+          // Reset scroll position
+          scrollViewRef.current?.scrollTo({ x: 0, animated: false });
+          rewardCardOpacity.setValue(0);
+          rewardCardScale.setValue(0.8);
+          gemTextOpacity.setValue(0);
+        }, 300);
     hapticMedium();
   }, [clearCurrentSession, rewardCardOpacity, rewardCardScale, gemTextOpacity]);
 
@@ -403,6 +423,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         mood: currentMood,
         focus: currentFocus,
         struggle: currentStruggle,
+        prayer: journalText.trim() || undefined,
       };
 
       appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
@@ -466,6 +487,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         setCheckInSaved(false);
         setGemsAwarded(false);
         setShowRewardAnimation(false);
+        setJournalText('');
         scrollViewRef.current?.scrollTo({ x: 0, animated: false });
         rewardCardOpacity.setValue(0);
         rewardCardScale.setValue(0.8);
@@ -544,6 +566,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         mood: currentMood,
         focus: currentFocus,
         struggle: currentStruggle,
+        prayer: journalText.trim() || undefined,
       };
 
       appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
@@ -619,6 +642,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           setCheckInSaved(false);
           setGemsAwarded(false);
           setShowRewardAnimation(false);
+          setJournalText('');
           scrollViewRef.current?.scrollTo({ x: 0, animated: false });
           rewardCardOpacity.setValue(0);
           rewardCardScale.setValue(0.8);
@@ -677,6 +701,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         setIsGenerating(false);
         setGemsAwarded(false);
         setShowRewardAnimation(false);
+        setJournalText('');
         scrollViewRef.current?.scrollTo({ x: 0, animated: false });
         rewardCardOpacity.setValue(0);
         rewardCardScale.setValue(0.8);
@@ -729,6 +754,46 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
     }),
     [clearCurrentSession, isSheetVisible, isClosing]
   );
+
+  // Handle getting journal response from AI
+  const handleGetJournalResponse = useCallback(async () => {
+    if (!journalText.trim()) return;
+
+    const currentUser = auth().currentUser;
+    if (!currentUser) {
+      console.error('No authenticated user available for journal response');
+      return;
+    }
+
+    setIsLoadingJournalResponse(true);
+
+    try {
+      const idToken = await currentUser.getIdToken();
+      
+      const journalData = {
+        mood: currentMood,
+        prayer: journalText.trim()
+      };
+
+      appLog('[GlobalCheckIn] Getting journal response for:', journalData);
+
+      const response = await createJournalResponse(journalData, idToken);
+      setJournalResponse(response);
+
+      analytics.logEvent('checkin_journal_response_received', {
+        mood: currentMood,
+        prayerLength: journalText.length,
+        responseLength: response.response.length,
+      });
+
+      appLog('[GlobalCheckIn] Journal response received successfully');
+    } catch (error) {
+      console.error('[GlobalCheckIn] Error getting journal response:', error);
+      // Don't show error to user, just log it
+    } finally {
+      setIsLoadingJournalResponse(false);
+    }
+  }, [journalText, currentMood]);
 
   // Mood options with corresponding lamb images
   const moods = [
@@ -1036,11 +1101,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
                   } else if (option.id === 'focus') {
                     animateToScreen('focus');
                   } else if (option.id === 'ask-god') {
-                    // Skip to success for prayer requests
-                    setTimeout(async () => {
-                      await handleCompleteCheckIn();
-                      animateToScreen('success');
-                    }, 100);
+                    // Navigate to journal screen for prayer requests
+                    animateToScreen('journal');
                   }
                 }, 100);
               }}
@@ -1428,7 +1490,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           const selectedStruggle = getSelectedStruggle();
           if (selectedStruggle && currentStruggle !== '') {
             return (
-              <View className="flex-row items-center mb-1">
+              <View className="flex-row items-center mb-3">
                 <View className={`w-8 h-8 rounded-lg ${selectedStruggle.bgColor} items-center justify-center`}>
                   {selectedStruggle.iconType === 'fontawesome6' ? (
                     <FontAwesome6 name={selectedStruggle.icon as any} size={14} color={selectedStruggle.color} />
@@ -1439,6 +1501,27 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
                 <View className="ml-3 flex-1">
                   <Text className="font-din text-sm text-gray-500">Struggling with</Text>
                   <Text className="font-din text-base text-textPrimary">{selectedStruggle.label}</Text>
+                </View>
+              </View>
+            );
+          }
+          return null;
+        })()}
+        
+        {/* Prayer Snippet */}
+        {(() => {
+          if (journalText.trim()) {
+            const snippet = journalText.length > 60 
+              ? journalText.substring(0, 60) + '...' 
+              : journalText;
+            return (
+              <View className="flex-row items-start mb-1">
+                <View className="w-8 h-8 rounded-lg bg-lightPurple items-center justify-center">
+                  <FontAwesome6 name="hands-praying" size={14} color="#7B2BFF" />
+                </View>
+                <View className="ml-3 flex-1">
+                  <Text className="font-din text-sm text-gray-500">Prayer{journalResponse ? ' (with response)' : ''}</Text>
+                  <Text className="font-din text-base text-textPrimary italic">"{snippet} - {journalResponse?.response.slice(0, 30)}..."</Text>
                 </View>
               </View>
             );
@@ -1532,6 +1615,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
                   setIsGenerating(false);
                   setGemsAwarded(false);
                   setShowRewardAnimation(false);
+                  setJournalText('');
                   scrollViewRef.current?.scrollTo({ x: 0, animated: false });
                   rewardCardOpacity.setValue(0);
                   rewardCardScale.setValue(0.8);
@@ -1570,6 +1654,138 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         </Pressable>
       </View>
     </View>
+  );
+
+  const renderJournalScreen = () => (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{
+        width: screenWidth,
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingTop: RPH(2),
+      }}>
+      
+      {/* Prayer hands icon */}
+      <View className="w-full items-center justify-center mb-6" style={{ marginTop: RPH(1) }}>
+        <View className="bg-lightPurple rounded-full p-6 border-[2.5px] border-accentGold">
+          <FontAwesome6 name="hands-praying" size={RPH(4)} color="#7B2BFF" />
+        </View>
+      </View>
+      
+      {/* Journal input area */}
+      {
+        !journalResponse && (
+          <View className="flex-1 mx-4 mb-6">
+        <View className="bg-white rounded-[22px] border-[2.5px] border-accentGold p-4 shadow-buttonShadow flex-1">      
+          <TextInput
+            className="flex-1 font-din text-base text-textPrimary"
+            placeholder="Dear God, I would like to ask for..."
+            placeholderTextColor="#B89B4C"
+            multiline
+            textAlignVertical="top"
+            value={journalText}
+            onChangeText={setJournalText}
+            style={{
+              fontSize: 16,
+              lineHeight: 24,
+              padding: 0,
+            }}
+            autoFocus
+          />
+        </View>
+      </View>
+        )
+      }
+      
+      {/* Bottom actions */}
+      <View className="w-full space-y-3 px-4 pb-8">
+        {/* Show AI response if available */}
+        {journalResponse && (
+          <View className="bg-white rounded-[22px] border-[2.5px] border-accentGold p-4 shadow-buttonShadow mb-4">
+            <View className="flex-row items-center mb-3">
+              <View className="bg-lightPurple rounded-full p-2">
+                <FontAwesome6 name="heart" size={16} color="#7B2BFF" />
+              </View>
+              <Text className="font-feather text-lg text-textPrimary ml-3">God's Response</Text>
+            </View>
+            
+            <Text className="font-din text-lg text-textPrimary mb-4 leading-6">
+              {journalResponse.response}
+            </Text>
+            
+            {journalResponse.verse && (
+              <View className="bg-surfaceCream rounded-xl p-3">
+                <Text className="italic text-sm text-description mb-1">
+                  "{journalResponse.verse}"
+                </Text>
+                {journalResponse.bibleReference && (
+                  <Text className="font-din text-xs text-description font-bold">
+                    - {journalResponse.bibleReference}
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
+        )}
+
+        {!journalResponse ? (
+          <PrimaryButton
+            title={isLoadingJournalResponse ? "Getting Response..." : "Get God's Response"}
+            onPress={async () => {
+              if (journalText.trim() && !isLoadingJournalResponse) {
+                hapticMedium();
+                await handleGetJournalResponse();
+              }
+            }}
+            style="w-full mb-3"
+            buttonType="gold"
+            disabled={!journalText.trim() || isLoadingJournalResponse}
+            hasGemsInside={false}
+          />
+        ) : (
+          <PrimaryButton
+            title="Save Prayer & Response"
+            onPress={async () => {
+              hapticMedium();
+              analytics.logEvent('checkin_prayer_saved', {
+                mood: currentMood,
+                prayerLength: journalText.length,
+                responseLength: journalResponse?.response.length,
+                hasResponse: !!journalResponse,
+              });
+              
+              // Complete check-in and save prayer
+              setTimeout(async () => {
+                await handleCompleteCheckIn();
+                animateToScreen('success');
+              }, 100);
+            }}
+            style="w-full mb-3"
+            buttonType="gold"
+            hasGemsInside={false}
+          />
+        )}
+
+        {/* <Pressable
+          onPress={() => {
+            hapticMedium();
+            analytics.logEvent('checkin_prayer_skipped', {
+              mood: currentMood,
+            });
+            setTimeout(async () => {
+              await handleCompleteCheckIn();
+              animateToScreen('success');
+            }, 100);
+          }}
+          onPressIn={() => playButtonSound?.()}
+          className="border-accentGold/40 absolute bottom-0 left-0 right-0">
+          <Text className="font-din text-base text-gray-600 text-center underline">
+            Skip Prayer
+          </Text>
+        </Pressable> */}
+      </View>
+    </KeyboardAvoidingView>
   );
 
   return (
@@ -1611,6 +1827,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
             setCheckInSaved(false);
             setGemsAwarded(false);
             setShowRewardAnimation(false);
+            setJournalText('');
             scrollViewRef.current?.scrollTo({ x: 0, animated: false });
             rewardCardOpacity.setValue(0);
             rewardCardScale.setValue(0.8);
@@ -1673,6 +1890,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
             {renderStruggleScreen()}
             {renderSuccessScreen()}
             {renderCustomScreen()}
+            {renderJournalScreen()}
           </ScrollView>
 
           {/* Bottom padding to avoid safe-area overlap */}
