@@ -1318,7 +1318,7 @@ export default function HomeScreen() {
                               className="flex-row items-center "
                               style={{
                                 marginTop: responsiveHeight(
-                                  prayerCompleted && reflectionCompleted ? -4 : 0
+                                  prayerCompleted && reflectionCompleted ? -4 : -4
                                 ),
                                 marginBottom: responsiveHeight(2),
                               }}>

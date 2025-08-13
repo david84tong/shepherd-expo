@@ -172,7 +172,16 @@ const BreatheText: React.FC<{ breathingProgress: Reanimated.SharedValue<number> 
 };
 
 // Breathing Animation Component
-const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reanimated.SharedValue<number>; hapticsEnabled: boolean; guidedPrayerEnabled: boolean; currentDevotional: any }> = ({ isActive, breathingProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional }) => {
+const BreathingAnimation: React.FC<{ 
+  isActive: boolean; 
+  breathingProgress: Reanimated.SharedValue<number>; 
+  hapticsEnabled: boolean; 
+  guidedPrayerEnabled: boolean; 
+  currentDevotional: any;
+  showGuidedPrayer: boolean;
+  onPressIn: () => void;
+  onPressOut: () => void;
+}> = ({ isActive, breathingProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional, showGuidedPrayer, onPressIn, onPressOut }) => {
   const circleSize = SCREEN_WIDTH * 0.4; // 50% of screen width
 
   // Haptic feedback function - stabilize with empty dependency array
@@ -295,19 +304,33 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
         }}
       >
         {guidedPrayerEnabled ? (
-          <TypingText
-            text={i18n.t('dear_god_default_prayer')}
-            className="text-yellow-700 font-feather text-xl text-center"
-            baseTextStyle={{
-              color: '#B45309',
-              fontSize: 20,
-              fontFamily: 'Nunito-Black',
-              textAlign: 'center',
-              lineHeight: 28,
-            }}
-            speed={50}
-            skipAnimation={false}
-          />
+          showGuidedPrayer ? (
+            <TypingText
+              text={i18n.t('dear_god_default_prayer')}
+              className="text-yellow-700 font-feather text-xl text-center"
+              baseTextStyle={{
+                color: '#B45309',
+                fontSize: 20,
+                fontFamily: 'Nunito-Black',
+                textAlign: 'center',
+                lineHeight: 28,
+              }}
+              speed={50}
+              skipAnimation={false}
+            />
+          ) : (
+            <Text
+              style={{
+                color: '#B45309',
+                fontSize: 20,
+                fontFamily: 'Nunito-Black',
+                textAlign: 'center',
+                lineHeight: 28,
+              }}
+            >
+              {i18n.t('press_and_hold_to_pray')}
+            </Text>
+          )
         ) : (
           <BreatheText breathingProgress={breathingProgress} />
         )}
@@ -412,8 +435,11 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
-  const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(false);
+  const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(true);
   const [buttonsEnabled, setButtonsEnabled] = useState(false);
+  const [isPressHeld, setIsPressHeld] = useState(false);
+  const [showGuidedPrayer, setShowGuidedPrayer] = useState(false);
+  const pressHoldTimer = useRef<NodeJS.Timeout | null>(null);
 
 
   // Animation values

@@ -506,6 +506,12 @@ export default Sentry.wrap(function RootLayout() {
       return;
     }
     
+    // Don't show check-in if the isUserLoggedIn state is false (component not rendered)
+    if (!isUserLoggedIn) {
+      appLog('[showCheckIn] Not showing check-in: isUserLoggedIn state is false, component not rendered');
+      return;
+    }
+    
     appLog('[showCheckIn] User authenticated:', currentUser.uid, 'Anonymous:', currentUser.isAnonymous);
     appLog('[showCheckIn] checkInRef.current exists:', !!checkInRef.current);
     appLog('[showCheckIn] isUserLoggedIn state:', isUserLoggedIn);
@@ -522,17 +528,20 @@ export default Sentry.wrap(function RootLayout() {
       }
     } else {
       console.error('[showCheckIn] checkInRef.current is null, cannot show check-in');
-      appLog('[showCheckIn] Attempting to retry in 500ms...');
+      appLog('[showCheckIn] Component may not be rendered yet. isUserLoggedIn:', isUserLoggedIn);
       
-      // Retry after a short delay
-      setTimeout(() => {
-        if (checkInRef.current) {
-          appLog('[showCheckIn] Retry successful, calling forceShow()');
-          checkInRef.current.forceShow();
-        } else {
-          console.error('[showCheckIn] Retry failed, checkInRef still null');
-        }
-      }, 500);
+      // Only retry if user is logged in (component should be rendered)
+      if (isUserLoggedIn) {
+        appLog('[showCheckIn] Attempting to retry in 500ms...');
+        setTimeout(() => {
+          if (checkInRef.current) {
+            appLog('[showCheckIn] Retry successful, calling forceShow()');
+            checkInRef.current.forceShow();
+          } else {
+            console.error('[showCheckIn] Retry failed, checkInRef still null');
+          }
+        }, 500);
+      }
     }
   };
 

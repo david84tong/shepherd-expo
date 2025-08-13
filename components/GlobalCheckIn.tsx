@@ -12,11 +12,17 @@ import {
   Animated,
   Dimensions,
   Image,
-  ScrollView,
   TextInput,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import ReanimatedAnimated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Rive, { RiveRef } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
@@ -117,7 +123,7 @@ const getResponsiveCardDimensions = () => {
 
 const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate }) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const journalInputRef = useRef<TextInput>(null);
   const [currentScreen, setCurrentScreen] = useState<CheckInScreen>('mood');
   const [isGenerating, setIsGenerating] = useState(false);
   const [checkInSaved, setCheckInSaved] = useState(false);
@@ -186,6 +192,11 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   const [gemsAwarded, setGemsAwarded] = useState(false);
   const [showRewardAnimation, setShowRewardAnimation] = useState(false);
 
+  // Animation shared values for screen transitions
+  const screenOpacity = useSharedValue(1);
+  const contentOpacity = useSharedValue(0);
+  const contentTranslateY = useSharedValue(20);
+
   // Animation values for rewards
   const rewardCardOpacity = useRef(new Animated.Value(0)).current;
   const rewardCardScale = useRef(new Animated.Value(0.8)).current;
@@ -245,16 +256,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
     }
   };
 
-  // Screen indices for scroll navigation
-  const screenIndices = {
-    mood: 0,
-    heart: 1,
-    focus: 2,
-    struggle: 3,
-    success: 4,
-    custom: 5,
-    journal: 6,
-  };
+  // Direct screen navigation - no longer using indices
 
   // Log when component mounts/unmounts
   useEffect(() => {
@@ -264,21 +266,55 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
     };
   }, []);
 
-  // Animate to screen by scrolling
-  const animateToScreen = useCallback((screen: CheckInScreen) => {
-    const targetIndex = screenIndices[screen];
-    const targetX = targetIndex * screenWidth;
+  // Auto-focus journal input when journal screen becomes active
+  useEffect(() => {
+    if (currentScreen === 'journal') {
+      // Add a small delay to ensure the screen has rendered
+      const timer = setTimeout(() => {
+        journalInputRef.current?.focus();
+      }, 400); // Wait for screen animation to complete
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentScreen]);
 
-    scrollViewRef.current?.scrollTo({
-      x: targetX,
-      animated: true,
-    });
+  // Initialize content animation when screen first loads
+  useEffect(() => {
+    // Initialize content with animation on first load
+    contentOpacity.value = withDelay(200, withTiming(1, { duration: 300 }));
+    contentTranslateY.value = withDelay(200, withSpring(0, {
+      damping: 16,
+      stiffness: 100,
+      mass: 0.8,
+    }));
+  }, []);
 
-    // Update current screen after animation
+  // Create animated styles
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+    transform: [{ translateY: contentTranslateY.value }],
+  }));
+
+  // Navigate to any screen directly with animation
+  const navigateToScreen = useCallback((screen: CheckInScreen) => {
+    appLog('[GlobalCheckIn] Navigating to screen:', screen);
+    
+    // Animate out current content
+    contentOpacity.value = withTiming(0, { duration: 150 });
+    contentTranslateY.value = withTiming(-10, { duration: 150 });
+    
+    // Change screen after fade out, then animate in new content
     setTimeout(() => {
       setCurrentScreen(screen);
-    }, 300);
-  }, []);
+      contentTranslateY.value = 20;
+      contentOpacity.value = withDelay(50, withTiming(1, { duration: 300 }));
+      contentTranslateY.value = withDelay(50, withSpring(0, {
+        damping: 16,
+        stiffness: 100,
+        mass: 0.8,
+      }));
+    }, 150);
+  }, [contentOpacity, contentTranslateY]);
 
   // Complete check-in and save to both stores
   const handleCompleteCheckIn = useCallback(async () => {
@@ -371,8 +407,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       setGemsAwarded(false); // Reset gems awarded flag
       setShowRewardAnimation(false); // Reset reward animation
       setJournalText(''); // Reset journal text
-      // Reset scroll position
-      scrollViewRef.current?.scrollTo({ x: 0, animated: false });
+      // Note: No longer using scroll position since we removed horizontal scrolling
       rewardCardOpacity.setValue(0);
       rewardCardScale.setValue(0.8);
       gemTextOpacity.setValue(0);
@@ -507,7 +542,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         setGemsAwarded(false);
         setShowRewardAnimation(false);
         setJournalText('');
-        scrollViewRef.current?.scrollTo({ x: 0, animated: false });
+        // Note: No longer using scroll position since we removed horizontal scrolling
         rewardCardOpacity.setValue(0);
         rewardCardScale.setValue(0.8);
         gemTextOpacity.setValue(0);
@@ -667,7 +702,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
             setGemsAwarded(false);
             setShowRewardAnimation(false);
             setJournalText('');
-            scrollViewRef.current?.scrollTo({ x: 0, animated: false });
+            // Note: No longer using scroll position since we removed horizontal scrolling
             rewardCardOpacity.setValue(0);
             rewardCardScale.setValue(0.8);
             gemTextOpacity.setValue(0);
@@ -733,7 +768,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         setGemsAwarded(false);
         setShowRewardAnimation(false);
         setJournalText('');
-        scrollViewRef.current?.scrollTo({ x: 0, animated: false });
+        // Note: No longer using scroll position since we removed horizontal scrolling
         rewardCardOpacity.setValue(0);
         rewardCardScale.setValue(0.8);
         gemTextOpacity.setValue(0);
@@ -1013,7 +1048,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
                 hapticMedium();
                 analytics.logEvent('checkin_mood_selected', { mood: mood.value });
                 setTimeout(() => {
-                  animateToScreen('heart');
+                  navigateToScreen('heart');
                 }, 200);
               }}
               onPressIn={() => {
@@ -1088,12 +1123,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
                 // Navigate based on selection
                 setTimeout(() => {
                   if (option.id === 'struggling') {
-                    animateToScreen('struggle');
+                    navigateToScreen('struggle');
                   } else if (option.id === 'focus') {
-                    animateToScreen('focus');
+                    navigateToScreen('focus');
                   } else if (option.id === 'ask-god') {
                     // Navigate to journal screen for prayer requests
-                    animateToScreen('journal');
+                    navigateToScreen('journal');
                   }
                 }, 100);
               }}
@@ -1128,12 +1163,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
               analytics.logEvent('checkin_heart_skipped');
               setTimeout(async () => {
                 await handleCompleteCheckIn();
-                animateToScreen('success');
+                navigateToScreen('success');
               }, 100);
             }}
             onPressIn={() => playButtonSound?.()}>
-            <Text className="font-din text-base text-gray-600 text-center underline">
-              Skip this step
+            <Text className="font-din text-xl text-gray-600 text-center underline">
+              Go Home
             </Text>
           </Pressable>
         </View>
@@ -1165,7 +1200,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
                   analytics.logEvent('checkin_focus_selected', { focus: focus.value });
                   setTimeout(async () => {
                     await handleCompleteCheckIn();
-                    animateToScreen('success');
+                    navigateToScreen('success');
                   }, 100);
                 }}
                 onPressIn={() => {
@@ -1189,24 +1224,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
             ))}
           </View>
         </View>
-        <View className="w-full px-4 pb-4">
-          <Pressable
-            onPress={() => {
-              skipFocus();
-              hapticMedium();
-              analytics.logEvent('checkin_focus_skipped');
-              setTimeout(async () => {
-                await handleCompleteCheckIn();
-                animateToScreen('success');
-              }, 100);
-            }}
-            onPressIn={() => playButtonSound?.()}
-            className="border-accentGold/40">
-            <Text className="font-din text-base text-gray-600 text-center underline">
-              {i18n.t('checkin_skip_this_step')}
-            </Text>
-          </Pressable>
-        </View>
+  
       </View>
     );
   };
@@ -1235,7 +1253,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
                   analytics.logEvent('checkin_struggle_selected', { struggle: struggle.value });
                   setTimeout(async () => {
                     await handleCompleteCheckIn();
-                    animateToScreen('success');
+                    navigateToScreen('success');
                   }, 100);
                 }}
                 onPressIn={() => {
@@ -1272,7 +1290,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
               analytics.logEvent('checkin_struggle_skipped');
               setTimeout(async () => {
                 await handleCompleteCheckIn();
-                animateToScreen('success');
+                navigateToScreen('success');
               }, 100);
             }}
             onPressIn={() => playButtonSound?.()}
@@ -1344,7 +1362,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       {showRewardAnimation && riveAssets ? (
         <View
           className="w-full items-center justify-center"
-          style={{ height: RPH(20), marginTop: RPH(-4) }}>
+          style={{ height: RPH(24), marginTop: RPH(4) }}>
           {IS_ANDROID ? (
             <Rive
               ref={riveRef}
@@ -1400,7 +1418,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           onPress={() => {
             hapticMedium();
             setTimeout(() => {
-              animateToScreen('custom');
+              navigateToScreen('custom');
             }, 100);
           }}
           style="w-full"
@@ -1423,7 +1441,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       <View className="w-full items-center justify-center mb-6" style={{ marginTop: RPH(1) }}>
         <Image
           source={require('../assets/images/customDevotionalIcon.png')}
-          style={{ width: RPH(12), height: RPH(12) }}
+          style={{ width: Platform.OS === 'ios' ? RPH(16) : RPH(12), height: Platform.OS === 'ios' ? RPH(16) : RPH(12) }}
           resizeMode="contain"
         />
       </View>
@@ -1627,7 +1645,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
                   setGemsAwarded(false);
                   setShowRewardAnimation(false);
                   setJournalText('');
-                  scrollViewRef.current?.scrollTo({ x: 0, animated: false });
+                  // Note: No longer using scroll position since we removed horizontal scrolling
                   rewardCardOpacity.setValue(0);
                   rewardCardScale.setValue(0.8);
                   gemTextOpacity.setValue(0);
@@ -1659,80 +1677,73 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           }}
           onPressIn={() => playButtonSound?.()}
           className=" border-accentGold/40">
-          <Text className="font-din text-base text-gray-600 text-center underline">Go Home</Text>
+          <Text className="font-din text-xl text-gray-600 text-center underline mt-4">Go Home</Text>
         </Pressable>
       </View>
     </View>
   );
 
   const renderJournalScreen = () => (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <View
       style={{
         width: screenWidth,
         flex: 1,
         paddingHorizontal: 20,
         paddingTop: RPH(2),
       }}>
-      {/* Prayer hands icon */}
-     {
-      IS_IOS && (
-        <View className="w-full items-center justify-center mb-6" style={{ marginTop: RPH(1) }}>
-        <View className="bg-lightPurple rounded-full p-6 border-[2.5px] border-accentGold">
-          <FontAwesome6 name="hands-praying" size={RPH(4)} color="#7B2BFF" />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}>
+        
+        {/* Journal input area */}
+        <View className="mx-4 mb-6" style={{ height: RPH(25) }}>
+          <View className="bg-white rounded-[22px] border-[2.5px] border-accentGold p-4 shadow-buttonShadow h-full">
+            <TextInput
+              ref={journalInputRef}
+              className="h-full font-din text-base text-textPrimary"
+              placeholder=""
+              placeholderTextColor="#B89B4C"
+              multiline
+              textAlignVertical="top"
+              value={journalText}
+              onChangeText={(text) => {
+                setJournalText(text);
+                setReflection(text);
+              }}
+              style={{
+                fontSize: 16,
+                lineHeight: 24,
+                padding: 0,
+              }}
+            />
+          </View>
         </View>
-      </View>
-      )
-     }
 
-      {/* Journal input area */}
-      <View className="flex-1 mx-4 mb-6">
-        <View className="bg-white rounded-[22px] border-[2.5px] border-accentGold p-4 shadow-buttonShadow flex-1">
-          <TextInput
-            className="flex-1 font-din text-base text-textPrimary"
-            placeholder="Dear God, I would like to ask for..."
-            placeholderTextColor="#B89B4C"
-            multiline
-            textAlignVertical="top"
-            value={journalText}
-            onChangeText={(text) => {
-              setJournalText(text);
-              setReflection(text);
+        {/* Bottom actions */}
+        <View className="w-full space-y-3 px-4 pb-8">
+          <PrimaryButton
+            title="Save Reflection"
+            onPress={async () => {
+              hapticMedium();
+              analytics.logEvent('checkin_reflection_saved', {
+                mood: currentMood,
+                reflectionLength: journalText.length,
+              });
+
+              // Complete check-in and save reflection
+              setTimeout(async () => {
+                await handleCompleteCheckIn();
+                navigateToScreen('success');
+              }, 100);
             }}
-            style={{
-              fontSize: 16,
-              lineHeight: 24,
-              padding: 0,
-            }}
-            autoFocus
+            style="w-full mb-3"
+            buttonType="gold"
+            disabled={!journalText.trim()}
+            hasGemsInside={false}
           />
         </View>
-      </View>
-
-      {/* Bottom actions */}
-      <View className="w-full space-y-3 px-4 pb-8">
-        <PrimaryButton
-          title="Save Reflection"
-          onPress={async () => {
-            hapticMedium();
-            analytics.logEvent('checkin_reflection_saved', {
-              mood: currentMood,
-              reflectionLength: journalText.length,
-            });
-
-            // Complete check-in and save reflection
-            setTimeout(async () => {
-              await handleCompleteCheckIn();
-              animateToScreen('success');
-            }, 100);
-          }}
-          style="w-full mb-3"
-          buttonType="gold"
-          disabled={!journalText.trim()}
-          hasGemsInside={false}
-        />
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 
   return (
@@ -1775,7 +1786,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
             setGemsAwarded(false);
             setShowRewardAnimation(false);
             setJournalText('');
-            scrollViewRef.current?.scrollTo({ x: 0, animated: false });
+            // Note: No longer using scroll position since we removed horizontal scrolling
             rewardCardOpacity.setValue(0);
             rewardCardScale.setValue(0.8);
             gemTextOpacity.setValue(0);
@@ -1790,12 +1801,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           overflow: 'hidden',
         }}>
         <View style={{ flex: 1 }}>
-          {/* Top Right Close Button */}
+          {/* Top Left Close/Back Button */}
           <Pressable
             style={{
               position: 'absolute',
               top: 0,
-              right: 16,
+              left: 16,
               width: 36,
               height: 36,
               backgroundColor: 'rgba(0, 0, 0, 0.1)',
@@ -1804,8 +1815,19 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
               justifyContent: 'center',
               zIndex: 10,
             }}
-            onPress={handleDismiss}>
-            <FontAwesome6 name="xmark" size={18} color="#634012" />
+            onPress={() => {
+              // If on focus, struggle, or journal screen, go back to previous screen
+              if (currentScreen === 'focus' || currentScreen === 'struggle' || currentScreen === 'journal') {
+                navigateToScreen('heart');
+              } else {
+                handleDismiss();
+              }
+            }}>
+            {currentScreen === 'focus' || currentScreen === 'struggle' || currentScreen === 'journal' ? (
+              <Ionicons name="arrow-back" size={18} color="#634012" />
+            ) : (
+              <FontAwesome6 name="xmark" size={18} color="#634012" />
+            )}
           </Pressable>
 
           {/* Header */}
@@ -1821,23 +1843,16 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
             ) : null}
           </View>
 
-          {/* Horizontal scrolling screens container */}
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={false} // Disable manual scrolling, only programmatic
-            style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 1 }}>
-            {renderMoodScreen()}
-            {renderHeartScreen()}
-            {renderFocusScreen()}
-            {renderStruggleScreen()}
-            {renderSuccessScreen()}
-            {renderCustomScreen()}
-            {renderJournalScreen()}
-          </ScrollView>
+          {/* Current screen content */}
+          <ReanimatedAnimated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
+            {currentScreen === 'mood' && renderMoodScreen()}
+            {currentScreen === 'heart' && renderHeartScreen()}
+            {currentScreen === 'focus' && renderFocusScreen()}
+            {currentScreen === 'struggle' && renderStruggleScreen()}
+            {currentScreen === 'success' && renderSuccessScreen()}
+            {currentScreen === 'custom' && renderCustomScreen()}
+            {currentScreen === 'journal' && renderJournalScreen()}
+          </ReanimatedAnimated.View>
 
           {/* Bottom padding to avoid safe-area overlap */}
           <View style={{ height: Math.max(20, insets.bottom + 8) }} />
