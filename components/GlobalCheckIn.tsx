@@ -232,12 +232,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         };
       case 'custom':
         return {
-          title: 'Generate a custom devotional from your check-in?',
+          title: i18n.t('checkin_custom_devotional_title'),
           subtitle: '',
         };
       case 'journal':
         return {
-          title: 'Hi my child ! , I\'m here to help you',
+          title: i18n.t('checkin_journal_title'),
           subtitle: '',
         };
       default:

@@ -575,5 +575,9 @@
     "onboarding_streak_commitment_title": "Choisissez votre objectif d'étude biblique",
     "hearts_lost": "Cœurs Perdus !",
     "lamb_lost_hearts_after_days": "Oh non ! {{lambName}} a perdu {{penalty}} cœurs après {{daysMissed}} jour(s) d'absence.",
-    "lets_bounce_back": "Reprenons-nous"
+    "lets_bounce_back": "Reprenons-nous",
+    "attention": "Attention",
+    "something_happened": "Quelque chose est arrivé",
+    "checkin_journal_title": "Bonjour mon enfant !, Je suis ici pour t'aider",
+    "checkin_custom_devotional_title": "Générer un dévotionnel personnalisé à partir de votre check-in ?"
 }

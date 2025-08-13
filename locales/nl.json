@@ -537,7 +537,7 @@
     "checkin_generating_personalized": "Je persoonlijke devotie genereren...",
     "checkin_start_worldwide_devotional": "Start wereldwijde devotie (Gratis)",
     "checkin_mood_great": "Geweldig",
-    "checkin_mood_good": "Goed",
+    "checkin_mood_good": "Goed",    
     "checkin_mood_meh": "Meh",
     "checkin_mood_bad": "Slecht",
     "checkin_mood_very_bad": "Zeer Slecht",
@@ -574,5 +574,9 @@
     "onboarding_streak_commitment_title": "Selecteer je bijbelstudie doel",
     "hearts_lost": "Harten Verloren!",
     "lamb_lost_hearts_after_days": "Oh nee! {{lambName}} verloor {{penalty}} harten na {{daysMissed}} dag(en) weg.",
-    "lets_bounce_back": "Laten we terugveren"
+    "lets_bounce_back": "Laten we terugveren",
+    "attention": "Attentie",
+    "something_happened": "Er is iets gebeurd",
+    "checkin_journal_title": "Hallo mijn kind! Ik ben hier om je te helpen",    
+    "checkin_custom_devotional_title": "Een aangepaste devotie genereren van je check-in?"
 }

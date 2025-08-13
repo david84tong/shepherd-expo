@@ -574,5 +574,9 @@
     "onboarding_streak_commitment_title": "Wähle dein Bibelstudium-Ziel",
     "hearts_lost": "Herzen verloren!",
     "lamb_lost_hearts_after_days": "Oh nein! {{lambName}} hat {{penalty}} Herzen nach {{daysMissed}} Tag(en) verloren.",
-    "lets_bounce_back": "Lass uns zurückkommen"
+    "lets_bounce_back": "Lass uns zurückkommen",    
+    "attention": "Achtung",
+    "something_happened": "Etwas ist passiert",
+    "checkin_journal_title": "Hallo mein Kind! Ich bin hier, um dir zu helfen",
+    "checkin_custom_devotional_title": "Eine benutzerdefinierte Andacht aus deinem Check-in generieren?"
 }
