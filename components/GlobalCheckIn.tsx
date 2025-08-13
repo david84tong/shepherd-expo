@@ -5,7 +5,18 @@ import BottomSheet, {
 } from '@gorhom/bottom-sheet';
 import { Ionicons, FontAwesome6 } from '@expo/vector-icons';
 import React, { useCallback, useRef, useImperativeHandle, useState, useEffect } from 'react';
-import { View, Text, Pressable, Animated, Dimensions, Image, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  Animated,
+  Dimensions,
+  Image,
+  ScrollView,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Rive, { RiveRef } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
@@ -15,7 +26,7 @@ import { hapticMedium } from '~/utils/haptics';
 import { appLog, RPH } from '~/app/helper/helper';
 import analytics from '~/utils/analytics';
 import { useCheckInStore } from '~/app/stores/checkInStore';
-import { createDevotionalFromCheckIn, createJournalResponse, JournalResponseData } from '~/app/api/ai';
+import { createDevotionalFromCheckIn } from '~/app/api/ai';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { useRouter } from 'expo-router';
 import { Devotional, devotionalBackgrounds } from '~/app/models/Devotional';
@@ -71,7 +82,7 @@ const getResponsiveCardDimensions = () => {
   const containerPadding = 40;
   const availableWidth = screenWidth - containerPadding;
   const focusItemsPerRow = getFocusItemsPerRow();
-  
+
   // For iPhone 16 Pro Max (440px), ensure 3 cards fit by using a more aggressive calculation
   let focusBoxWidth;
   if (screenWidth >= 440) {
@@ -89,18 +100,18 @@ const getResponsiveCardDimensions = () => {
     mood: {
       width: RPH(12),
       height: RPH(14),
-      itemsPerRow: getMoodItemsPerRow()
+      itemsPerRow: getMoodItemsPerRow(),
     },
     focus: {
       width: focusBoxWidth,
       height: RPH(11),
-      itemsPerRow: focusItemsPerRow
+      itemsPerRow: focusItemsPerRow,
     },
     gap,
     isSmallDevice,
     isMediumDevice,
     isLargeDevice,
-    isTablet
+    isTablet,
   };
 };
 
@@ -123,23 +134,26 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   const { playChestOpeningSound, playButtonSound } = useSoundStore();
 
   // Safe navigation helper
-  const navigateToPath = useCallback((path: string) => {
-    if (onNavigate) {
-      // Use callback if provided
-      onNavigate(path);
-      return true;
-    } else {
-      // Fallback to router with error handling
-      try {
-        router.push(path as any);
+  const navigateToPath = useCallback(
+    (path: string) => {
+      if (onNavigate) {
+        // Use callback if provided
+        onNavigate(path);
         return true;
-      } catch (error) {
-        console.warn('Navigation error - closing modal instead:', error);
-        bottomSheetRef.current?.close();
-        return false;
+      } else {
+        // Fallback to router with error handling
+        try {
+          router.push(path as any);
+          return true;
+        } catch (error) {
+          console.warn('Navigation error - closing modal instead:', error);
+          bottomSheetRef.current?.close();
+          return false;
+        }
       }
-    }
-  }, [onNavigate, router]);
+    },
+    [onNavigate, router]
+  );
 
   // Use CheckIn store
   const {
@@ -156,7 +170,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   } = useCheckInStore();
 
   // Local state for UI feedback (removed selected states since we only use tap animations now)
-  
+
   // State for tracking pressed buttons (for tap animations)
   const [pressedMood, setPressedMood] = useState<string | null>(null);
   const [pressedHeart, setPressedHeart] = useState<string | null>(null);
@@ -165,8 +179,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
 
   // State for journal
   const [journalText, setJournalText] = useState('');
-  const [journalResponse, setJournalResponse] = useState<JournalResponseData | null>(null);
-  const [isLoadingJournalResponse, setIsLoadingJournalResponse] = useState(false);
 
   // State for gem reward
   const [gemsAwarded, setGemsAwarded] = useState(false);
@@ -194,22 +206,22 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       case 'mood':
         return {
           title: i18n.t('checkin_how_are_you_feeling'),
-          subtitle: "",
+          subtitle: '',
         };
       case 'heart':
         return {
           title: "What's on your heart today?",
-          subtitle: "",
+          subtitle: '',
         };
       case 'focus':
         return {
           title: i18n.t('checkin_what_focus_on'),
-          subtitle: "",
+          subtitle: '',
         };
       case 'struggle':
         return {
           title: i18n.t('checkin_what_struggling_with'),
-          subtitle: "",
+          subtitle: '',
         };
       case 'success':
         return {
@@ -239,7 +251,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
     struggle: 3,
     success: 4,
     custom: 5,
-    journal: 6
+    journal: 6,
   };
 
   // Log when component mounts/unmounts
@@ -254,12 +266,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   const animateToScreen = useCallback((screen: CheckInScreen) => {
     const targetIndex = screenIndices[screen];
     const targetX = targetIndex * screenWidth;
-    
+
     scrollViewRef.current?.scrollTo({
       x: targetX,
       animated: true,
     });
-    
+
     // Update current screen after animation
     setTimeout(() => {
       setCurrentScreen(screen);
@@ -292,13 +304,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         mood: currentMood,
         focus: currentFocus,
         struggles: currentStruggle,
-        prayer: journalText.trim() || undefined, // Only include if not empty
-        journalResponse: journalResponse ? {
-          response: journalResponse.response,
-          verse: journalResponse.verse,
-          bibleReference: journalResponse.bibleReference
-        } : undefined,
-        timeStamp: Timestamp.now()
+        reflection: journalText.trim() || '', // Only include if not empty
+        timeStamp: Timestamp.now(),
       };
 
       // Create unique key using timestamp to prevent overrides
@@ -335,72 +342,80 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
 
     // Verify the check-in was saved
     const verifyCheckIn = useCheckInStore.getState().getTodaysCheckIn();
-    appLog('[GlobalCheckIn] Verification - Today\'s check-in after save:', verifyCheckIn);
-  }, [currentMood, currentFocus, currentStruggle, completeCheckIn, addCheckIn, checkInSaved, gemsAwarded, getGens, setGens]);
+    appLog("[GlobalCheckIn] Verification - Today's check-in after save:", verifyCheckIn);
+  }, [
+    currentMood,
+    currentFocus,
+    currentStruggle,
+    completeCheckIn,
+    addCheckIn,
+    checkInSaved,
+    gemsAwarded,
+    getGens,
+    setGens,
+  ]);
 
   // Handle dismiss
   const handleDismiss = useCallback(() => {
     bottomSheetRef.current?.close();
     setIsSheetVisible(false);
-            // Reset everything after sheet closes
-        setTimeout(() => {
-          setCurrentScreen('mood');
-          clearCurrentSession(); // Clear store session
-          setIsGenerating(false); // Reset generating state
-          setCheckInSaved(false); // Reset saved flag
-          setGemsAwarded(false); // Reset gems awarded flag
-          setShowRewardAnimation(false); // Reset reward animation
-          setJournalText(''); // Reset journal text
-          setJournalResponse(null); // Reset journal response
-          setIsLoadingJournalResponse(false); // Reset loading state
-          // Reset scroll position
-          scrollViewRef.current?.scrollTo({ x: 0, animated: false });
-          rewardCardOpacity.setValue(0);
-          rewardCardScale.setValue(0.8);
-          gemTextOpacity.setValue(0);
-        }, 300);
+    // Reset everything after sheet closes
+    setTimeout(() => {
+      setCurrentScreen('mood');
+      clearCurrentSession(); // Clear store session
+      setIsGenerating(false); // Reset generating state
+      setCheckInSaved(false); // Reset saved flag
+      setGemsAwarded(false); // Reset gems awarded flag
+      setShowRewardAnimation(false); // Reset reward animation
+      setJournalText(''); // Reset journal text
+      // Reset scroll position
+      scrollViewRef.current?.scrollTo({ x: 0, animated: false });
+      rewardCardOpacity.setValue(0);
+      rewardCardScale.setValue(0.8);
+      gemTextOpacity.setValue(0);
+    }, 300);
     hapticMedium();
   }, [clearCurrentSession, rewardCardOpacity, rewardCardScale, gemTextOpacity]);
 
   // Handle custom devotional access based on availability
   const handleCustomDevotionalPurchase = useCallback(async () => {
     appLog('[GlobalCheckIn] handleCustomDevotionalPurchase started');
-    
+
     const { customDevotionalsLeft, setCustomDevotionalsLeft } = useUserStore.getState();
-    
+
     // Check if user has any custom devotionals left
     if (customDevotionalsLeft > 0) {
       appLog('[GlobalCheckIn] User has custom devotionals left, generating');
-      
+
       // Deduct the custom devotional immediately
       setCustomDevotionalsLeft(customDevotionalsLeft - 1);
-      
+
       // Set navigation flag to prevent check-in from showing during navigation
       const { setIsNavigating } = useCheckInStore.getState();
       setIsNavigating(true);
-      
+
       // Close the sheet immediately without showing success screen
       bottomSheetRef.current?.close();
-      
+
       // Navigate immediately to loading screen without delay
       setTimeout(() => {
         navigateToPath('/devotionalLoading');
       }, 100);
-      
+
       // Generate the custom devotional in the background
       setTimeout(() => {
         handleGenerateCustomDevotionalInBackground();
       }, 200);
-      
+
       return;
     }
-    
+
     // User has no custom devotionals left, show free trial paywall
     appLog('[GlobalCheckIn] User has no custom devotionals left, showing free trial');
     analytics.logEvent('checkin_custom_devotional_no_devotionals_left', {
       customDevotionalsLeft,
     });
-    
+
     // Show free trial paywall
     await safelyPresentPaywall('free');
   }, []);
@@ -423,7 +438,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         mood: currentMood,
         focus: currentFocus,
         struggle: currentStruggle,
-        prayer: journalText.trim() || undefined,
+        reflection: journalText.trim() || undefined,
       };
 
       appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
@@ -468,6 +483,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         mood: currentMood,
         focus: currentFocus,
         struggle: currentStruggle,
+        reflection: journalText.trim(),
       });
 
       // Set check-in flag
@@ -512,157 +528,164 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   ]);
 
   // Handle custom devotional generation
-  const handleGenerateCustomDevotional = useCallback(async (skipProCheck = false) => {
-    appLog('[GlobalCheckIn] handleGenerateCustomDevotional started, skipProCheck:', skipProCheck);
-    const currentUser = auth().currentUser;
-    if (!currentUser) {
-      console.error('No authenticated user available for generating devotional');
-      return;
-    }
-
-    // Only check pro status if not skipping (i.e., not called after gem purchase)
-    if (!skipProCheck) {
-      // Check if user is pro - check both subscription store and user store
-      const { isProMember, forceRefreshProStatus } = useSubscriptionStore.getState();
-      const userProStatus = useUserStore.getState().proStatus;
-      
-      // First force refresh pro status to get latest from all sources
-      await forceRefreshProStatus();
-      
-      // Re-check pro status after refresh
-      const subscriptionStore = useSubscriptionStore.getState();
-      const userStore = useUserStore.getState();
-      const isProAfterRefresh = subscriptionStore.isProMember;
-      const userProStatusAfterRefresh = userStore.proStatus;
-      const userIsPro = userStore.getUser()?.isPro;
-      
-      // Check all possible pro status sources
-      const isPro = isProAfterRefresh || userProStatusAfterRefresh === 'pro' || userIsPro === true;
-      
-      appLog('[GlobalCheckIn] Pro status check:', {
-        isProMember,
-        isProAfterRefresh,
-        userProStatus,
-        userProStatusAfterRefresh,
-        userIsPro,
-        finalIsPro: isPro
-      });
-      
-      if (!isPro && customDevotionalsLeft <= 0) {
-        appLog('[GlobalCheckIn] User is not pro and no custom devotionals left, presenting free trial paywall');
-        await safelyPresentPaywall('free');
+  const handleGenerateCustomDevotional = useCallback(
+    async (skipProCheck = false) => {
+      appLog('[GlobalCheckIn] handleGenerateCustomDevotional started, skipProCheck:', skipProCheck);
+      const currentUser = auth().currentUser;
+      if (!currentUser) {
+        console.error('No authenticated user available for generating devotional');
         return;
       }
-    }
 
-    setIsGenerating(true);
+      // Only check pro status if not skipping (i.e., not called after gem purchase)
+      if (!skipProCheck) {
+        // Check if user is pro - check both subscription store and user store
+        const { isProMember, forceRefreshProStatus } = useSubscriptionStore.getState();
+        const userProStatus = useUserStore.getState().proStatus;
 
-    try {
-      // Get the user's ID token
-      const idToken = await currentUser.getIdToken();
+        // First force refresh pro status to get latest from all sources
+        await forceRefreshProStatus();
 
-      // Create the check-in data
-      const checkInData = {
-        mood: currentMood,
-        focus: currentFocus,
-        struggle: currentStruggle,
-        prayer: journalText.trim() || undefined,
-      };
+        // Re-check pro status after refresh
+        const subscriptionStore = useSubscriptionStore.getState();
+        const userStore = useUserStore.getState();
+        const isProAfterRefresh = subscriptionStore.isProMember;
+        const userProStatusAfterRefresh = userStore.proStatus;
+        const userIsPro = userStore.getUser()?.isPro;
 
-      appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
+        // Check all possible pro status sources
+        const isPro =
+          isProAfterRefresh || userProStatusAfterRefresh === 'pro' || userIsPro === true;
 
-      // Generate the custom devotional
-      const customDevotional = await createDevotionalFromCheckIn(checkInData, idToken);
+        appLog('[GlobalCheckIn] Pro status check:', {
+          isProMember,
+          isProAfterRefresh,
+          userProStatus,
+          userProStatusAfterRefresh,
+          userIsPro,
+          finalIsPro: isPro,
+        });
 
-      // Get random background using the proper backgrounds from model
-      const backgroundUrls = Object.values(devotionalBackgrounds);
-      const randomBackground = backgroundUrls[Math.floor(Math.random() * backgroundUrls.length)];
+        if (!isPro && customDevotionalsLeft <= 0) {
+          appLog(
+            '[GlobalCheckIn] User is not pro and no custom devotionals left, presenting free trial paywall'
+          );
+          await safelyPresentPaywall('free');
+          return;
+        }
+      }
 
-      // Save the custom devotional to the store
-      const fullDevotional: Devotional = {
-        id: 'custom-checkin',
-        title: customDevotional.title,
-        content: customDevotional.context, // Using context as content
-        createdAt: new Date().toISOString(),
-        context: customDevotional.context,
-        bibleReference: customDevotional.bibleReference || '',
-        prayer: customDevotional.prayer,
-        reflectionPrompt: customDevotional.reflectionPrompt,
-        likes: 0,
-        shares: 0,
-        completed: 0,
-        date: dayjs().format('YYYY-MM-DD') || new Date().toISOString().split('T')[0],
-        imageURL: randomBackground,
-        verse: customDevotional.verse || '',
-      };
+      setIsGenerating(true);
 
-      appLog('GlobalCheckIn: Full devotional object:', fullDevotional);
-      appLog('GlobalCheckIn: Verse field:', fullDevotional.verse);
-      appLog('GlobalCheckIn: BibleReference field:', fullDevotional.bibleReference);
+      try {
+        // Get the user's ID token
+        const idToken = await currentUser.getIdToken();
 
-      // Use the new function to save to Firestore
-      await createCustomDevotionalFromCheckIn(fullDevotional);
+        // Create the check-in data
+        const checkInData = {
+          mood: currentMood,
+          focus: currentFocus,
+          struggle: currentStruggle,
+          reflection: journalText.trim() || undefined,
+        };
 
-      // Complete the check-in and save to both stores
-      appLog('[GlobalCheckIn] About to save check-in...');
-      await handleCompleteCheckIn();
-      appLog('[GlobalCheckIn] Check-in saved successfully');
+        appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
 
-      // Log analytics
-      analytics.logEvent('checkin_custom_devotional_generated', {
-        mood: currentMood,
-        focus: currentFocus,
-        struggle: currentStruggle,
-      });
+        // Generate the custom devotional
+        const customDevotional = await createDevotionalFromCheckIn(checkInData, idToken);
 
-      // Set check-in flag
-      setIsFromCheckIn(true);
+        // Get random background using the proper backgrounds from model
+        const backgroundUrls = Object.values(devotionalBackgrounds);
+        const randomBackground = backgroundUrls[Math.floor(Math.random() * backgroundUrls.length)];
 
-      // Set navigation flag to prevent check-in from showing during navigation
-      const { setIsNavigating } = useCheckInStore.getState();
-      setIsNavigating(true);
+        // Save the custom devotional to the store
+        const fullDevotional: Devotional = {
+          id: 'custom-checkin',
+          title: customDevotional.title,
+          content: customDevotional.context, // Using context as content
+          createdAt: new Date().toISOString(),
+          context: customDevotional.context,
+          bibleReference: customDevotional.bibleReference || '',
+          prayer: customDevotional.prayer,
+          reflectionPrompt: customDevotional.reflectionPrompt,
+          likes: 0,
+          shares: 0,
+          completed: 0,
+          date: dayjs().format('YYYY-MM-DD') || new Date().toISOString().split('T')[0],
+          imageURL: randomBackground,
+          verse: customDevotional.verse || '',
+        };
 
-      // Close the sheet directly without handleDismiss to prevent reappearing
-      bottomSheetRef.current?.close();
+        appLog('GlobalCheckIn: Full devotional object:', fullDevotional);
+        appLog('GlobalCheckIn: Verse field:', fullDevotional.verse);
+        appLog('GlobalCheckIn: BibleReference field:', fullDevotional.bibleReference);
 
-      // Navigate after sheet closes
-      setTimeout(() => {
-        navigateToPath('/devotionalLoading');
+        // Use the new function to save to Firestore
+        await createCustomDevotionalFromCheckIn(fullDevotional);
 
-        // Reset navigation flag after a delay
+        // Complete the check-in and save to both stores
+        appLog('[GlobalCheckIn] About to save check-in...');
+        await handleCompleteCheckIn();
+        appLog('[GlobalCheckIn] Check-in saved successfully');
+
+        // Log analytics
+        analytics.logEvent('checkin_custom_devotional_generated', {
+          mood: currentMood,
+          focus: currentFocus,
+          struggle: currentStruggle,
+          reflection: journalText.trim(),
+        });
+
+        // Set check-in flag
+        setIsFromCheckIn(true);
+
+        // Set navigation flag to prevent check-in from showing during navigation
+        const { setIsNavigating } = useCheckInStore.getState();
+        setIsNavigating(true);
+
+        // Close the sheet directly without handleDismiss to prevent reappearing
+        bottomSheetRef.current?.close();
+
+        // Navigate after sheet closes
         setTimeout(() => {
-          setIsNavigating(false);
-        }, 3000); // 3 seconds should be enough for navigation to complete
+          navigateToPath('/devotionalLoading');
 
-        // Reset state after navigation
-        setTimeout(() => {
-          setCurrentScreen('mood');
-          clearCurrentSession();
-          setIsGenerating(false);
-          setCheckInSaved(false);
-          setGemsAwarded(false);
-          setShowRewardAnimation(false);
-          setJournalText('');
-          scrollViewRef.current?.scrollTo({ x: 0, animated: false });
-          rewardCardOpacity.setValue(0);
-          rewardCardScale.setValue(0.8);
-          gemTextOpacity.setValue(0);
-        }, 100);
-      }, 300);
-    } catch (error) {
-      appLog('Error generating custom devotional:', error);
-      setIsGenerating(false);
-      // You might want to show an error toast here
-    }
-  }, [
-    currentMood,
-    currentFocus,
-    currentStruggle,
-    setCustomDevotional,
-    handleCompleteCheckIn,
-    router,
-    customDevotionalsLeft,
-  ]);
+          // Reset navigation flag after a delay
+          setTimeout(() => {
+            setIsNavigating(false);
+          }, 3000); // 3 seconds should be enough for navigation to complete
+
+          // Reset state after navigation
+          setTimeout(() => {
+            setCurrentScreen('mood');
+            clearCurrentSession();
+            setIsGenerating(false);
+            setCheckInSaved(false);
+            setGemsAwarded(false);
+            setShowRewardAnimation(false);
+            setJournalText('');
+            scrollViewRef.current?.scrollTo({ x: 0, animated: false });
+            rewardCardOpacity.setValue(0);
+            rewardCardScale.setValue(0.8);
+            gemTextOpacity.setValue(0);
+          }, 100);
+        }, 300);
+      } catch (error) {
+        appLog('Error generating custom devotional:', error);
+        setIsGenerating(false);
+        // You might want to show an error toast here
+      }
+    },
+    [
+      currentMood,
+      currentFocus,
+      currentStruggle,
+      setCustomDevotional,
+      handleCompleteCheckIn,
+      router,
+      customDevotionalsLeft,
+    ]
+  );
 
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
@@ -677,8 +700,13 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
     checkInRef,
     () => ({
       expand: () => {
-        appLog('[GlobalCheckIn] expand() called, isSheetVisible:', isSheetVisible, 'isClosing:', isClosing);
-        
+        appLog(
+          '[GlobalCheckIn] expand() called, isSheetVisible:',
+          isSheetVisible,
+          'isClosing:',
+          isClosing
+        );
+
         // If currently closing, wait and retry
         if (isClosing) {
           appLog('[GlobalCheckIn] Sheet is closing, waiting to expand...');
@@ -690,10 +718,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           }
           return;
         }
-        
+
         // Reset expand attempts
         expandAttempts.current = 0;
-        
+
         // Reset to initial state when opening
         setCurrentScreen('mood');
         clearCurrentSession();
@@ -726,15 +754,15 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       },
       forceShow: () => {
         appLog('[GlobalCheckIn] forceShow() called');
-        
+
         // Reset expand attempts
         expandAttempts.current = 0;
-        
+
         // First, force close if visible
         if (isSheetVisible) {
           setIsClosing(true);
           bottomSheetRef.current?.close();
-          
+
           // Wait for close to complete, then expand
           setTimeout(() => {
             setIsClosing(false);
@@ -745,55 +773,15 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           setIsClosing(false);
           checkInRef.current?.expand();
         }
-        
+
         // Log analytics
         analytics.logEvent('checkin_sheet_force_shown', {
-          trigger: 'custom_devotional'
+          trigger: 'custom_devotional',
         });
       },
     }),
     [clearCurrentSession, isSheetVisible, isClosing]
   );
-
-  // Handle getting journal response from AI
-  const handleGetJournalResponse = useCallback(async () => {
-    if (!journalText.trim()) return;
-
-    const currentUser = auth().currentUser;
-    if (!currentUser) {
-      console.error('No authenticated user available for journal response');
-      return;
-    }
-
-    setIsLoadingJournalResponse(true);
-
-    try {
-      const idToken = await currentUser.getIdToken();
-      
-      const journalData = {
-        mood: currentMood,
-        prayer: journalText.trim()
-      };
-
-      appLog('[GlobalCheckIn] Getting journal response for:', journalData);
-
-      const response = await createJournalResponse(journalData, idToken);
-      setJournalResponse(response);
-
-      analytics.logEvent('checkin_journal_response_received', {
-        mood: currentMood,
-        prayerLength: journalText.length,
-        responseLength: response.response.length,
-      });
-
-      appLog('[GlobalCheckIn] Journal response received successfully');
-    } catch (error) {
-      console.error('[GlobalCheckIn] Error getting journal response:', error);
-      // Don't show error to user, just log it
-    } finally {
-      setIsLoadingJournalResponse(false);
-    }
-  }, [journalText, currentMood]);
 
   // Mood options with corresponding lamb images
   const moods = [
@@ -990,20 +978,20 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
 
   // Helper functions to get selected check-in items
   const getSelectedMood = () => {
-    return moods.find(mood => mood.value === currentMood);
+    return moods.find((mood) => mood.value === currentMood);
   };
 
   const getSelectedFocus = () => {
-    return focusAreas.find(focus => focus.value === currentFocus);
+    return focusAreas.find((focus) => focus.value === currentFocus);
   };
 
   const getSelectedStruggle = () => {
-    return struggleAreas.find(struggle => struggle.value === currentStruggle);
+    return struggleAreas.find((struggle) => struggle.value === currentStruggle);
   };
 
   const renderMoodScreen = () => {
     const imageSize = RPH(8); // Responsive image size
-    
+
     return (
       <View
         style={{
@@ -1055,7 +1043,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         color: '#E64132',
         bgColor: 'bg-lightRed',
         title: "I'm struggling with...",
-        description: "I need help working through challenges",
+        description: 'I need help working through challenges',
       },
       {
         id: 'focus',
@@ -1063,8 +1051,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         iconType: 'ionicon',
         color: '#24CA17',
         bgColor: 'bg-lightGreen',
-        title: "I want to focus on...",
-        description: "I want to grow in a specific area",
+        title: 'I want to focus on...',
+        description: 'I want to grow in a specific area',
       },
       {
         id: 'ask-god',
@@ -1072,8 +1060,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         iconType: 'fontawesome6',
         color: '#7B2BFF',
         bgColor: 'bg-lightPurple',
-        title: "I want to ask God for...",
-        description: "I have a prayer request or need",
+        title: 'I want to ask God for...',
+        description: 'I have a prayer request or need',
       },
     ];
 
@@ -1093,7 +1081,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
               onPress={() => {
                 hapticMedium();
                 analytics.logEvent('checkin_heart_selected', { heart: option.id });
-                
+
                 // Navigate based on selection
                 setTimeout(() => {
                   if (option.id === 'struggling') {
@@ -1123,9 +1111,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
               </View>
               <View className="ml-4 flex-1">
                 <Text className="font-feather text-lg text-textPrimary">{option.title}</Text>
-                <Text className="font-din text-md text-description mt-1">
-                  {option.description}
-                </Text>
+                <Text className="font-din text-md text-description mt-1">{option.description}</Text>
               </View>
             </Pressable>
           ))}
@@ -1155,7 +1141,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   const renderFocusScreen = () => {
     const dimensions = getResponsiveCardDimensions();
     const iconSize = dimensions.isSmallDevice ? RPH(2) : RPH(3);
-    
+
     return (
       <View
         style={{
@@ -1174,8 +1160,9 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
                   setFocus(focus.value);
                   hapticMedium();
                   analytics.logEvent('checkin_focus_selected', { focus: focus.value });
-                  setTimeout(() => {
-                    animateToScreen('struggle');
+                  setTimeout(async () => {
+                    await handleCompleteCheckIn();
+                    animateToScreen('success');
                   }, 100);
                 }}
                 onPressIn={() => {
@@ -1205,8 +1192,9 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
               skipFocus();
               hapticMedium();
               analytics.logEvent('checkin_focus_skipped');
-              setTimeout(() => {
-                animateToScreen('struggle');
+              setTimeout(async () => {
+                await handleCompleteCheckIn();
+                animateToScreen('success');
               }, 100);
             }}
             onPressIn={() => playButtonSound?.()}
@@ -1223,7 +1211,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   const renderStruggleScreen = () => {
     const dimensions = getResponsiveCardDimensions();
     const iconSize = dimensions.isSmallDevice ? RPH(2) : RPH(3);
-    
+
     return (
       <View
         style={{
@@ -1268,7 +1256,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
                 <Text className="font-din text-sm text-textPrimary text-center mb-1">
                   {struggle.label}
                 </Text>
-              
               </Pressable>
             ))}
           </View>
@@ -1313,7 +1300,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           riveRef.current.play();
         }
       }, 50);
-      
+
       // Animate reward card with bounce effect
       setTimeout(() => {
         Animated.parallel([
@@ -1351,9 +1338,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         paddingHorizontal: 20,
         paddingTop: RPH(2),
       }}>
-  
       {showRewardAnimation && riveAssets ? (
-        <View className="w-full items-center justify-center" style={{ height: RPH(20), marginTop: RPH(-4) }}>
+        <View
+          className="w-full items-center justify-center"
+          style={{ height: RPH(20), marginTop: RPH(-4) }}>
           {IS_ANDROID ? (
             <Rive
               ref={riveRef}
@@ -1365,7 +1353,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           ) : (
             <Rive
               ref={riveRef}
-              resourceName='success_lamb'
+              resourceName="success_lamb"
               artboardName="chest"
               autoplay={true}
               style={{ width: '160%', height: '160%' }}
@@ -1395,12 +1383,14 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
               className="flex-row items-center justify-center"
               style={{ opacity: gemTextOpacity }}>
               <Image source={gemIcon} style={{ width: RPH(3), height: RPH(3) }} className="mr-3" />
-              <Text className="font-din text-textPrimary text-xl font-bold">{i18n.t('checkin_gems_awarded')}</Text>
+              <Text className="font-din text-textPrimary text-xl font-bold">
+                {i18n.t('checkin_gems_awarded')}
+              </Text>
             </Animated.View>
           </Animated.View>
         </View>
       )}
-   
+
       <View className="w-full flex-1 justify-end px-4 pb-8">
         <PrimaryButton
           title="Continue"
@@ -1414,7 +1404,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           buttonType="gold"
           hasGemsInside={false}
         />
-
       </View>
     </View>
   );
@@ -1427,22 +1416,21 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         paddingHorizontal: 20,
         paddingTop: RPH(2),
       }}>
-      
       {/* Custom devotional icon */}
       <View className="w-full items-center justify-center mb-6" style={{ marginTop: RPH(1) }}>
-        <Image 
-          source={require('../assets/images/customDevotionalIcon.png')} 
-          style={{ width: RPH(12), height: RPH(12) }} 
+        <Image
+          source={require('../assets/images/customDevotionalIcon.png')}
+          style={{ width: RPH(12), height: RPH(12) }}
           resizeMode="contain"
         />
       </View>
-      
+
       {/* Check-in Summary Card */}
       <View className="mx-4 mb-6 bg-white rounded-[22px] border-[2.5px] border-accentGold p-4 shadow-buttonShadow">
         <Text className="font-feather text-lg text-textPrimary text-center mb-3">
           Your Check-in Summary
         </Text>
-        
+
         {/* Mood */}
         {(() => {
           const selectedMood = getSelectedMood();
@@ -1461,18 +1449,27 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           }
           return null;
         })()}
-        
+
         {/* Focus */}
         {(() => {
           const selectedFocus = getSelectedFocus();
           if (selectedFocus && currentFocus !== '') {
             return (
               <View className="flex-row items-center mb-3">
-                <View className={`w-8 h-8 rounded-lg ${selectedFocus.bgColor} items-center justify-center`}>
+                <View
+                  className={`w-8 h-8 rounded-lg ${selectedFocus.bgColor} items-center justify-center`}>
                   {selectedFocus.iconType === 'fontawesome6' ? (
-                    <FontAwesome6 name={selectedFocus.icon as any} size={14} color={selectedFocus.color} />
+                    <FontAwesome6
+                      name={selectedFocus.icon as any}
+                      size={14}
+                      color={selectedFocus.color}
+                    />
                   ) : (
-                    <Ionicons name={selectedFocus.icon as any} size={14} color={selectedFocus.color} />
+                    <Ionicons
+                      name={selectedFocus.icon as any}
+                      size={14}
+                      color={selectedFocus.color}
+                    />
                   )}
                 </View>
                 <View className="ml-3 flex-1">
@@ -1484,44 +1481,54 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           }
           return null;
         })()}
-        
+
         {/* Struggle */}
         {(() => {
           const selectedStruggle = getSelectedStruggle();
           if (selectedStruggle && currentStruggle !== '') {
             return (
               <View className="flex-row items-center mb-3">
-                <View className={`w-8 h-8 rounded-lg ${selectedStruggle.bgColor} items-center justify-center`}>
+                <View
+                  className={`w-8 h-8 rounded-lg ${selectedStruggle.bgColor} items-center justify-center`}>
                   {selectedStruggle.iconType === 'fontawesome6' ? (
-                    <FontAwesome6 name={selectedStruggle.icon as any} size={14} color={selectedStruggle.color} />
+                    <FontAwesome6
+                      name={selectedStruggle.icon as any}
+                      size={14}
+                      color={selectedStruggle.color}
+                    />
                   ) : (
-                    <Ionicons name={selectedStruggle.icon as any} size={14} color={selectedStruggle.color} />
+                    <Ionicons
+                      name={selectedStruggle.icon as any}
+                      size={14}
+                      color={selectedStruggle.color}
+                    />
                   )}
                 </View>
                 <View className="ml-3 flex-1">
                   <Text className="font-din text-sm text-gray-500">Struggling with</Text>
-                  <Text className="font-din text-base text-textPrimary">{selectedStruggle.label}</Text>
+                  <Text className="font-din text-base text-textPrimary">
+                    {selectedStruggle.label}
+                  </Text>
                 </View>
               </View>
             );
           }
           return null;
         })()}
-        
-        {/* Prayer Snippet */}
+
+        {/* Reflection Snippet */}
         {(() => {
           if (journalText.trim()) {
-            const snippet = journalText.length > 60 
-              ? journalText.substring(0, 60) + '...' 
-              : journalText;
+            const snippet =
+              journalText.length > 50 ? journalText.substring(0, 50) + '...' : journalText;
             return (
               <View className="flex-row items-start mb-1">
                 <View className="w-8 h-8 rounded-lg bg-lightPurple items-center justify-center">
                   <FontAwesome6 name="hands-praying" size={14} color="#7B2BFF" />
                 </View>
                 <View className="ml-3 flex-1">
-                  <Text className="font-din text-sm text-gray-500">Prayer{journalResponse ? ' (with response)' : ''}</Text>
-                  <Text className="font-din text-base text-textPrimary italic">"{snippet} - {journalResponse?.response.slice(0, 30)}..."</Text>
+                  <Text className="font-din text-sm text-gray-500">Reflection</Text>
+                  <Text className="font-din text-base text-textPrimary italic">"{snippet}"</Text>
                 </View>
               </View>
             );
@@ -1529,58 +1536,58 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           return null;
         })()}
       </View>
-      
+
       <View className="w-full space-y-3 px-4 pb-8 gap-3">
-        
         <PrimaryButton
           title={
-            currentFocus !== '' || currentStruggle !== ''
+            currentFocus !== '' || currentStruggle !== '' || journalText.trim()
               ? (() => {
                   // Check if user is pro
                   const { isProMember } = useSubscriptionStore.getState();
                   const { getUser, customDevotionalsLeft } = useUserStore.getState();
                   const user = getUser();
-                  
+
                   // If user is pro, show normal text
                   if (isProMember || user?.isPro || user?.isProWithReferral) {
                     return i18n.t('checkin_generate_custom_devotional');
                   }
-                  
+
                   // If user has custom devotionals left, show normal text
                   if (customDevotionalsLeft > 0) {
                     return `Start Custom Devotional (${customDevotionalsLeft}/2)`;
                   }
-                  
+
                   // If user is not pro and has no custom devotionals left, show devotional count
                   return `Start Custom Devotional (${customDevotionalsLeft}/2)`;
                 })()
               : i18n.t('checkin_start_todays_devotional')
           }
           onPress={async () => {
-            if (currentFocus !== '' || currentStruggle !== '') {
+            if (currentFocus !== '' || currentStruggle !== '' || journalText.trim()) {
               // Check if user is pro or has custom devotionals left
               const { isProMember } = useSubscriptionStore.getState();
-              const { getUser, customDevotionalsLeft } = useUserStore.getState();
+              const { getUser, customDevotionalsLeft, setCustomDevotionalsLeft } = useUserStore.getState();
               const user = getUser();
-              
+
               // Check if user is pro
               const isPro = isProMember || user?.isPro || user?.isProWithReferral;
-              
+
               if (isPro) {
                 // Pro user - generate custom devotional directly (skip pro check)
                 appLog('[GlobalCheckIn] Pro user generating custom devotional');
                 await handleGenerateCustomDevotional(true);
                 return;
               }
-              
+
               // Non-pro user - check if they have custom devotionals left
               if (customDevotionalsLeft > 0) {
                 // User has custom devotionals left - generate directly (skip pro check)
+                setCustomDevotionalsLeft(customDevotionalsLeft - 1);
                 appLog('[GlobalCheckIn] User has custom devotionals left, generating');
                 await handleGenerateCustomDevotional(true);
                 return;
               }
-              
+
               // Non-pro user with no custom devotionals left - show purchase flow
               appLog('[GlobalCheckIn] Non-pro user needs to purchase custom devotional');
               await handleCustomDevotionalPurchase();
@@ -1590,6 +1597,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
                 mood: currentMood,
                 focus: currentFocus,
                 struggle: currentStruggle,
+                reflection: journalText.trim(),
               });
 
               // Set navigation flag to prevent check-in from showing during navigation
@@ -1648,9 +1656,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           }}
           onPressIn={() => playButtonSound?.()}
           className=" border-accentGold/40">
-          <Text className="font-din text-base text-gray-600 text-center underline">
-            Go Home
-          </Text>
+          <Text className="font-din text-base text-gray-600 text-center underline">Go Home</Text>
         </Pressable>
       </View>
     </View>
@@ -1665,23 +1671,20 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         paddingHorizontal: 20,
         paddingTop: RPH(2),
       }}>
-      
       {/* Prayer hands icon */}
-      {
-        (!journalResponse && IS_IOS) && (
-          <View className="w-full items-center justify-center mb-6" style={{ marginTop: RPH(1) }}>
+     {
+      IS_IOS && (
+        <View className="w-full items-center justify-center mb-6" style={{ marginTop: RPH(1) }}>
         <View className="bg-lightPurple rounded-full p-6 border-[2.5px] border-accentGold">
           <FontAwesome6 name="hands-praying" size={RPH(4)} color="#7B2BFF" />
         </View>
       </View>
-        )
-      }
-      
+      )
+     }
+
       {/* Journal input area */}
-      {
-        !journalResponse && (
-          <View className="flex-1 mx-4 mb-6">
-        <View className="bg-white rounded-[22px] border-[2.5px] border-accentGold p-4 shadow-buttonShadow flex-1">      
+      <View className="flex-1 mx-4 mb-6">
+        <View className="bg-white rounded-[22px] border-[2.5px] border-accentGold p-4 shadow-buttonShadow flex-1">
           <TextInput
             className="flex-1 font-din text-base text-textPrimary"
             placeholder="Dear God, I would like to ask for..."
@@ -1699,95 +1702,29 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           />
         </View>
       </View>
-        )
-      }
-      
+
       {/* Bottom actions */}
       <View className="w-full space-y-3 px-4 pb-8">
-        {/* Show AI response if available */}
-        {journalResponse && (
-          <View className="bg-white rounded-[22px] border-[2.5px] border-accentGold p-4 shadow-buttonShadow mb-4">
-            <View className="flex-row items-center mb-3">
-              <View className="bg-lightPurple rounded-full p-2">
-                <FontAwesome6 name="heart" size={16} color="#7B2BFF" />
-              </View>
-              <Text className="font-feather text-lg text-textPrimary ml-3">God's Response</Text>
-            </View>
-            
-            <Text className="font-din text-lg text-textPrimary mb-4 leading-6">
-              {journalResponse.response}
-            </Text>
-            
-            {journalResponse.verse && (
-              <View className="bg-surfaceCream rounded-xl p-3">
-                <Text className="italic text-sm text-description mb-1">
-                  "{journalResponse.verse}"
-                </Text>
-                {journalResponse.bibleReference && (
-                  <Text className="font-din text-xs text-description font-bold">
-                    - {journalResponse.bibleReference}
-                  </Text>
-                )}
-              </View>
-            )}
-          </View>
-        )}
-
-        {!journalResponse ? (
-          <PrimaryButton
-            title={isLoadingJournalResponse ? "Getting Response..." : "Get God's Response"}
-            onPress={async () => {
-              if (journalText.trim() && !isLoadingJournalResponse) {
-                hapticMedium();
-                await handleGetJournalResponse();
-              }
-            }}
-            style="w-full mb-3"
-            buttonType="gold"
-            disabled={!journalText.trim() || isLoadingJournalResponse}
-            hasGemsInside={false}
-          />
-        ) : (
-          <PrimaryButton
-            title="Save Prayer & Response"
-            onPress={async () => {
-              hapticMedium();
-              analytics.logEvent('checkin_prayer_saved', {
-                mood: currentMood,
-                prayerLength: journalText.length,
-                responseLength: journalResponse?.response.length,
-                hasResponse: !!journalResponse,
-              });
-              
-              // Complete check-in and save prayer
-              setTimeout(async () => {
-                await handleCompleteCheckIn();
-                animateToScreen('success');
-              }, 100);
-            }}
-            style="w-full mb-3"
-            buttonType="gold"
-            hasGemsInside={false}
-          />
-        )}
-
-        {/* <Pressable
-          onPress={() => {
+        <PrimaryButton
+          title="Save Reflection"
+          onPress={async () => {
             hapticMedium();
-            analytics.logEvent('checkin_prayer_skipped', {
+            analytics.logEvent('checkin_reflection_saved', {
               mood: currentMood,
+              reflectionLength: journalText.length,
             });
+
+            // Complete check-in and save reflection
             setTimeout(async () => {
               await handleCompleteCheckIn();
               animateToScreen('success');
             }, 100);
           }}
-          onPressIn={() => playButtonSound?.()}
-          className="border-accentGold/40 absolute bottom-0 left-0 right-0">
-          <Text className="font-din text-base text-gray-600 text-center underline">
-            Skip Prayer
-          </Text>
-        </Pressable> */}
+          style="w-full mb-3"
+          buttonType="gold"
+          disabled={!journalText.trim()}
+          hasGemsInside={false}
+        />
       </View>
     </KeyboardAvoidingView>
   );
@@ -1812,17 +1749,17 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       backdropComponent={renderBackdrop}
       onChange={(index) => {
         appLog('[GlobalCheckIn] BottomSheet changed to index:', index);
-        
+
         // Update visibility state
         const wasVisible = isSheetVisible;
         const isNowVisible = index >= 0;
         setIsSheetVisible(isNowVisible);
-        
+
         // If sheet just closed
         if (wasVisible && !isNowVisible) {
           appLog('[GlobalCheckIn] Sheet closed, marking as not closing');
           setIsClosing(false);
-          
+
           // Reset states after close
           setTimeout(() => {
             setCurrentScreen('mood');
@@ -1861,23 +1798,22 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
               justifyContent: 'center',
               zIndex: 10,
             }}
-            onPress={handleDismiss}
-          >
+            onPress={handleDismiss}>
             <FontAwesome6 name="xmark" size={18} color="#634012" />
           </Pressable>
 
           {/* Header */}
-          
-              <View style={{ paddingTop: 56, paddingHorizontal: 32, paddingBottom: 20 }}>
-              <Text className="font-feather text-h1 text-textPrimary text-center mb-1">
-                {getStepCopy(currentScreen).title }
+
+          <View style={{ paddingTop: 56, paddingHorizontal: 32 }}>
+            <Text className="font-feather text-h1 text-textPrimary text-center mb-1">
+              {getStepCopy(currentScreen).title}
+            </Text>
+            {getStepCopy(currentScreen).subtitle ? (
+              <Text className="font-din text-textPrimary/60 text-center mb-1 mt-4">
+                {getStepCopy(currentScreen).subtitle}
               </Text>
-              {getStepCopy(currentScreen).subtitle ? (
-                <Text className="font-din text-textPrimary/60 text-center mb-1 mt-4">
-                  {getStepCopy(currentScreen).subtitle}
-                </Text>
-              ) : null}
-            </View> 
+            ) : null}
+          </View>
 
           {/* Horizontal scrolling screens container */}
           <ScrollView
@@ -1887,8 +1823,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
             showsHorizontalScrollIndicator={false}
             scrollEnabled={false} // Disable manual scrolling, only programmatic
             style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 1 }}
-          >
+            contentContainerStyle={{ flexGrow: 1 }}>
             {renderMoodScreen()}
             {renderHeartScreen()}
             {renderFocusScreen()}

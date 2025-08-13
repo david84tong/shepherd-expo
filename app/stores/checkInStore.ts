@@ -7,6 +7,7 @@ export interface CheckInData {
   mood: string;
   focus: string;
   struggle: string;
+  reflection: string;
   completedAt: string; // ISO date string
 }
 
@@ -15,7 +16,7 @@ interface CheckInState {
   currentMood: string;
   currentFocus: string;
   currentStruggle: string;
-  
+  currentReflection: string;
   // Today's completed check-in
   todaysCheckIn: CheckInData | null;
   
@@ -55,6 +56,7 @@ export const useCheckInStore = create<CheckInState>()(
       currentMood: '',
       currentFocus: '',
       currentStruggle: '',
+      currentReflection: '',
       todaysCheckIn: null,
       checkInHistory: [],
       lastCheckInTime: null,
@@ -71,6 +73,10 @@ export const useCheckInStore = create<CheckInState>()(
 
       setStruggle: (struggle: string) => {
         set({ currentStruggle: struggle });
+      },
+
+      setReflection: (reflection: string) => {
+        set({ currentReflection: reflection });
       },
 
       skipFocus: () => {
@@ -90,6 +96,7 @@ export const useCheckInStore = create<CheckInState>()(
           mood: state.currentMood,
           focus: state.currentFocus,
           struggle: state.currentStruggle,
+          reflection: state.currentReflection,
           completedAt: now,
         };
 

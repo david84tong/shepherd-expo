@@ -16,6 +16,7 @@ export interface CheckIn {
   mood: string;
   focus: string; // can be blank
   struggles: string; // can be blank
+  reflection: string; // can be blank
   // customDevotionalId: string;
   timeStamp: FirebaseFirestoreTypes.Timestamp;
 }
