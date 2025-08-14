@@ -336,7 +336,7 @@ const WaterWaveAnimation: React.FC<{
                       textAlign: 'center',
                       lineHeight: 28,
                     }}
-                    speed={50}
+                    speed={38}
                     skipAnimation={false}
                   />
                 </View>
@@ -548,11 +548,13 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
   // Generate prayer content based on devotional or recent prayers
   const generatePrayerContent = useCallback(() => {
     let devotionalPrayer: string | undefined;
-    if (currentDevotional?.prayer) {
-      if (typeof currentDevotional.prayer === 'string') {
-        devotionalPrayer = currentDevotional.prayer;
-      } else if (typeof currentDevotional.prayer === 'object') {
-        const prayerObj = currentDevotional.prayer as Record<string, string>;
+    // Prefer custom devotional if present
+    const prayerSource = devotionalToUse?.prayer as any;
+    if (prayerSource) {
+      if (typeof prayerSource === 'string') {
+        devotionalPrayer = prayerSource as string;
+      } else if (typeof prayerSource === 'object') {
+        const prayerObj = prayerSource as Record<string, string>;
         
         // Try to get prayer in current language
         if (prayerObj[language]) {
@@ -635,9 +637,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
   // Split prayer into sentences when component loads
   useEffect(() => {
     appLog('🙏 Processing prayer content');
-    appLog('🙏 Current devotional:', currentDevotional?.id, currentDevotional?.bibleReference);
-    appLog('🙏 Devotional prayer available:', !!currentDevotional?.prayer);
-    appLog('🙏 Prayer structure:', typeof currentDevotional?.prayer, currentDevotional?.prayer);
+    appLog('🙏 Current devotional:', devotionalToUse?.id, devotionalToUse?.bibleReference);
+    appLog('🙏 Devotional prayer available:', !!(devotionalToUse as any)?.prayer);
+    appLog('🙏 Prayer structure:', typeof (devotionalToUse as any)?.prayer, (devotionalToUse as any)?.prayer);
 
     const prayerText = generatePrayerContent();
     appLog('🙏 Generated prayer text:', prayerText);

@@ -175,19 +175,16 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
 
       // After progress bars finish, switch to final stats
       setTimeout(() => {
-        // Use a microtask to defer the state update to avoid render conflicts
-        Promise.resolve().then(() => {
-          setShowFinalStats(true);
-        });
+        setShowFinalStats(true);
         // Animate in the final stats
         finalStatsOpacity.value = withTiming(1, { duration: 600 });
         finalStatsScale.value = withTiming(1, { duration: 600 });
         setTimeout(() => {
           blueOpacity.value = withTiming(1, { duration: 600 });
           goldOpacity.value = withTiming(1, { duration: 600 });
-          Promise.resolve().then(() => {
+          setTimeout(() => {
             setLocalButtonsEnabled(true);
-          });
+          }, 0);
         }, 600); // Wait for final stats animation
       }, 1200); // Wait for progress bars to finish
     }, didLevelUp ? 1000 : 500); // Start later if level up

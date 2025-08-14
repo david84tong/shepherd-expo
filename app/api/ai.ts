@@ -1,4 +1,6 @@
 import { appLog } from "../helper/helper";
+import { useUserStore } from '../stores/userStore';
+import { useLanguageStore } from '../stores/languageStore';
 
 interface BibleVerseContext {
   bookName: string;
@@ -37,6 +39,103 @@ export interface JournalResponseData {
   response: string;
   verse?: string;
   bibleReference?: string;
+}
+
+// Lightweight generation: produce a short prayer (2–3 sentences) and a reflection prompt
+export interface QuickPrayerAndPrompt {
+  prayer: string;
+  reflectionPrompt: string;
+}
+
+/**
+ * Generate a concise 2–3 sentence prayer and a single-sentence reflection prompt
+ * based on the user's mood and raw prayer text. This is faster and cheaper than
+ * full devotional generation and is intended for WaterPrayer and Journal flows.
+ */
+export async function generateQuickPrayerAndPrompt(
+  mood: string,
+  rawPrayer: string,
+  idToken: string
+): Promise<QuickPrayerAndPrompt> {
+  // Build minimal user context
+  const userStore = useUserStore.getState();
+  const languageStore = useLanguageStore.getState();
+  const userName = userStore.getDisplayName() || 'Friend';
+  const userAge = userStore.getAgeRange() || '';
+  const denomination = userStore.getDenomination() || '';
+  const familiarity = userStore.getExperienceLevel() || 'new';
+  const language = languageStore.language || 'en';
+
+  const languageInstructions: Record<string, string> = {
+    en: 'Respond in English.',
+    es: 'Responde en español.',
+    pt: 'Responda em português.',
+    nl: 'Antwoord in het Nederlands.',
+    fr: 'Répondez en français.',
+    de: 'Antworten Sie auf Deutsch.'
+  };
+  const langNote = languageInstructions[language] || languageInstructions.en;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25000);
+  try {
+    const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5-nano', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: 'system',
+            content: `${langNote} You are a concise Christian guide. Create:
+1) A 2–3 sentence heartfelt prayer grounded in Scripture themes, personalized to their mood and request.
+2) A single-sentence reflection prompt that invites journaling and self-examination.
+Keep tone warm and pastoral. Account for denomination and Bible familiarity level.`,
+          },
+          {
+            role: 'user',
+            content: `User: ${userName}. Age: ${userAge}. Denomination: ${denomination}. Familiarity: ${familiarity}.
+Mood: ${mood}.
+Their prayer: "${(rawPrayer || '').trim()}".
+
+Respond as strict JSON with keys: {"prayer": string, "reflectionPrompt": string}.`,
+          },
+        ],
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+    const data: AIResponse = await response.json();
+    if (!data || typeof data.content !== 'string') {
+      throw new Error('Invalid AI response');
+    }
+    const content = data.content.trim();
+    let parsed: QuickPrayerAndPrompt | null = null;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      const match = content.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+    }
+    if (!parsed?.prayer || !parsed?.reflectionPrompt) {
+      throw new Error('Missing prayer or reflectionPrompt');
+    }
+    return parsed;
+  } catch (err) {
+    appLog('[AI API] Quick generation failed, using local fallback:', err);
+    // Simple local fallback
+    const cleaned = (rawPrayer || '').trim();
+    const prayer = cleaned
+      ? `Lord, I lift up this prayer: "${cleaned}". Meet me in this ${mood.toLowerCase()} moment and guide my steps with Your peace. Strengthen my heart to trust You today. Amen.`
+      : `Lord, You know my heart and my ${mood.toLowerCase()} feelings. Draw me close and steady my steps in Your presence. Fill me with Your wisdom and peace. Amen.`;
+    const reflectionPrompt = cleaned
+      ? 'What is one small next step of faith you can take in response to your prayer today?'
+      : 'Where do you most need God’s presence and guidance today, and what would trusting Him look like?';
+    return { prayer, reflectionPrompt };
+  }
 }
 
 export async function getBibleVerseAIResponse(
@@ -115,9 +214,6 @@ export async function createDevotionalFromVerse(
     }
 
     // Get user onboarding data from user store
-    const { useUserStore } = require('../stores/userStore');
-    const { useLanguageStore } = require('../stores/languageStore');
-    
     const userStore = useUserStore.getState();
     const languageStore = useLanguageStore.getState();
     
@@ -191,7 +287,7 @@ export async function createDevotionalFromVerse(
 Please respond with a JSON object containing exactly these four fields:
 - "title": A compelling, short title (3-6 words) for this devotional that captures the main theme
 - "context": 4-5 sentences explaining the historical and spiritual context of this verse, written at an appropriate level for their Bible familiarity
-- "prayer": A heartfelt prayer (2-3 sentences) related to this verse that someone could pray
+- "prayer": A heartfelt prayer (1-2 sentences) related to this verse that someone could pray
 - "reflectionPrompt": A thoughtful question or prompt (1-2 sentences) to help someone reflect on how this verse applies to their life
 
 Make sure your response is valid JSON format and is personalized to their spiritual background and experience level.`
@@ -366,9 +462,6 @@ export async function createDevotionalFromCheckIn(
     }
 
     // Get user onboarding data from user store
-    const { useUserStore } = require('../stores/userStore');
-    const { useLanguageStore } = require('../stores/languageStore');
-    
     const userStore = useUserStore.getState();
     const languageStore = useLanguageStore.getState();
     
@@ -463,10 +556,10 @@ Please respond with a JSON object containing exactly these fields:
 - "context": 4-5 sentences that acknowledge their feelings${checkInData.reflection ? ' and reflection/prayer' : ''} and provide biblical wisdom specific to their situation, written at an appropriate level for their Bible familiarity
 - "verse": The actual Bible verse text (not the reference, but the full verse text)
 - "bibleReference": The Bible reference (e.g., "Philippians 4:13" or "Romans 8:28")
-- "prayer": A heartfelt prayer (2-3 sentences) that specifically addresses their mood${checkInData.focus ? ', focus area' : ''}${checkInData.struggle ? ', struggle' : ''}${checkInData.reflection ? ', and builds upon their personal reflection/prayer' : ''}
-- "reflectionPrompt": A thoughtful question or prompt (1-2 sentences) to help them process their emotions and find God's guidance
+- "prayer": A heartfelt, personal prayer (2-3 sentences) that specifically addresses their mood${checkInData.focus ? ', focus area' : ''}${checkInData.struggle ? ', struggle' : ''}${checkInData.reflection ? ', and builds upon their personal reflection/prayer' : ''}. This prayer should be suitable for guided prayer meditation and water prayer activities.
+- "reflectionPrompt": A thoughtful question or prompt (1-2 sentences) to help them process their emotions and find God's guidance. This should encourage deep personal reflection and journaling about their spiritual journey.
 
-Make sure your response is valid JSON format and is deeply personalized to their specific situation. The verse should be particularly relevant to their current emotional state and needs. Consider their denomination and Bible familiarity when choosing language and theological depth.`
+Make sure your response is valid JSON format and is deeply personalized to their specific situation. The verse should be particularly relevant to their current emotional state and needs. The prayer should be meaningful for meditation and the reflection prompt should inspire thoughtful writing. Consider their denomination and Bible familiarity when choosing language and theological depth.`
             },
             {
               "role": "user",
@@ -588,8 +681,8 @@ function createCheckInFallbackDevotional(checkInData: CheckInData): DevotionalAI
       context: 'When we feel great, it\'s a wonderful opportunity to praise God for His blessings. Your positive mood is a gift to be celebrated and shared with others.',
       verse: 'This is the day that the Lord has made; let us rejoice and be glad in it.',
       bibleReference: 'Psalm 118:24',
-      prayer: 'Thank You, Lord, for this day of joy and blessing. Help me to use this positive energy to serve You and encourage others. Amen.',
-      reflectionPrompt: 'How can you share your joy with someone who might need encouragement today?'
+      prayer: 'Thank You, Lord, for this day of joy and blessing. Help me to use this positive energy to serve You and encourage others. May my joy be a reflection of Your goodness. Amen.',
+      reflectionPrompt: 'How can you share your joy with someone who might need encouragement today? What specific blessings has God given you that you can celebrate?'
     },
     'good': {
       title: 'Grateful for Today',
@@ -620,8 +713,8 @@ function createCheckInFallbackDevotional(checkInData: CheckInData): DevotionalAI
       context: 'When we\'re having a bad day, God draws especially near. Your struggles don\'t push God away - they invite His comfort and strength into your life.',
       verse: 'The Lord is near to the brokenhearted and saves the crushed in spirit.',
       bibleReference: 'Psalm 34:18',
-      prayer: 'Lord, I\'m struggling today. Please wrap me in Your comfort and give me the strength to persevere. Amen.',
-      reflectionPrompt: 'What would it look like to invite God into your difficult emotions today?'
+      prayer: 'Lord, I\'m struggling today. Please wrap me in Your comfort and give me the strength to persevere. Fill my heart with Your peace and remind me that You are always near. Amen.',
+      reflectionPrompt: 'What would it look like to invite God into your difficult emotions today? How might God be using this challenge to grow your faith?'
     },
     'veryBad': {
       title: 'Hope in the Darkness',
@@ -729,9 +822,6 @@ export async function createJournalResponse(
     }
 
     // Get user onboarding data from user store
-    const { useUserStore } = require('../stores/userStore');
-    const { useLanguageStore } = require('../stores/languageStore');
-    
     const userStore = useUserStore.getState();
     const languageStore = useLanguageStore.getState();
     
@@ -802,22 +892,22 @@ export async function createJournalResponse(
               "role": "system",
               "content": `You are a compassionate Christian spiritual advisor responding to someone's prayer and request. The person is feeling ${journalData.mood.toLowerCase()} and has shared this prayer with you: "${journalData.prayer}".${userContext}
 
-Respond as if God is speaking through you with compassion, wisdom, and biblical truth. Your response should:
-1. Acknowledge their feelings and prayer with empathy
-2. Offer biblical comfort, guidance, or encouragement specific to their request
-3. Include a relevant Bible verse that speaks to their situation
-4. Be warm, personal, and pastorally sensitive
+              Respond as if God is speaking through you with compassion, wisdom, and biblical truth. Your response should:
+              1. Acknowledge their feelings and prayer with empathy
+              2. Offer biblical comfort, guidance, or encouragement specific to their request
+              3. Include a relevant Bible verse that speaks to their situation
+              4. Be warm, personal, and pastorally sensitive
 
-Please respond with a JSON object containing exactly these fields:
-- "response": A compassionate, biblical response (4-5 sentences) that directly addresses their prayer and emotional state, with the final sentence as a call to action for them / pep talk of some sort to make them ready to tackle the day.
-- "verse": The actual Bible verse text (not the reference, but the full verse text)
-- "bibleReference": The Bible reference (e.g., "Philippians 4:13" or "Matthew 11:28")
+              Please respond with a JSON object containing exactly these fields:
+              - "response": A compassionate, biblical response (4-5 sentences) that directly addresses their prayer and emotional state, with the final sentence as a call to action for them / pep talk of some sort to make them ready to tackle the day.
+              - "verse": The actual Bible verse text (not the reference, but the full verse text)
+              - "bibleReference": The Bible reference (e.g., "Philippians 4:13" or "Matthew 11:28")
 
-Make sure your response feels personal and directly relevant to their specific prayer and mood. Keep in mind their age as well. If they are under 24, make sure to use Gen Z language. Consider their denomination and Bible familiarity when choosing language and theological depth.`
+              Make sure your response feels personal and directly relevant to their specific prayer and mood. Keep in mind their age as well. If they are under 24, make sure to use Gen Z language. Consider their denomination and Bible familiarity when choosing language and theological depth.`
             },
             {
               "role": "user",
-              "content": `Please respond to this prayer from someone who is feeling ${journalData.mood.toLowerCase()}: "${journalData.prayer}"`
+              "content": `Please respond to this prayer from someone who is feeling ${journalData.mood.toLowerCase()}: "${journalData.prayer}. Please make sure to prioritize their prayer first."`
             }
           ]
         }),

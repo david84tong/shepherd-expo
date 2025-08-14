@@ -214,13 +214,13 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     const currentLang = language;
      
     // First try to use the devotional reflection prompt (handle both string and object structures)
-    if (currentDevotional?.reflectionPrompt) {
-      if (typeof currentDevotional.reflectionPrompt === 'string') {
+    if (devotionalToUse?.reflectionPrompt) {
+      if (typeof devotionalToUse.reflectionPrompt === 'string') {
       
-        appLog('📝 Using string reflection prompt:', currentDevotional.reflectionPrompt);
-        return currentDevotional.reflectionPrompt;
-      } else if (typeof currentDevotional.reflectionPrompt === 'object') {
-        const promptObj = currentDevotional.reflectionPrompt as any;
+        appLog('📝 Using string reflection prompt:', devotionalToUse.reflectionPrompt);
+        return devotionalToUse.reflectionPrompt as string;
+      } else if (typeof devotionalToUse.reflectionPrompt === 'object') {
+        const promptObj = devotionalToUse.reflectionPrompt as any;
         let prompt: string;
 
         // Try to get prompt in current language
