@@ -122,6 +122,7 @@ function calculateStreakAndPenalties({
   lambHearts,
   streakCount,
   streakFreezes,
+  streakFreezeUsedDates,
   lastActivityDate,
   lastReadingDate,
   lastPrayerDate,
@@ -145,6 +146,7 @@ function calculateStreakAndPenalties({
   lambHearts: number;
   streakCount: number;
   streakFreezes: number;
+  streakFreezeUsedDates: string[];
   lastActivityDate: any;
   lastReadingDate: any;
   lastPrayerDate: any;
@@ -207,20 +209,28 @@ function calculateStreakAndPenalties({
   const isReadingStreakBroken = daysSinceReading > 1;
   let streakFreezeUsed = false;
 
+  // Determine the missed day string (yesterday) in 'YYYY-MM-DD'
+  const missedDay = new Date(now);
+  missedDay.setDate(missedDay.getDate() - 1);
+  const missedDayStr = missedDay.toISOString().split('T')[0];
+  const freezeAlreadyRecordedForMissedDay = Array.isArray(streakFreezeUsedDates)
+    ? streakFreezeUsedDates.includes(missedDayStr)
+    : false;
+
   // Check if we should use a streak freeze instead of breaking the streak
   if (isReadingStreakBroken && streakCount > 0) {
-    if (streakFreezes > 0) {
+    if (freezeAlreadyRecordedForMissedDay) {
+      // A freeze was already recorded for this missed day; honor it and do NOT decrement again
+      streakFreezeUsed = true;
+      if (debug)
+        appLog(`❄️ Streak freeze already recorded for ${missedDayStr}; not decrementing again.`);
+    } else if (streakFreezes > 0) {
       // Use a streak freeze to save the streak
       streakFreezeUsed = true;
       const newFreezeCount = streakFreezes - 1;
       setStreakFreezes(newFreezeCount);
-      
       // Record the date when freeze was used (yesterday, the missed day)
-      const missedDay = new Date(now);
-      missedDay.setDate(missedDay.getDate() - 1);
-      const missedDayStr = missedDay.toISOString().split('T')[0]; // 'YYYY-MM-DD'
       addStreakFreezeUsedDate(missedDayStr);
-      
       if (debug)
         appLog(`❄️ Using streak freeze! Freezes remaining: ${newFreezeCount}. Recorded freeze for ${missedDayStr}`);
     } else {
@@ -268,7 +278,9 @@ function calculateStreakAndPenalties({
   // Skip if user was active today (based on calendar day)
   if (daysSinceActivity === 0 && !isNewDay) {
     return {
-      streakBroken: isReadingStreakBroken,
+      streakBroken: isReadingStreakBroken && !(streakFreezeUsed || freezeAlreadyRecordedForMissedDay),
+      streakFreezeUsed: streakFreezeUsed || freezeAlreadyRecordedForMissedDay,
+      freezesRemaining: (streakFreezeUsed && !freezeAlreadyRecordedForMissedDay) ? streakFreezes - 1 : streakFreezes,
       heartPenalty: 0,
       daysMissed: 0,
       newDay: isNewDay,
@@ -353,9 +365,9 @@ function calculateStreakAndPenalties({
     }
 
     return {
-      streakBroken: isReadingStreakBroken && !streakFreezeUsed,
-      streakFreezeUsed,
-      freezesRemaining: streakFreezeUsed ? streakFreezes - 1 : streakFreezes,
+      streakBroken: isReadingStreakBroken && !(streakFreezeUsed || freezeAlreadyRecordedForMissedDay),
+      streakFreezeUsed: streakFreezeUsed || freezeAlreadyRecordedForMissedDay,
+      freezesRemaining: (streakFreezeUsed && !freezeAlreadyRecordedForMissedDay) ? streakFreezes - 1 : streakFreezes,
       heartPenalty,
       daysMissed: Math.max(0, daysSinceActivity - 1), // Subtract 1 because if you're 2 days since activity, you missed 1 day
       readingPenalized: applyReadingPenalty,
@@ -366,9 +378,9 @@ function calculateStreakAndPenalties({
   } else {
     setLambMood?.(getLambMoodByHearts(lambHearts));
     return {
-      streakBroken: isReadingStreakBroken && !streakFreezeUsed,
-      streakFreezeUsed,
-      freezesRemaining: streakFreezeUsed ? streakFreezes - 1 : streakFreezes,
+      streakBroken: isReadingStreakBroken && !(streakFreezeUsed || freezeAlreadyRecordedForMissedDay),
+      streakFreezeUsed: streakFreezeUsed || freezeAlreadyRecordedForMissedDay,
+      freezesRemaining: (streakFreezeUsed && !freezeAlreadyRecordedForMissedDay) ? streakFreezes - 1 : streakFreezes,
       heartPenalty: 0,
       daysMissed: 0,
       readingPenalized: false,
@@ -442,6 +454,7 @@ export const checkStreakAndApplyPenalties = async () => {
       lambHearts,
       streakCount,
       streakFreezes,
+      streakFreezeUsedDates: userStore.getStreakFreezeUsedDates?.() || userStore.streakFreezeUsedDates || [],
       lastActivityDate,
       lastReadingDate,
       lastPrayerDate,
@@ -542,6 +555,7 @@ export const useStreakManager = () => {
         lambHearts,
         streakCount,
         streakFreezes,
+        streakFreezeUsedDates: userStore.getStreakFreezeUsedDates?.() || userStore.streakFreezeUsedDates || [],
         lastActivityDate,
         lastReadingDate,
         lastPrayerDate,
