@@ -75,6 +75,8 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   // Add timeout state and ref
   const [timeoutTriggered, setTimeoutTriggered] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Track nested timers to ensure we clear them on unmount as well
+  const nestedTimersRef = useRef<Set<NodeJS.Timeout>>(new Set());
   
 
 
@@ -291,7 +293,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           });
 
           // Navigate back to appropriate screen after toast has been shown for full duration
-          setTimeout(() => {
+          const nested = setTimeout(() => {
             if (!hasNavigated.current) {
               hasNavigated.current = true;
               // For check-in flow, go back to home tab, otherwise go to bible tab
@@ -302,6 +304,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
               }
             }
           }, 4000); // Wait for full toast duration before navigating
+          nestedTimersRef.current.add(nested);
         }, 20000); // 30 seconds after reaching 100%
       }
 
@@ -310,6 +313,9 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
         }
+        // Clear any nested timers that may have been scheduled by the timeout callback
+        nestedTimersRef.current.forEach((id) => clearTimeout(id));
+        nestedTimersRef.current.clear();
       };
     }
   }, [progressValue, isOnboarding, isCheckInFlow, verseText, reference, currentStep, loadingPoints.length, apiLoadingState, isCreatingDevotional, customDevotional, devotionalStoreCurrentDevotional, router]);
@@ -363,7 +369,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
   // Animate glow effect using requestAnimationFrame
   useEffect(() => {
-    let frameId: number;
+    let frameId: number | null = null;
     let lastTime = performance.now();
     const targetFPS = 60;
     const frameInterval = 1000 / targetFPS;
@@ -380,7 +386,10 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     };
 
     frameId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frameId);
+    return () => {
+      if (frameId) cancelAnimationFrame(frameId);
+      frameId = null;
+    };
   }, []);
   /**
    * NOTE (leak risk): The rAF loop above is safe as long as this component always unmounts.
@@ -802,6 +811,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   // --- GLOWING BORDER EFFECT ---
   const glViewRef = useRef<{ stop: () => void } | null>(null);
   const threeFrameRef = useRef<number | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
 
   // Optimize GLView animation
   const handleContextCreate = async (gl: ExpoWebGLRenderingContext) => {
@@ -819,6 +829,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       renderer = new Renderer({ gl });
       renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
       renderer.setClearColor(DARK_BG, 1);
+      rendererRef.current = renderer;
 
       scene = new THREE.Scene();
       camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
@@ -936,16 +947,14 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           shouldAnimate = false;
           if (threeFrameRef.current) {
             cancelAnimationFrame(threeFrameRef.current);
+            threeFrameRef.current = null;
           }
           if (geometry) geometry.dispose();
           if (material) material.dispose();
           if (plane) scene?.remove(plane);
-          /**
-           * IMPORTANT (leak hotspot on iOS): Also consider calling renderer.dispose() and forcing GL context teardown.
-           * expo-three/THREE sometimes leaves buffers/textures alive unless renderer.dispose() is called.
-           * That shows up in Instruments as persistent VM: CG raster data + Malloc 64KB bins growing after closing this screen.
-           */
           try { (renderer as any)?.dispose?.(); } catch (_) {}
+          try { (rendererRef.current as any)?.dispose?.(); } catch (_) {}
+          rendererRef.current = null;
         },
       };
     } catch (error) {
@@ -959,11 +968,13 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       if (glViewRef.current?.stop) {
         glViewRef.current.stop();
       }
-      /**
-       * NOTE: If you still see a leak here, the Expo GL context may persist until the next frame flush.
-       * Consider gating the <GLView> render by state so it unmounts earlier, or track an explicit `gl.destroy`
-       * once available in the Expo SDK you use.
-       */
+      // Extra guard: ensure no stray timers survive unmount
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      nestedTimersRef.current.forEach((id) => clearTimeout(id));
+      nestedTimersRef.current.clear();
     };
   }, []);
 

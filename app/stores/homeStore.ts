@@ -186,6 +186,9 @@ export const useHomeStore = create<HomeState>()(
       setJournalViewVisible: (visible) => set({ journalViewVisible: visible }),
       setBottomSheetRef: (ref) => set({ bottomSheetRef: ref }),
       setRiveRef: (ref) => set({ riveRef: ref }),
+      // Helpers to explicitly clear heavy refs on unmount from screens
+      clearBottomSheetRef: () => set({ bottomSheetRef: null }),
+      clearRiveRef: () => set({ riveRef: null }),
       setCurrentSkin: (skin) => set({ currentSkin: skin }),
       setArtboardName: (name) => set({ artboardName: name }),
       setShowCovenantSuccessModal: (show) => set({ showCovenantSuccessModal: show }),

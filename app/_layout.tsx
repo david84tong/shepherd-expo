@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases from 'react-native-purchases';
-import Rive from 'rive-react-native';
+import Rive, { RiveRef } from 'rive-react-native';
 import '../global.css';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppLoading from '../components/AppLoading';
@@ -151,6 +151,7 @@ export const unstable_settings = {
 export default Sentry.wrap(function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
+  const splashRiveRef = useRef<RiveRef>(null);
   const { visibleForceUpdate } = useForceUpdateCheck();
   const [fontsLoaded, fontError] = useFonts({
     'DIN Next Rounded LT W01 Regular': require('../assets/fonts/DIN Next Rounded LT W01 Regular.ttf'),
@@ -652,6 +653,19 @@ export default Sentry.wrap(function RootLayout() {
     }
   }, [fontsLoaded, riveAssets, riveAssetsLoaded, appReady]);
 
+  // Ensure splash Rive is disposed/reset when leaving splash or on unmount
+  useEffect(() => {
+    if (!showRiveAnimation) {
+      try { splashRiveRef.current?.reset?.(); } catch (_) {}
+    }
+  }, [showRiveAnimation]);
+
+  useEffect(() => {
+    return () => {
+      try { splashRiveRef.current?.reset?.(); } catch (_) {}
+    };
+  }, []);
+
   const activateAdapty = async () => {
     try {
       const isActivated = await adapty.isActivated();
@@ -869,6 +883,7 @@ export default Sentry.wrap(function RootLayout() {
       <View style={[styles.riveContainer, { backgroundColor: '#FFF4D9' }]}> 
         {IS_ANDROID ? (
           <Rive
+            ref={splashRiveRef}
             resourceName={'shepherd_splash_screen'}
             style={styles.riveAnimation}
             autoplay={true}
@@ -891,6 +906,7 @@ export default Sentry.wrap(function RootLayout() {
           />
         ) : (
           <Rive
+            ref={splashRiveRef}
             resourceName={'shepherd_splash_screen'}
             style={styles.riveAnimation}
             autoplay={true}

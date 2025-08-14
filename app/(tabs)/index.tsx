@@ -248,7 +248,8 @@ export default function HomeScreen() {
     prayerViewRef,
     journalRef,
     bottomSheetRef,
-    riveRef,
+    // Optional timer registry from hook (if implemented)
+    __debugTimerRegistry,
 
     // Animation refs and values
     lambSizeAnim,
@@ -743,6 +744,15 @@ export default function HomeScreen() {
       console.error('[handleCustomDevotionalPress] showCheckIn function not found on global');
     }
   };
+
+  useEffect(() => {
+    return () => {
+      // Best-effort guard: if hook exposes a timer registry for cleanup, clear it here too
+      if (Array.isArray(__debugTimerRegistry)) {
+        __debugTimerRegistry.forEach((id: NodeJS.Timeout) => clearTimeout(id));
+      }
+    };
+  }, [__debugTimerRegistry]);
 
   return (
     <>
