@@ -1,6 +1,7 @@
 import { appLog } from "../helper/helper";
 import { useUserStore } from '../stores/userStore';
 import { useLanguageStore } from '../stores/languageStore';
+import { getStatsigClient } from '../../utils/analytics';
 
 interface BibleVerseContext {
   bookName: string;
@@ -48,6 +49,25 @@ export interface QuickPrayerAndPrompt {
 }
 
 /**
+ * Helper function to get the GPT model from Statsig experiment
+ * Defaults to 'gpt-5-nano' if experiment is not available
+ */
+function getExperimentGptModel(): string {
+  const statsigClient = getStatsigClient();
+  let modelName = 'gpt-5-nano'; // default
+  if (statsigClient) {
+    try {
+      const gptModelExperiment = statsigClient.getExperiment('gpt-model');
+      modelName = gptModelExperiment?.get?.('gptModel', 'gpt-5-nano') || 'gpt-5-nano';
+      appLog('🧪 [GPT-MODEL] Using model from experiment:', modelName);
+    } catch (error) {
+      appLog('🧪 [GPT-MODEL] Error getting experiment, using default:', error);
+    }
+  }
+  return modelName;
+}
+
+/**
  * Generate a concise 2–3 sentence prayer and a single-sentence reflection prompt
  * based on the user's mood and raw prayer text. This is faster and cheaper than
  * full devotional generation and is intended for WaterPrayer and Journal flows.
@@ -79,7 +99,8 @@ export async function generateQuickPrayerAndPrompt(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 25000);
   try {
-    const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5-nano', {
+    const modelName = getExperimentGptModel();
+    const response = await fetch(`https://shepherd-dev-api.skylar.gg/oai/gpt?model=${modelName}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -157,7 +178,8 @@ export async function getBibleVerseAIResponse(
 
     const languageInstruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
 
-    const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5-nano', {
+    const modelName = getExperimentGptModel();
+    const response = await fetch(`https://shepherd-dev-api.skylar.gg/oai/gpt?model=${modelName}`, {
       method: 'POST',
       headers: {
         "Content-Type": "application/json",
@@ -272,7 +294,8 @@ export async function createDevotionalFromVerse(
         userContext += ` They primarily speak ${languageName}.`;
       }
 
-      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5-nano', {
+      const modelName = getExperimentGptModel();
+    const response = await fetch(`https://shepherd-dev-api.skylar.gg/oai/gpt?model=${modelName}`, {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
@@ -535,7 +558,8 @@ export async function createDevotionalFromCheckIn(
         userContext += ` They primarily speak ${languageName}.`;
       }
 
-      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5-nano', {
+      const modelName = getExperimentGptModel();
+    const response = await fetch(`https://shepherd-dev-api.skylar.gg/oai/gpt?model=${modelName}`, {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
@@ -880,7 +904,8 @@ export async function createJournalResponse(
         userContext += ` They primarily speak ${languageName}.`;
       }
 
-      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5-nano', {
+      const modelName = getExperimentGptModel();
+    const response = await fetch(`https://shepherd-dev-api.skylar.gg/oai/gpt?model=${modelName}`, {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",

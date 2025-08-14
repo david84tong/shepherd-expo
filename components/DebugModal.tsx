@@ -121,23 +121,35 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
               if (typeof statsigExperiment.getValue === 'function') {
                 experimentValue = statsigExperiment.getValue();
               } else if (typeof statsigExperiment.get === 'function') {
-                // Try .get() method instead - for path_feature, get the specific parameter
+                // Try .get() method instead - for specific experiments, get the specific parameter
                 if (experimentName === 'path_feature') {
                   experimentValue = statsigExperiment.get('path_shown', false);
+                } else if (experimentName === 'gpt-model') {
+                  experimentValue = { gptModel: statsigExperiment.get('gptModel', 'gpt-5-nano') };
+                } else if (experimentName === 'prayer_gen_on') {
+                  experimentValue = statsigExperiment.get('generate_prayer_for_user', false);
                 } else {
                   experimentValue = statsigExperiment.get('value', null);
                 }
               } else if (statsigExperiment.value !== undefined) {
-                // Direct value property - for path_feature, extract path_shown
+                // Direct value property - for specific experiments, extract specific parameters
                 if (experimentName === 'path_feature' && statsigExperiment.value.path_shown !== undefined) {
                   experimentValue = statsigExperiment.value.path_shown;
+                } else if (experimentName === 'gpt-model' && statsigExperiment.value.gptModel !== undefined) {
+                  experimentValue = { gptModel: statsigExperiment.value.gptModel };
+                } else if (experimentName === 'prayer_gen_on' && statsigExperiment.value.generate_prayer_for_user !== undefined) {
+                  experimentValue = statsigExperiment.value.generate_prayer_for_user;
                 } else {
                   experimentValue = statsigExperiment.value;
                 }
               } else {
-                // For path_feature, try to get the specific parameter
+                // For specific experiments, try to get the specific parameter
                 if (experimentName === 'path_feature') {
                   experimentValue = statsigExperiment.path_shown ?? null;
+                } else if (experimentName === 'gpt-model') {
+                  experimentValue = { gptModel: statsigExperiment.gptModel ?? 'gpt-5-nano' };
+                } else if (experimentName === 'prayer_gen_on') {
+                  experimentValue = statsigExperiment.generate_prayer_for_user ?? false;
                 }
               }
               
@@ -259,8 +271,10 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
     switch (experimentName) {
       case 'path_feature':
         return 'Controls custom path button visibility in home screen';
-      case 'generate_prayer_for_user':
+      case 'prayer_gen_on':
         return 'Controls prayer generation feature for users';
+      case 'gpt-model':
+        return 'Controls which GPT model is used for AI responses';
       default:
         return 'Experiment configuration';
     }
@@ -327,6 +341,10 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
         <Text className="font-din text-xs text-[#666]">
           {experimentName === 'path_feature' ? 
             `path_shown: ${experimentData.value === null ? 'unknown' : experimentData.value}` :
+            experimentName === 'gpt-model' ?
+            `gptModel: ${experimentData.value?.gptModel || 'unknown'}` :
+            experimentName === 'prayer_gen_on' ?
+            `generate_prayer_for_user: ${experimentData.value === null ? 'unknown' : experimentData.value}` :
             `Experiment value: ${JSON.stringify(experimentData.value)}`
           }
         </Text>
@@ -1317,7 +1335,10 @@ export function DebugButton() {
                   <ExperimentCard experimentName="path_feature" />
                   
                   {/* Prayer Generation Experiment */}
-                  <ExperimentCard experimentName="generate_prayer_for_user" />
+                  <ExperimentCard experimentName="prayer_gen_on" />
+                  
+                  {/* GPT Model Experiment */}
+                  <ExperimentCard experimentName="gpt-model" />
                 </View>
 
                 {/* Feature Gates */}
