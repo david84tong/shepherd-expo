@@ -775,6 +775,11 @@ export default Sentry.wrap(function RootLayout() {
 
     return () => {
       subscription.remove();
+      /**
+       * NOTE (leak guard): If this effect ever re-runs (e.g., hot reload or router ref identity changes),
+       * ensure only one listener is active. We do remove() here, but watch for duplicate mounts during splash
+       * which can manifest as increasing retained JS closures.
+       */
     };
   }, [router]);
 
@@ -861,7 +866,7 @@ export default Sentry.wrap(function RootLayout() {
   // Show Rive animation
   if (showRiveAnimation && riveAssets?.[0]?.uri) {
     return (
-      <View style={[styles.riveContainer, { backgroundColor: '#FFF4D9' }]}>
+      <View style={[styles.riveContainer, { backgroundColor: '#FFF4D9' }]}> 
         {IS_ANDROID ? (
           <Rive
             resourceName={'shepherd_splash_screen'}
@@ -883,9 +888,9 @@ export default Sentry.wrap(function RootLayout() {
               Sentry.captureException(error);
               setShowRiveAnimation(false);
             }}
-            />
-          ) : (
-            <Rive
+          />
+        ) : (
+          <Rive
             resourceName={'shepherd_splash_screen'}
             style={styles.riveAnimation}
             autoplay={true}
@@ -907,6 +912,13 @@ export default Sentry.wrap(function RootLayout() {
             }}
           />
         )}
+        {/**
+         * POTENTIAL MEMORY LEAK (early splash): The Rive splash view allocates a native renderer/texture.
+         * - If this screen toggles rapidly or hot-reloads, multiple Rive instances may briefly overlap.
+         * - Consider explicitly stopping/disposing the animation on unmount (e.g., keeping a ref and calling reset/stop),
+         *   because Rive iOS has known retain cycles if the view is not fully torn down before a new one mounts.
+         * - These allocations typically show up as CG raster data spikes in Instruments before the home screen renders.
+         */}
       </View>
     );
   }

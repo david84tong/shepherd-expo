@@ -36,6 +36,17 @@ import { useSoundStore } from '../stores/soundStore';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
 import { appLog } from '../helper/helper';
 
+/**
+ * MEMORY-LEAK REVIEW (startup → home):
+ * - This hook orchestrates many animations and setTimeouts (search for setTimeout below) and holds refs to
+ *   heavy native-backed components (Rive, BottomSheet, readers). If timers are not centrally tracked/cleared
+ *   on unmount (including during hot reload), queued callbacks can reference stale refs and retain memory.
+ * - Consider consolidating timer IDs in a single ref (Set<NodeJS.Timeout>) to cancel on unmount, and avoid
+ *   storing component refs in global stores unless necessary; retained refs can keep whole subtrees alive.
+ * - AppState/gesture responders added elsewhere should be paired with remove() in cleanup to avoid accumulating
+ *   listeners when home remounts.
+ */
+
 // Constants
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const LAMB_VIEWPORT_PERCENTAGE = 0.4;

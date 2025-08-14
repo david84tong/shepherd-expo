@@ -178,6 +178,13 @@ export default function HomeScreen() {
       console.error('❌ Error fetching recent devotionals on mount:', error);
     });
   }, []);
+  /**
+   * NOTE (leak risk): This screen coordinates many timers (see useHomeScreen) and holds refs to heavy components
+   * (reader, prayer, journal, Rive). If this root component remounts due to navigation resets, previously scheduled
+   * setTimeouts in the hook may still fire, touching unmounted refs. That pattern shows up as increasing “All Heap
+   * Allocations” with lots of small Malloc 64.00 KiB entries. Consider centralizing timers in the hook with cleanup,
+   * and avoid storing component refs in a global store unless strictly necessary.
+   */
 
   // Local state for prayer success screen visibility
   const [showPrayerSuccess, setShowPrayerSuccess] = useState(false);

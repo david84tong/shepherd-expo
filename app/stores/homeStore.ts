@@ -105,6 +105,11 @@ export const useHomeStore = create<HomeState>()(
       journalViewVisible: false,
       bottomSheetRef: null,
       riveRef: null,
+      /**
+       * NOTE (memory): Keeping view refs (e.g., BottomSheet/Rive) in a global store can retain whole component trees
+       * if not nulled on screen unmount. Verify callers set these back to null on teardown to prevent leaks when
+       * navigating away from home.
+       */
       currentSkin: '',
       artboardName: '[Main] Shpeherd',
       // Default completion states

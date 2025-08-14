@@ -265,6 +265,10 @@ export default function OnboardingWelcomeScreen() {
       return () => {
         clearTimeout(typingTimeout);
         clearInterval(typingInterval);
+        /**
+         * NOTE: This screen runs multiple timers/intervals in quick succession. If users skip ahead fast,
+         * leftover intervals can continue running; this cleanup prevents that and reduces leak signals on splash.
+         */
       };
     } else {
       // For first and second welcome texts

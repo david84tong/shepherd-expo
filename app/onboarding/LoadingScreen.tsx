@@ -313,7 +313,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       };
     }
   }, [progressValue, isOnboarding, isCheckInFlow, verseText, reference, currentStep, loadingPoints.length, apiLoadingState, isCreatingDevotional, customDevotional, devotionalStoreCurrentDevotional, router]);
-
+  /**
+   * NOTE (leak risk): Multiple chained setTimeouts exist here (20s + 4s). If navigation happens elsewhere first,
+   * these timers can fire later and re-touch state. We clear the main timer on effect cleanup, but the nested 4s timer
+   * relies on the outer callback having executed. If you see delayed toasts/navigation after leaving this screen,
+   * this is likely why. Consider tracking and clearing nested timers too if needed.
+   */
 
 
   // Cleanup function
@@ -377,6 +382,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     frameId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frameId);
   }, []);
+  /**
+   * NOTE (leak risk): The rAF loop above is safe as long as this component always unmounts.
+   * If navigation bounces in and out of this screen without unmount (or during fast hot reload),
+   * a stale rAF could remain scheduled. We cancel in cleanup; if you see steady “All Heap & Anonymous VM” growth
+   * while sitting on this screen, confirm cleanup is running by logging the cleanup path.
+   */
 
   // Initialize animation sequence
   useEffect(() => {
@@ -855,15 +866,15 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             return smoothstep(0.06, 0.0, edgeDist);
           }
   
- float verticalEdgeGlow(float x, float y, float time, float edge) {
-    float spotX = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
-    float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
-    float edgeDist = abs(y - edge);
-    float xDist = abs(x - spotX);
-    float spot = exp(-pow(xDist / spotWidth, 2.0) * 6.0);
-    float flicker = 0.6 + 0.4 * noise(vec2(x * 10.0, time * 0.5 + edge * 10.0));
-    return smoothstep(0.08, 0.0, edgeDist) * (0.5 + 0.5 * spot * flicker);
-  }
+  float verticalEdgeGlow(float x, float y, float time, float edge) {
+     float spotX = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
+     float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
+     float edgeDist = abs(y - edge);
+     float xDist = abs(x - spotX);
+     float spot = exp(-pow(xDist / spotWidth, 2.0) * 6.0);
+     float flicker = 0.6 + 0.4 * noise(vec2(x * 10.0, time * 0.5 + edge * 10.0));
+     return smoothstep(0.08, 0.0, edgeDist) * (0.5 + 0.5 * spot * flicker);
+   }
           
           void main() {
             float t = u_time;
@@ -890,8 +901,8 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             
             gl_FragColor = vec4(u_color, finalAlpha);
           }
-  
-  
+        
+        
         `,
         transparent: true,
         depthWrite: false,
@@ -929,6 +940,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           if (geometry) geometry.dispose();
           if (material) material.dispose();
           if (plane) scene?.remove(plane);
+          /**
+           * IMPORTANT (leak hotspot on iOS): Also consider calling renderer.dispose() and forcing GL context teardown.
+           * expo-three/THREE sometimes leaves buffers/textures alive unless renderer.dispose() is called.
+           * That shows up in Instruments as persistent VM: CG raster data + Malloc 64KB bins growing after closing this screen.
+           */
+          try { (renderer as any)?.dispose?.(); } catch (_) {}
         },
       };
     } catch (error) {
@@ -942,6 +959,11 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       if (glViewRef.current?.stop) {
         glViewRef.current.stop();
       }
+      /**
+       * NOTE: If you still see a leak here, the Expo GL context may persist until the next frame flush.
+       * Consider gating the <GLView> render by state so it unmounts earlier, or track an explicit `gl.destroy`
+       * once available in the Expo SDK you use.
+       */
     };
   }, []);
 
