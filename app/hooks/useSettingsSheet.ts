@@ -641,7 +641,6 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
               useDevotionalStore.getState().reset();
               useCheckInStore.getState().resetCheckInData();
               useHomeStore.getState().resetCompletionStates();
-              useSubscriptionStore.getState().logoutAdaptyUser();
               usePrayerStore.getState().resetStore();
               await useOnboardingStore.getState().clearResponses();
               useOnboardingStore.getState().clearSavedScreenNavigation();

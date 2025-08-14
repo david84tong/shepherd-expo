@@ -12,8 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import Toast from 'react-native-toast-message';
 import { isSignedIn } from '../hooks/authHook';
-import { adapty } from 'react-native-adapty';
-import { createPaywallView } from '@adapty/react-native-ui';
+import { presentSuperwallPlacement } from '~/app/utils/superwallBridge';
 import { appLog } from '../helper/helper';
 
 // Add constant for tracking half-off paywall view
@@ -90,9 +89,9 @@ const handleRestoreCompleted = async ({
 }) => {
   let result = '';
   try {
-    const profile = await adapty.getProfile();
-    const accessLevel = profile.accessLevels?.['premium'];
-    if (accessLevel?.isActive) {
+    const customerInfo = await Purchases.restorePurchases();
+    const isActive = !!customerInfo.entitlements.active[ENTITLEMENT_ID];
+    if (isActive) {
       useUserStore.getState().setIsProFromOnboarding(true);
       result = PAYWALL_RESULT.RESTORED;
       moveUserToProMode(true, packageId, productId, fromPaywall);
@@ -227,102 +226,11 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         fromScreen: get().fromScreen,
         platform: Platform.OS, // Track platform for analytics
       });
-      appLog('[SubscriptionStore] About to fetch paywall from Adapty');
-      const paywall = await adapty.getPaywall('freeTrial-simple');
-      appLog('Fetched paywall:', JSON.stringify(paywall, null, 2));
-      appLog('[SubscriptionStore] About to create paywall view');
-      const view = await createPaywallView(paywall);
-
-      let result: PAYWALL_RESULT | null = null;
-
-      view.registerEventHandlers({
-        onCloseButtonPress() {
-          result = PAYWALL_RESULT.CANCELLED;
-          set({ isPaywallPresenting: false });
-          // Check if onboarding is completed
-          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
-            .then((completed) => {
-              if (completed !== 'true' && Platform.OS === 'ios') {
-                // For iOS users who haven't completed onboarding, just dismiss the paywall
-                appLog('iOS user skipped paywall during onboarding, dismissing paywall');
-                // No navigation - just let the paywall dismiss
-              } else if (completed !== 'true') {
-                // For Android users, redirect to onboarding 11
-                appLog('Onboarding not completed, redirecting to onboarding/11');
-                router.replace('/onboarding/11');
-              }
-            })
-            .catch(() => {
-              appLog('Could not check onboarding status');
-            });
-          return true;
-        },
-        onPurchaseCompleted() {
-          result = PAYWALL_RESULT.PURCHASED;
-          set({ isPaywallPresenting: false });
-          moveUserToProMode(false, 'free-trial', 'free-trial-product', 'free-trial');
-          return true;
-        },
-        onRestoreCompleted() {
-          result = PAYWALL_RESULT.RESTORED;
-          handleRestoreCompleted({
-            packageId: 'free-trial',
-            productId: 'free-trial-product',
-            fromPaywall: 'free-trial',
-          });
-          return true;
-        },
-        onProductSelected() {
-          appLog('===>product selected');
-        },
-        onPurchaseStarted() {
-          appLog('===>purrchase started');
-        },
-        onPurchaseCancelled() {
-          setTimeout(() => {
-            get().presentHalfOffPaywall();
-          }, 500);
-          result = PAYWALL_RESULT.CANCELLED;
-          // Check if onboarding is completed, if not redirect to PricingScreen
-        
-          return true;
-        },
-        onPurchaseFailed() {
-          setTimeout(() => {
-            get().presentHalfOffPaywall();
-          }, 500);
-          result = PAYWALL_RESULT.CANCELLED;
-          // Check if onboarding is completed, if not redirect to PricingScreen
-      
-          return true;
-        },
-        onRestoreFailed() {
-          result = PAYWALL_RESULT.ERROR;
-        },
-        onRenderingFailed() {
-          result = PAYWALL_RESULT.ERROR;
-        },
-        onLoadingProductsFailed() {
-          result = PAYWALL_RESULT.ERROR;
-        },
-      });
-      
-      try {
-        await view.present();
-      } catch (presentError) {
-        console.error('[SubscriptionStore] Error presenting free trial paywall:', presentError);
-        set({ isPaywallPresenting: false });
-        return PAYWALL_RESULT.ERROR;
-      }
-      
-      // Reset presenting flag after paywall is dismissed
+      await presentSuperwallPlacement('main_paywall');
       set({ isPaywallPresenting: false });
-      
-      const products = await adapty.getPaywallProducts(paywall);
-      appLog('products ==>', products);
-      return result;
+      return PAYWALL_RESULT.CANCELLED;
     } catch (error) {
-      console.error('Adapty paywall error:', error);
+      console.error('Superwall paywall error:', error);
       set({ isPaywallPresenting: false });
       analytics.logEvent('PricingScreen_Paywall_Error', {
         errorMessage: (error as Error)?.message || 'Unknown error',
@@ -367,101 +275,11 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
     try {
       set({ isPaywallPresenting: true });
-      const paywall = await adapty.getPaywall('halfoff-simple');
-      appLog('Fetched paywall:', JSON.stringify(paywall, null, 2));
-      const view = await createPaywallView(paywall);
-      
-      let result: PAYWALL_RESULT | null = null;
-
-      view.registerEventHandlers({
-        onCloseButtonPress() {
-          result = PAYWALL_RESULT.CANCELLED;
-          set({ isPaywallPresenting: false });
-          // Check if onboarding is completed
-          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
-            .then((completed) => {
-              if (completed === 'true') {
-                // Onboarding complete - redirect to subscription management
-                // Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
-                //   appLog('Could not open subscription management');
-                // });
-              } else if (Platform.OS === 'ios') {
-                // For iOS users who haven't completed onboarding, just dismiss the paywall
-                appLog('iOS user skipped half-off paywall during onboarding, dismissing paywall');
-                // No navigation - just let the paywall dismiss
-              } else {
-                // For Android users, redirect to onboarding 11
-                appLog('Onboarding not completed, redirecting to onboarding/11');
-                router.replace('/onboarding/11');
-              }
-            })
-            .catch(() => {
-              appLog('Could not check onboarding status');
-            });
-          return true;
-        },
-        onPurchaseCompleted() {
-          result = PAYWALL_RESULT.PURCHASED;
-          set({ isPaywallPresenting: false });
-          moveUserToProMode(false, 'halfoff', 'halfoff-product', 'halfoff');
-          return true;
-        },
-        onRestoreCompleted() {
-          result = PAYWALL_RESULT.RESTORED;
-          handleRestoreCompleted({
-            packageId: 'halfoff',
-            productId: 'halfoff-product',
-            fromPaywall: 'halfoff',
-          });
-          return true;
-        },
-        onProductSelected() {
-          appLog('===>product selected');
-        },
-        onPurchaseStarted() {
-          appLog('===>purrchase started');
-        },
-        onPurchaseCancelled() {
-          setTimeout(() => {
-            // get().presentFreeTrialPaywall();
-          }, 500);
-          result = PAYWALL_RESULT.CANCELLED;
-          // Check if onboarding is completed, if not redirect to onboarding 11
-      
-        },
-        onPurchaseFailed() {
-          result = PAYWALL_RESULT.ERROR;
-          // Check if onboarding is completed, if not redirect to onboarding 11
-          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
-          
-        },
-        onRestoreFailed() {
-          result = PAYWALL_RESULT.ERROR;
-        },
-        onRenderingFailed() {
-          result = PAYWALL_RESULT.ERROR;
-        },
-        onLoadingProductsFailed() {
-          result = PAYWALL_RESULT.ERROR;
-        },
-      });
-      
-      try {
-        await view.present();
-      } catch (presentError) {
-        console.error('[SubscriptionStore] Error presenting half-off paywall:', presentError);
-        set({ isPaywallPresenting: false });
-        return PAYWALL_RESULT.ERROR;
-      }
-      
-      // Reset presenting flag after paywall is dismissed
+      await presentSuperwallPlacement('half_off');
       set({ isPaywallPresenting: false });
-      
-      const products = await adapty.getPaywallProducts(paywall);
-      appLog('products ==>', products);
-      return result;
+      return PAYWALL_RESULT.CANCELLED;
     } catch (error) {
-      console.error('Adapty paywall error:', error);
+      console.error('Superwall paywall error:', error);
       analytics.logEvent('PricingScreen_Paywall_Error', {
         errorMessage: (error as Error)?.message || 'Unknown error',
       });
@@ -498,101 +316,11 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     
     try {
       set({ isPaywallPresenting: true });
-      const paywall = await adapty.getPaywall('noFreeTrial'); 
-      appLog('Fetched paywall:', JSON.stringify(paywall, null, 2));
-      const view = await createPaywallView(paywall);
-      
-      let result: PAYWALL_RESULT | null = null;
-
-      view.registerEventHandlers({
-        onCloseButtonPress() {
-          result = PAYWALL_RESULT.CANCELLED;
-          set({ isPaywallPresenting: false });
-          // Check if onboarding is completed
-          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
-            .then((completed) => {
-              if (completed !== 'true' && Platform.OS === 'ios') {
-                // For iOS users who haven't completed onboarding, just dismiss the paywall
-                appLog('iOS user skipped paywall during onboarding, dismissing paywall');
-                // No navigation - just let the paywall dismiss
-              } else if (completed !== 'true') {
-                // For Android users, redirect to PricingScreen
-                appLog('Onboarding not completed, redirecting to PricingScreen');
-                router.replace('/PricingScreen');
-              }
-            })
-            .catch(() => {
-              appLog('Could not check onboarding status');
-            });
-          return true;
-        },
-        onPurchaseCompleted() {
-          result = PAYWALL_RESULT.PURCHASED;
-          set({ isPaywallPresenting: false });
-          moveUserToProMode(false, 'shepherd_pay', 'shepherd-product', 'shepherd_pay');
-          return true;
-        },
-        onRestoreCompleted() {
-          result = PAYWALL_RESULT.RESTORED;
-          handleRestoreCompleted({
-            packageId: 'shepherd_pay',
-            productId: 'shepherd-product',
-            fromPaywall: 'shepherd_pay',
-          });
-          return true;
-        },
-        onProductSelected() {
-          appLog('===>product selected');
-        },
-        onPurchaseStarted() {
-          appLog('===>purrchase started');
-        },
-        onPurchaseCancelled() {
-          setTimeout(() => {
-            get().presentHalfOffPaywall();
-          }, 500);
-          result = PAYWALL_RESULT.CANCELLED;
-          // Check if onboarding is completed, if not redirect to PricingScreen
-         
-          return true;
-        },
-        onPurchaseFailed() {
-          setTimeout(() => {
-            get().presentHalfOffPaywall();
-          }, 500);
-          result = PAYWALL_RESULT.CANCELLED;
-          // Check if onboarding is completed, if not redirect to PricingScreen
-      
-          return true;
-        },
-        onRestoreFailed() {
-          result = PAYWALL_RESULT.ERROR;
-        },
-        onRenderingFailed() {
-          result = PAYWALL_RESULT.ERROR;
-        },
-        onLoadingProductsFailed() {
-          result = PAYWALL_RESULT.ERROR;
-        },
-      });
-      
-      try {
-        await view.present();
-      } catch (presentError) {
-        console.error('[SubscriptionStore] Error presenting paywall:', presentError);
-        set({ isPaywallPresenting: false });
-        return PAYWALL_RESULT.ERROR;
-      }
-      
-      // Reset presenting flag after paywall is dismissed
+      await presentSuperwallPlacement('main_paywall');
       set({ isPaywallPresenting: false });
-      
-      const products = await adapty.getPaywallProducts(paywall);
-      appLog('products ==>', products);
-      return result;
+      return PAYWALL_RESULT.CANCELLED;
     } catch (error) {
-      console.error('Adapty paywall error:', error);
-      set({ isPaywallPresenting: false });
+      console.error('Superwall paywall error:', error);
       analytics.logEvent('PricingScreen_Paywall_Error', {
         errorMessage: (error as Error)?.message || 'Unknown error',
       });
@@ -707,15 +435,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     appLog('[SubscriptionStore] getCustomerInfo called (Adapty + Firestore version).');
     try {
       // 1. Check Adapty profile
-      const profile = await adapty.getProfile();
-      appLog(
-        '[SubscriptionStore] Adapty profile fetched successfully:',
-        JSON.stringify(profile, null, 2)
-      );
-      appLog('[SubscriptionStore] Adapty accessLevels:', profile.accessLevels);
-      const isProAdapty =
-        (profile.accessLevels && profile.accessLevels['premium']?.isActive) || false;
-      appLog(`[SubscriptionStore] User is pro member (premium/Adapty): ${isProAdapty}`);
+      // const profile = await adapty.getProfile(); // Removed Adapty
+      // appLog(
+      //   '[SubscriptionStore] Adapty profile fetched successfully:',
+      //   JSON.stringify(profile, null, 2)
+      // );
+      // appLog('[SubscriptionStore] Adapty accessLevels:', profile.accessLevels);
+      // const isProAdapty =
+      //   (profile.accessLevels && profile.accessLevels['premium']?.isActive) || false;
+      // appLog(`[SubscriptionStore] User is pro member (premium/Adapty): ${isProAdapty}`);
 
       // 2. Check Firestore for custom pro/referral
       let isProFromFirebase = false;
@@ -756,15 +484,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
               });
               isProWithReferralFromFirebase = false;
               proExpiryDate = null;
-              if (!isProAdapty) {
-                set({ isProMember: false });
-                // Update user properties in analytics platforms
-                analytics.identifyUser(useUserStore.getState().id || 'anonymous', {
-                  isPro: false,
-                  proStatus: 'free',
-                  subscriptionType: 'expired',
-                });
-              }
+              // if (!isProAdapty) { // Removed Adapty
+              set({ isProMember: false });
+              // Update user properties in analytics platforms
+              analytics.identifyUser(useUserStore.getState().id || 'anonymous', {
+                isPro: false,
+                proStatus: 'free',
+                subscriptionType: 'expired',
+              });
+              // } // Removed Adapty
               useUserStore.getState().setProStatus('free');
               appLog('[SubscriptionStore] Pro status expired in Firestore, set to free.');
             }
@@ -776,7 +504,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       appLog('isProFromFirebase ==>', isProFromFirebase);
 
       // 3. Final pro status: Adapty OR Firestore (if not expired)
-      const finalProStatus = isProAdapty || isProFromFirebase || isProWithReferralFromFirebase;
+      const finalProStatus = isProFromFirebase || isProWithReferralFromFirebase;
       // Track status change if different from current state
       const prevIsPro = get().isProMember;
       if (prevIsPro !== finalProStatus) {
@@ -785,7 +513,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           current: finalProStatus ? 'pro' : 'free',
         });
       }
-      set({ customerInfo: profile, isProMember: finalProStatus });
+      set({ customerInfo: null, isProMember: finalProStatus }); // Removed Adapty
       useUserStore.getState().setProStatus(finalProStatus ? 'pro' : 'free');
       
       // Handle golden skin removal when user loses pro status
@@ -1003,25 +731,25 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
   loginAdaptyUser: async (userId: string) => {
     // Call adapty.identify to associate purchases with a specific user
-    try {
-      await adapty.identify(userId);
-      appLog(`[SubscriptionStore] Adapty identify successful for userId: ${userId}`);
-      // Optionally refresh customer info after login
-      await get().getCustomerInfo();
-    } catch (e) {
-      console.error('[SubscriptionStore] Error identifying Adapty user:', e);
-    }
+    // try { // Removed Adapty
+    //   await adapty.identify(userId); // Removed Adapty
+    //   appLog(`[SubscriptionStore] Adapty identify successful for userId: ${userId}`); // Removed Adapty
+    //   // Optionally refresh customer info after login // Removed Adapty
+    //   await get().getCustomerInfo(); // Removed Adapty
+    // } catch (e) { // Removed Adapty
+    //   console.error('[SubscriptionStore] Error identifying Adapty user:', e); // Removed Adapty
+    // } // Removed Adapty
   },
   logoutAdaptyUser: async () => {
     // Call adapty.logout to disassociate purchases from the current user
-    try {
-      await adapty.logout();
-      appLog('[SubscriptionStore] Adapty logout successful');
-      // Optionally refresh customer info after logout
-      await get().getCustomerInfo();
-    } catch (e) {
-      console.error('[SubscriptionStore] Error logging out Adapty user:', e);
-    }
+    // try { // Removed Adapty
+    //   await adapty.logout(); // Removed Adapty
+    //   appLog('[SubscriptionStore] Adapty logout successful'); // Removed Adapty
+    //   // Optionally refresh customer info after logout // Removed Adapty
+    //   await get().getCustomerInfo(); // Removed Adapty
+    // } catch (e) { // Removed Adapty
+    //   console.error('[SubscriptionStore] Error logging out Adapty user:', e); // Removed Adapty
+    // } // Removed Adapty
   },
   checkHasSeenHalfOffPaywall: async () => {
     try {

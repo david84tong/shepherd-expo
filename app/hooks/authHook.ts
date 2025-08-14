@@ -474,30 +474,11 @@ export const useAuth = () => {
   // Add a signOut function that logs out Adapty as well
   const signOut = async () => {
     try {
-      const currentUser = auth().currentUser;
-      const isAnonymous = currentUser?.isAnonymous;
-
       await auth().signOut();
-
-      // Stop background music when signing out
-      useSoundStore.getState().stopBackgroundMusic();
-
-      if (Platform.OS === 'android' && !isAnonymous) {
-        await GoogleSignin.revokeAccess?.();
-      }
-
-      // Clear widget data when signing out
-      safeWidgetCall('updateWidgetStatus', 'loggedOut');
-
-      // Reset analytics
-      await resetAnalytics();
+      // Adapty removed
+      useUserStore.getState().resetUser();
     } catch (error) {
-      appLog('[Auth] Error during sign out:', error);
-      
-      // Stop background music even if there was an error
-      useSoundStore.getState().stopBackgroundMusic();
-      
-      throw error;
+      appLog('Error signing out:', error);
     }
   };
 

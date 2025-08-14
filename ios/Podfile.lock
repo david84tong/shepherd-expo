@@ -3090,11 +3090,11 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-adapty-sdk (3.1.0):
+  - react-native-adapty-sdk (removed):
     - Adapty (= 3.1.0)
     - AdaptyUI (= 3.1.0)
     - React
-  - react-native-adapty-ui (3.1.0):
+  - react-native-adapty-ui (removed):
     - Adapty (>= 3.1.0)
     - AdaptyUI (= 3.1.0)
     - React-Core

@@ -46,7 +46,9 @@ import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
 import StreakFreezeBottomSheet, { StreakFreezeBottomSheetRef } from '~/components/StreakFreezeBottomSheet';
 import { disableFontScaling } from './helper/disableFontScaling';
-import { adapty } from 'react-native-adapty';
+// Superwall
+import { SuperwallProvider } from 'expo-superwall';
+import SuperwallHandler from '~/app/components/SuperwallHandler';
 import './stores/userStore';
 import { IS_ANDROID } from './utils/utils';
 import { initializeQuickActions } from './utils/quickActions';
@@ -652,22 +654,7 @@ export default Sentry.wrap(function RootLayout() {
     }
   }, [fontsLoaded, riveAssets, riveAssetsLoaded, appReady]);
 
-  const activateAdapty = async () => {
-    try {
-      const isActivated = await adapty.isActivated();
-      appLog('isActivated ==>', isActivated);
-      if (isActivated) return;
-      // if(adapty){
-      //   appLog("adapty ==>",adapty?.isActivated());
-      // }
-      await adapty.activate('public_live_6JQmP6iR.y5BUrJSqvfMEVYQBPBLz', {
-        lockMethodsUntilReady: true,
-      });
-      appLog('Adapty activated');
-    } catch (error) {
-      appLog('Error activating Adapty:', error);
-    }
-  };
+  // Adapty removed
 
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
@@ -685,7 +672,7 @@ export default Sentry.wrap(function RootLayout() {
     };
     appLog('Activating Adapty');
 
-    activateAdapty();
+    // Adapty removed
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     const quickActionsSubscription = initializeQuickActions();
@@ -709,31 +696,12 @@ export default Sentry.wrap(function RootLayout() {
     if (appReady && pendingDiscountDeepLink) {
       appLog('App is ready, handling pending discount deep link...');
       setPendingDiscountDeepLink(false);
-      
-      // Add a delay to ensure everything is fully loaded
       setTimeout(async () => {
         try {
-          appLog('Triggering discount paywall from pending deep link...');
-          
-          // Check if Adapty is activated
-          const isActivated = await adapty.isActivated();
-          if (!isActivated) {
-            appLog('Adapty not activated yet, waiting...');
-            return;
-          }
-          
-          // Check user pro status
           const userProStatus = useUserStore.getState().proStatus;
           const subscriptionProStatus = useSubscriptionStore.getState().isProMember;
-          appLog('User pro status check:', { userProStatus, subscriptionProStatus });
-          
-          if (userProStatus === 'pro' || subscriptionProStatus) {
-            appLog('User is already pro, skipping paywall');
-            return;
-          }
-          
-          const result = await useSubscriptionStore.getState().presentHalfOffPaywall();
-          appLog('Discount paywall result:', result);
+          if (userProStatus === 'pro' || subscriptionProStatus) return;
+          await useSubscriptionStore.getState().presentHalfOffPaywall();
         } catch (error) {
           appLog('Error triggering discount paywall:', error);
         }
@@ -925,7 +893,8 @@ export default Sentry.wrap(function RootLayout() {
   appLog(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
+    <SuperwallProvider apiKeys={{ ios: 'pk_c805a222445436a84d083a803fdb5c09254d1a405a603c54' }}>
+      <SuperwallHandler />
       <BottomSheetModalProvider>
         {visibleForceUpdate ? (
           <ForceUpdateModal visible={visibleForceUpdate} />
@@ -1025,7 +994,7 @@ export default Sentry.wrap(function RootLayout() {
       {visibleForceUpdate && isInitialized ? (
         <ForceUpdateModal visible={visibleForceUpdate} />
       ) : null}
-    </GestureHandlerRootView>
+    </SuperwallProvider>
   );
 });
 

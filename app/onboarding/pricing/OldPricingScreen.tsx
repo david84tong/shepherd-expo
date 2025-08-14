@@ -212,7 +212,7 @@ const OldPricingScreen = () => {
       //   });
       // }
 
-      // Adapty implementation
+      // Paywall implementation via Superwall
     } catch (error) {
       appLog('Error presenting paywall:', error);
       analytics.logEvent('PricingScreen_Paywall_Error', {
