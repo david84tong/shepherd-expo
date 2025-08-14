@@ -36,6 +36,8 @@ import { useSoundStore } from '../stores/soundStore';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
 import { appLog } from '../helper/helper';
 import { useExperiment } from '@statsig/react-native-bindings';
+import { useStatsigExperiment } from './useStatsig';
+import { shouldShowStreakWithExperiment } from '../stores/homeStore';
 
 // Constants
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -61,6 +63,11 @@ export const useHomeScreen = () => {
 
   // Statsig experiment for custom path feature
   const pathFeatureExperiment = useExperiment('path_feature');
+  
+  // Get experiment data for streak timing
+  const { experiment: streakExperiment } = useStatsigExperiment('exp_streak_after_daily_reading');
+  const streakAfterReadingFlag = streakExperiment?.get?.('streak_after_reading_flag', false) ?? false;
+  const streakAfterAllTasks = !streakAfterReadingFlag;
 
   // Check if user joined on or before August 13th (should always show custom path button)
   const getCreatedAt = useUserStore((state) => state.getCreatedAt);
@@ -734,18 +741,20 @@ export const useHomeScreen = () => {
           // First check and reset streak flag if it's a new day
           homeStore.checkAndResetStreakIfNeeded();
 
-          const { readingCompleted, sawStreakToday } = homeStore;
+          const { readingCompleted, prayerCompleted, reflectionCompleted, sawStreakToday } = homeStore;
 
-          // Only trigger if reading is completed and streak hasn't been shown today
           appLog('🔍 handleDevotionalClose - Checking streak conditions:', {
             readingCompleted,
+            prayerCompleted,
+            reflectionCompleted,
             sawStreakToday,
+            experimentVariant: streakAfterAllTasks ? 'test' : 'control',
             timestamp: new Date().toISOString(),
           });
 
-          // Only trigger if reading is completed and streak hasn't been shown today
-          if (readingCompleted && !sawStreakToday) {
-            appLog('🎯 Reading completed! Triggering streak screen from devotional close');
+          // Check if we should show streak based on experiment
+          if (shouldShowStreakWithExperiment(homeStore, streakAfterAllTasks)) {
+            appLog('🎯 Streak conditions met! Triggering streak screen from devotional close');
 
             // Mark that we've shown the streak screen today
             homeStore.setSawStreakToday(true);
@@ -754,7 +763,10 @@ export const useHomeScreen = () => {
             router.push('/streak');
 
             analytics.logEvent('HomeScreen_StreakTriggered', {
+              experimentVariant: streakAfterAllTasks ? 'test' : 'control',
               readingCompleted,
+              prayerCompleted,
+              reflectionCompleted,
               sawStreakToday: false,
               timestamp: new Date().toISOString(),
             });
@@ -1165,17 +1177,20 @@ export const useHomeScreen = () => {
       // First check and reset streak flag if it's a new day
       homeStore.checkAndResetStreakIfNeeded();
 
-      const { readingCompleted, sawStreakToday } = homeStore;
+      const { readingCompleted, prayerCompleted, reflectionCompleted, sawStreakToday } = homeStore;
 
       appLog('🔍 onCloseJournal - Checking streak conditions:', {
         readingCompleted,
+        prayerCompleted,
+        reflectionCompleted,
         sawStreakToday,
+        experimentVariant: streakAfterAllTasks ? 'test' : 'control',
         timestamp: new Date().toISOString(),
       });
 
-      // Only trigger if reading is completed and streak hasn't been shown today
-      if (readingCompleted && !sawStreakToday) {
-        appLog('🎯 Reading completed! Triggering streak screen from journal close');
+      // Check if we should show streak based on experiment
+      if (shouldShowStreakWithExperiment(homeStore, streakAfterAllTasks)) {
+        appLog('🎯 Streak conditions met! Triggering streak screen from journal close');
 
         // Mark that we've shown the streak screen today
         homeStore.setSawStreakToday(true);
@@ -1184,7 +1199,10 @@ export const useHomeScreen = () => {
         router.push('/streak');
 
         analytics.logEvent('HomeScreen_StreakTriggered_FromJournal', {
+          experimentVariant: streakAfterAllTasks ? 'test' : 'control',
           readingCompleted,
+          prayerCompleted,
+          reflectionCompleted,
           sawStreakToday: false,
           timestamp: new Date().toISOString(),
         });
@@ -1324,17 +1342,20 @@ export const useHomeScreen = () => {
 
         // Get fresh state after potential reset
         const currentState = useHomeStore.getState();
-        const { readingCompleted, sawStreakToday } = currentState;
+        const { readingCompleted, prayerCompleted, reflectionCompleted, sawStreakToday } = currentState;
 
         appLog('🔍 onClosePrayer - Checking streak conditions:', {
           readingCompleted,
+          prayerCompleted,
+          reflectionCompleted,
           sawStreakToday,
+          experimentVariant: streakAfterAllTasks ? 'test' : 'control',
           timestamp: new Date().toISOString(),
         });
 
-        // Only trigger if reading is completed and streak hasn't been shown today
-        if (readingCompleted && !sawStreakToday) {
-          appLog('🎯 Reading completed! Triggering streak screen from prayer close');
+        // Check if we should show streak based on experiment
+        if (shouldShowStreakWithExperiment(currentState, streakAfterAllTasks)) {
+          appLog('🎯 Streak conditions met! Triggering streak screen from prayer close');
 
           // Mark that we've shown the streak screen today
           homeStore.setSawStreakToday(true);
@@ -1343,7 +1364,10 @@ export const useHomeScreen = () => {
           router.push('/streak');
 
           analytics.logEvent('HomeScreen_StreakTriggered_FromPrayer', {
+            experimentVariant: streakAfterAllTasks ? 'test' : 'control',
             readingCompleted,
+            prayerCompleted,
+            reflectionCompleted,
             sawStreakToday: false,
             timestamp: new Date().toISOString(),
           });

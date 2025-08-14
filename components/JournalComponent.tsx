@@ -40,6 +40,8 @@ import CircleButton from './Shared/CircleButton';
 import i18n from '../app/utils/i18n';
 import { useSoundStore } from '~/app/stores/soundStore';
 import { useLanguageStore } from '~/app/stores/languageStore';
+import { useStatsigExperiment } from '~/app/hooks/useStatsig';
+import { shouldShowStreakWithExperiment } from '~/app/stores/homeStore';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -97,6 +99,11 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
   // Check if this reflection was initiated from the verse reading
   const tappedReflectAboutVerse = useHomeStore((state) => state.tappedReflectAboutVerse);
+
+  // Get experiment configuration for streak behavior
+  const streakExperiment = useStatsigExperiment('exp_streak_after_daily_reading');
+  const streakAfterReadingFlag = streakExperiment?.get?.('streak_after_reading_flag', false) ?? false;
+  const streakAfterAllTasks = !streakAfterReadingFlag;
 
   // Calculate character count
   const charCount = useMemo(() => reflectionContent.length, [reflectionContent]);
@@ -611,6 +618,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         heartsAwarded: heartsToAdd,
         xpAwarded: xpReward,
       });
+      // Mark success BEFORE dismissing keyboard so the sheet does not snap up to 80%
+      setSuccess(true);
       Keyboard.dismiss();
       setPathInProgress(false);
       setFinishReading(true)
@@ -643,8 +652,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       } catch (error) {
         appLog('Error saving reflection data:', error);
       }
-      appLog('🔍 JOURNAL SUCCESS - Setting success state to true');
-      setSuccess(true);
+      appLog('🔍 JOURNAL SUCCESS - Success state already set before keyboard dismiss');
     },
     handleCancel: () => {
       useHomeStore.getState().setShowGlobalButtons(false);

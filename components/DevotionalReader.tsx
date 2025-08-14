@@ -35,6 +35,9 @@ import { useSoundStore } from '~/app/stores/soundStore';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
 import { Devotional } from '~/app/models/Devotional';
 import { useLanguageStore } from '~/app/stores/languageStore';
+import { useStatsigExperiment } from '~/app/hooks/useStatsig';
+import { shouldShowStreakWithExperiment } from '~/app/stores/homeStore';
+import { router } from 'expo-router';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -71,6 +74,11 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   const activeDevotional: Devotional | null = customDevotional || currentDevotional;
 
   const { language } = useLanguageStore();
+  
+  // Get experiment data for streak timing
+  const { experiment: streakExperiment } = useStatsigExperiment('exp_streak_after_daily_reading');
+  const streakAfterReadingFlag = streakExperiment?.get?.('streak_after_reading_flag', false) ?? false;
+  const streakAfterAllTasks = !streakAfterReadingFlag;
   
   // Debug logging for devotional data
   useEffect(() => {
@@ -580,9 +588,39 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             const setLastReadingDate = useUserStore.getState().setLastReadingDate;
             setLastActivityDate(now);
             setLastReadingDate(now);
+            setIsRewarding(false);
+            
+            // Check streak trigger conditions before navigation
+            const homeStore = useHomeStore.getState();
+            homeStore.checkAndResetStreakIfNeeded();
+            const { readingCompleted, prayerCompleted, reflectionCompleted, sawStreakToday } = homeStore;
+            const setSawStreakToday = homeStore.setSawStreakToday;
+            
+            // Determine if we should show streak based on experiment
+            // IMPORTANT: evaluate BEFORE marking reading as completed so
+            // we don't trigger streak solely from this screen when the experiment is on
+            if (shouldShowStreakWithExperiment(homeStore, streakAfterAllTasks)) {
+              // Mark that we've shown the streak screen today
+              setSawStreakToday(true);
+              
+              // Navigate to streak screen
+              router.push('/streak');
+              
+              analytics.logEvent('DevotionalReader_StreakTriggered_FromGoHome', {
+                experimentVariant: streakAfterAllTasks ? 'test' : 'control',
+                readingCompleted,
+                prayerCompleted,
+                reflectionCompleted,
+                sawStreakToday: false,
+                timestamp: new Date().toISOString()
+              });
+              
+              return; // Exit early to prevent normal navigation
+            }
+            // Mark reading completed after streak decision
             const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
             setReadingCompleted(true);
-            setIsRewarding(false);
+            
             if (onClose) {
               hapticMedium();
               const setDevotionalReaderVisible = useUIStore.getState().setDevotionalReaderVisible;

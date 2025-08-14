@@ -128,6 +128,8 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
                   experimentValue = { gptModel: statsigExperiment.get('gptModel', 'gpt-5-nano') };
                 } else if (experimentName === 'prayer_gen_on') {
                   experimentValue = statsigExperiment.get('generate_prayer_for_user', false);
+                } else if (experimentName === 'exp_streak_after_daily_reading') {
+                  experimentValue = statsigExperiment.get('streak_after_reading_flag', false);
                 } else {
                   experimentValue = statsigExperiment.get('value', null);
                 }
@@ -139,6 +141,8 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
                   experimentValue = { gptModel: statsigExperiment.value.gptModel };
                 } else if (experimentName === 'prayer_gen_on' && statsigExperiment.value.generate_prayer_for_user !== undefined) {
                   experimentValue = statsigExperiment.value.generate_prayer_for_user;
+                } else if (experimentName === 'exp_streak_after_daily_reading' && statsigExperiment.value.streak_after_reading_flag !== undefined) {
+                  experimentValue = statsigExperiment.value.streak_after_reading_flag;
                 } else {
                   experimentValue = statsigExperiment.value;
                 }
@@ -150,6 +154,8 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
                   experimentValue = { gptModel: statsigExperiment.gptModel ?? 'gpt-5-nano' };
                 } else if (experimentName === 'prayer_gen_on') {
                   experimentValue = statsigExperiment.generate_prayer_for_user ?? false;
+                } else if (experimentName === 'exp_streak_after_daily_reading') {
+                  experimentValue = statsigExperiment.streak_after_reading_flag ?? false;
                 }
               }
               
@@ -275,6 +281,8 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
         return 'Controls prayer generation feature for users';
       case 'gpt-model':
         return 'Controls which GPT model is used for AI responses';
+      case 'exp_streak_after_daily_reading':
+        return 'Controls when streak screen shows (after reading vs after all 3 tasks)';
       default:
         return 'Experiment configuration';
     }
@@ -345,6 +353,8 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
             `gptModel: ${experimentData.value?.gptModel || 'unknown'}` :
             experimentName === 'prayer_gen_on' ?
             `generate_prayer_for_user: ${experimentData.value === null ? 'unknown' : experimentData.value}` :
+            experimentName === 'exp_streak_after_daily_reading' ?
+            `streak_after_reading_flag: ${experimentData.value === null ? 'unknown' : experimentData.value}` :
             `Experiment value: ${JSON.stringify(experimentData.value)}`
           }
         </Text>
@@ -1339,6 +1349,9 @@ export function DebugButton() {
                   
                   {/* GPT Model Experiment */}
                   <ExperimentCard experimentName="gpt-model" />
+                  
+                  {/* Streak Timing Experiment */}
+                  <ExperimentCard experimentName="exp_streak_after_daily_reading" />
                 </View>
 
                 {/* Feature Gates */}

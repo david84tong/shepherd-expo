@@ -351,7 +351,10 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
             )}
             <RNAnimated.View style={goldButtonStyle} className="w-full">
               <TouchableOpacity
-                onPress={onGoHome}
+                onPress={() => {
+                  // Ensure streak logic can evaluate using the state BEFORE any completion flags are mutated
+                  onGoHome();
+                }}
                 disabled={!localButtonsEnabled || !buttonsEnabled}
                 className="h-[52px] w-full self-center bg-gold rounded-[16px] mt-4 items-center justify-center"
               >

@@ -1378,9 +1378,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
             }}
             onPressIn={() => playButtonSound?.()}
             className="border-accentGold/40">
-            <Text className="font-din text-base text-gray-600 text-center underline">
-              {i18n.t('checkin_skip_this_step')}
-            </Text>
+           
           </Pressable>
         </View>
       </View>

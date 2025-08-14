@@ -68,6 +68,22 @@ function getExperimentGptModel(): string {
 }
 
 /**
+ * Build GPT API URL with model and conditional params.
+ * If model starts with 'gpt-5', append verbosity=low & reasoning_effort=minimal
+ */
+function buildGptApiUrl(modelName: string): string {
+  const base = 'https://shepherd-dev-api.skylar.gg/oai/gpt';
+  const isGpt5 = typeof modelName === 'string' && modelName.startsWith('gpt-5');
+  const params = new URLSearchParams({ model: modelName });
+  if (isGpt5) {
+    params.set('verbosity', 'low');
+    params.set('reasoning_effort', 'minimal');
+  }
+  console.log('🧪 [GPT-MODEL] Building API URL with params:', params.toString());
+  return `${base}?${params.toString()}`;
+}
+
+/**
  * Generate a concise 2–3 sentence prayer and a single-sentence reflection prompt
  * based on the user's mood and raw prayer text. This is faster and cheaper than
  * full devotional generation and is intended for WaterPrayer and Journal flows.
@@ -100,7 +116,7 @@ export async function generateQuickPrayerAndPrompt(
   const timeout = setTimeout(() => controller.abort(), 25000);
   try {
     const modelName = getExperimentGptModel();
-    const response = await fetch(`https://shepherd-dev-api.skylar.gg/oai/gpt?model=${modelName}`, {
+    const response = await fetch(buildGptApiUrl(modelName), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -179,7 +195,7 @@ export async function getBibleVerseAIResponse(
     const languageInstruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
 
     const modelName = getExperimentGptModel();
-    const response = await fetch(`https://shepherd-dev-api.skylar.gg/oai/gpt?model=${modelName}`, {
+    const response = await fetch(buildGptApiUrl(modelName), {
       method: 'POST',
       headers: {
         "Content-Type": "application/json",
@@ -295,7 +311,7 @@ export async function createDevotionalFromVerse(
       }
 
       const modelName = getExperimentGptModel();
-    const response = await fetch(`https://shepherd-dev-api.skylar.gg/oai/gpt?model=${modelName}`, {
+    const response = await fetch(buildGptApiUrl(modelName), {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
@@ -559,7 +575,7 @@ export async function createDevotionalFromCheckIn(
       }
 
       const modelName = getExperimentGptModel();
-    const response = await fetch(`https://shepherd-dev-api.skylar.gg/oai/gpt?model=${modelName}`, {
+    const response = await fetch(buildGptApiUrl(modelName), {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
@@ -905,7 +921,7 @@ export async function createJournalResponse(
       }
 
       const modelName = getExperimentGptModel();
-    const response = await fetch(`https://shepherd-dev-api.skylar.gg/oai/gpt?model=${modelName}`, {
+    const response = await fetch(buildGptApiUrl(modelName), {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",

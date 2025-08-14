@@ -33,6 +33,8 @@ import Reanimated, {
 import * as Haptics from 'expo-haptics';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import analytics from '../utils/analytics';
+import { useStatsigExperiment } from '~/app/hooks/useStatsig';
+import { shouldShowStreakWithExperiment } from '~/app/stores/homeStore';
 import i18n from '../app/utils/i18n';
 
 import { getLevelData } from '~/utils/levelUtils';
@@ -443,6 +445,11 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 }, ref) => {
   const { recentPrayers } = usePrayerStore();
   const { currentDevotional } = useDevotionalStore();
+  
+  // Get experiment data for streak timing
+  const { experiment: streakExperiment } = useStatsigExperiment('exp_streak_after_daily_reading');
+  const streakAfterReadingFlag = streakExperiment?.get?.('streak_after_reading_flag', false) ?? false;
+  const streakAfterAllTasks = !streakAfterReadingFlag;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [skipTyping, setSkipTyping] = useState(false);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
@@ -1205,20 +1212,21 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               }
               // Check streak trigger conditions when user presses "Go Home" from prayer success
               const homeStore = useHomeStore.getState();
-              const { readingCompleted, sawStreakToday } = homeStore;
+              const { readingCompleted, prayerCompleted, reflectionCompleted, sawStreakToday } = homeStore;
 
-              // Only trigger if reading is completed and streak hasn't been shown today
-              if (readingCompleted && !sawStreakToday) {
-
+              // Check if we should show streak based on experiment
+              if (shouldShowStreakWithExperiment(homeStore, streakAfterAllTasks)) {
                 // Mark that we've shown the streak screen today
                 homeStore.setSawStreakToday(true);
 
                 // Navigate to streak screen
-               
                 router.push('/streak');
 
                 analytics.logEvent('PrayerView_StreakTriggered_FromGoHome', {
+                  experimentVariant: streakAfterAllTasks ? 'test' : 'control',
                   readingCompleted,
+                  prayerCompleted,
+                  reflectionCompleted,
                   sawStreakToday: false,
                   timestamp: new Date().toISOString()
                 });

@@ -19,7 +19,7 @@ import i18n from '~/app/utils/i18n';
 import PrimaryButton from './PrimaryButton';
 import { StreakScreen } from './StreakScreen';
 import { getLambMoodByHearts } from '../app/hooks/streakHook';
-import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
+import { useHomeStore, SuccessAnimationType, shouldShowStreakWithExperiment } from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
 import { useUIStore } from '../app/stores/uiStore';
@@ -35,6 +35,7 @@ import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import { AppFonts } from '~/app/constants/appFonts';
 import { appLog, RPH } from '~/app/helper/helper';
 import { hapticMedium } from '~/utils/haptics';
+import { useStatsigExperiment } from '~/app/hooks/useStatsig';
 
 // Get screen dimensions to ensure full screen sizing
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -75,6 +76,11 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const [homeLambAssets] = useAssets([require('../assets/riveAnimations/home_lamb.riv')]);
 
   // -------- Other hooks below (must appear before any conditional return) --------
+  // Get experiment data for streak timing
+  const { experiment: streakExperiment } = useStatsigExperiment('exp_streak_after_daily_reading');
+  const streakAfterReadingFlag = streakExperiment?.get?.('streak_after_reading_flag', false) ?? false;
+  const streakAfterAllTasks = !streakAfterReadingFlag;
+  
   // Get completion states
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
@@ -232,7 +238,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             }
             // Try to parse as string or number
             else if (reading.date) {
-              const parsed = dayjs(reading.date);
+              const parsed = dayjs(reading.date as any);
               if (parsed.isValid()) {
                 return parsed.format('YYYY-MM-DD');
               }
@@ -243,7 +249,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             return null;
           }
         })
-        .filter((dateStr) => dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)); // Filter out null and invalid dates
+        .filter((dateStr): dateStr is string => Boolean(dateStr) && /^\d{4}-\d{2}-\d{2}$/.test(dateStr as string)); // Filter out null and invalid dates
 
       // Today's date as string for easy comparison
       const todayStr = today.format('YYYY-MM-DD');
@@ -660,21 +666,38 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     homeStore.setPrayerViewVisible(false);
     homeStore.setJournalViewVisible(false);
 
-    // For reading completion, never show streak screen - just go home
-    if (effectiveType === SuccessAnimationType.READING || effectiveType === SuccessAnimationType.SECTION_COMPLETE) {
-      router.back();
-    } else {
-      // For other success types, check if we should show streak
-      if (!sawStreakToday) {
-        // Set sawStreakToday to true before navigating to streak screen
-        setSawStreakToday(true);
-        appLog('Setting sawStreakToday to true before navigating to streak screen');
-        router.replace({
-          pathname: '/streak',
-        });
-      } else {
-        router.back();
+    // Determine streak logic based on experiment
+    const shouldShowStreak = () => {
+      if (sawStreakToday) {
+        return false; // Never show streak if already shown today
       }
+      
+      if (streakAfterAllTasks) {
+        // Test group: Only show streak after all 3 tasks are completed
+        return readingCompleted && prayerCompleted && reflectionCompleted;
+      } else {
+        // Control group: Show streak after reading completion (current behavior)
+        return readingCompleted;
+      }
+    };
+
+    if (shouldShowStreak()) {
+      // Set sawStreakToday to true before navigating to streak screen
+      setSawStreakToday(true);
+      appLog('Setting sawStreakToday to true before navigating to streak screen');
+      
+      // Log experiment variant for analytics
+      analytics.logEvent('SuccessAnimation_ShowingStreak_ExperimentTracking', {
+        experimentVariant: streakAfterAllTasks ? 'test' : 'control',
+        fromType: effectiveType,
+        allTasksCompleted: readingCompleted && prayerCompleted && reflectionCompleted,
+      });
+      
+      router.replace({
+        pathname: '/streak',
+      });
+    } else {
+      router.back();
     }
   };
 
@@ -683,6 +706,14 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     if (sawStreakToday) {
       appLog('Streak screen already shown today - skipping');
       // Just continue with normal navigation
+      handleGoHome();
+      return;
+    }
+
+    // Respect experiment: only show streak if conditions match flag semantics
+    const homeState = useHomeStore.getState();
+    if (!shouldShowStreakWithExperiment(homeState, streakAfterAllTasks)) {
+      appLog('Streak experiment gating prevented streak screen; navigating home');
       handleGoHome();
       return;
     }
@@ -726,14 +757,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     return <StreakScreen />;
   }
 
-  // Show loading indicator if assets aren't loaded yet
+  // Don't render if assets aren't loaded yet
   if (!riveAssets || !homeLambAssets) {
-    return (
-      <View className="flex-1 items-center justify-center bg-surfaceCream">
-        <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading animation...</Text>
-      </View>
-    );
+    return null;
   }
 
   return (
@@ -745,11 +771,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         <Animated.View
           className="flex-1 items-center justify-center pt-4 px-5 bg-surfaceCream"
           style={{ opacity: fadeToStreakAnim }}>
-          {isTransitioning && (
-            <View className="absolute inset-0 items-center justify-center bg-surfaceCream">
-              <ActivityIndicator size="large" color="#F2B705" />
-            </View>
-          )}
 
           {/* Rive animation - centered */}
           <View className="w-full h-[275px] my-4 items-center justify-center ">

@@ -299,6 +299,28 @@ export default function HomeScreen() {
   // Memoize recent devotionals to prevent re-renders when array reference changes but content is same
   const memoizedRecentDevotionals = useMemo(() => recentDevotionals, [recentDevotionals]);
 
+  // Whether the home should render multiple devotional cards (custom + daily)
+  const hasMultipleHomeDevotionals = useMemo(() => {
+    const hasCustomFromRecent = (recentDevotionals || []).some(
+      (d) => d && typeof d.id === 'string' && (d.id.startsWith('custom-') || d.id.startsWith('ai-'))
+    );
+    const hasCustom = hasCustomFromRecent || !!customDevotional;
+    const hasDaily = !!dailyDevotional;
+    return hasCustom && hasDaily;
+  }, [recentDevotionals, customDevotional, dailyDevotional]);
+
+  // Whether any devotional card section (DailyVerseCard or custom) is visible above the prayer/reflect buttons
+  const hasAnyDevotionalCards = useMemo(() => {
+    if (!readingCompleted) return false;
+    const hasCustomFromRecent = (recentDevotionals || []).some(
+      (d) => d && typeof d.id === 'string' && (d.id.startsWith('custom-') || d.id.startsWith('ai-'))
+    );
+    const hasCustom = hasCustomFromRecent || !!customDevotional;
+    const hasDaily = !!dailyDevotional && !!dailyDevotional.id && dailyDevotional.id !== 'undefined';
+    const hasFallback = !!currentDevotional;
+    return hasDaily || hasCustom || hasFallback;
+  }, [readingCompleted, recentDevotionals, customDevotional, dailyDevotional, currentDevotional]);
+
   // Debug effect to track nextUnitPreview changes
   useEffect(() => {
     appLog('🔍 NextUnitPreview debug:', {
@@ -1224,7 +1246,7 @@ export default function HomeScreen() {
                                 // If only one devotional, render it directly without CardStack
                                 if (finalDevotionals.length === 1) {
                                   return (
-                                    <View className="-mt-2 mb-8">
+                                    <View className="-mt-2 -mb-4">
                                       <DailyVerseCard
                                         devotional={finalDevotionals[0]}
                                         share={true}
@@ -1240,7 +1262,7 @@ export default function HomeScreen() {
                                 } else {
                                   // Multiple devotionals, use CardStack
                                   return (
-                                    <View className="-mt-4">
+                                    <View className="-mt-4 -mb-12">
                                       <CardStack
                                         data={finalDevotionals}
                                         dynamicHeight={true}
@@ -1512,7 +1534,7 @@ export default function HomeScreen() {
                         )}
 
                         {/* PRAYER AND REFLECT BUTTONS - Always show below daily bread/custom devotional and above custom path */}
-                        <View style={{ marginTop: responsiveHeight(0) }}>
+                        <View style={{ marginTop: responsiveHeight(hasAnyDevotionalCards ? 0 : 2) }}>
                           {/* Prayer Button */}
                           <View
                             className="flex-row items-center"

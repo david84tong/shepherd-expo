@@ -20,9 +20,8 @@ import { ONBOARDING_COMPLETED_KEY } from '~/app/models/Onboarding';
 import i18n from '~/app/utils/i18n';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
-import analytics from '~/utils/analytics';
+import analytics, { getStatsigClient } from '~/utils/analytics';
 import { hapticHeavy } from '~/utils/haptics';
-import { useHomeStore } from '../stores/homeStore';
 import { useUIStore } from '../stores/uiStore';
 import { appLog } from '../helper/helper';
 import Toast from 'react-native-toast-message';
@@ -69,6 +68,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const router = useRouter();
   const params = useLocalSearchParams();
   const [hasStarted, setHasStarted] = useState(false);
+  const startTimeRef = useRef<number | null>(null);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const lastHapticPercentage = useRef(0);
 
@@ -167,60 +167,39 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     return DEVOTIONAL_LOADING_POINTS;
   }, [isOnboarding, isCheckInFlow]);
 
-  // Flow-aware step duration: 3x longer for custom devotional/check-in flows
-  const STEP_DURATION = useMemo(() => {
-    return isOnboarding ? BASE_STEP_DURATION : BASE_STEP_DURATION * 3;
-  }, [isOnboarding]);
-
-  // Add loading state for API call
-  const [apiLoadingState, setApiLoadingState] = useState<'idle' | 'loading' | 'completed' | 'error'>('idle');
-  
-  // Track if paywall has been shown to prevent duplicate calls
-  const [paywallShown, setPaywallShown] = useState(false);
-
-  // Add navigation guard to prevent multiple navigations
-  const hasNavigated = useRef(false);
-
-  function showDevotionalReader(){
-    if(!useUIStore.getState().devotionalReaderVisible){
-      useUIStore.getState().setDevotionalReaderVisible(true);
-    }
-  }
-
-  // Monitor API loading state - ENHANCED to be more strict
+  // Detect if a GPT-5 or GPT-4-mini model is active via Statsig experiment
+  const [isGpt5Model, setIsGpt5Model] = useState(false);
+  const [isGpt4MiniModel, setIsGpt4MiniModel] = useState(false);
   useEffect(() => {
-    if (!isOnboarding) {
-      appLog('[LoadingScreen] API State Monitor:', {
-        isCreatingDevotional,
-        hasCustomDevotional: !!customDevotional,
-        hasCurrentDevotional: !!devotionalStoreCurrentDevotional,
-        hasError: !!devotionalError,
-        isCheckInFlow,
-        currentApiState: apiLoadingState
-      });
-      
-      // Only mark as loading if actively creating
-      if (isCreatingDevotional) {
-        appLog('[LoadingScreen] Setting API state to loading - devotional creation in progress');
-        setApiLoadingState('loading');
-      } 
-      // Only mark as completed when we have a devotional AND creation is finished
-      else if ((customDevotional || devotionalStoreCurrentDevotional) && !isCreatingDevotional) {
-        appLog('[LoadingScreen] Setting API state to completed - devotional ready and creation finished');
-        setApiLoadingState('completed');
-      } 
-      // Mark as error only when there's an actual error
-      else if (devotionalError) {
-        appLog('[LoadingScreen] Setting API state to error - devotional creation failed');
-        setApiLoadingState('error');
+    try {
+      const client = getStatsigClient?.();
+      let modelName = 'gpt-5-nano';
+      if (client && typeof client.getExperiment === 'function') {
+        const exp = client.getExperiment('gpt-model');
+        modelName = exp?.get?.('gptModel', 'gpt-5-nano') || 'gpt-5-nano';
       }
-      // Keep as loading if we're in check-in flow but don't have devotional yet
-      else if (isCheckInFlow && !customDevotional && !devotionalStoreCurrentDevotional) {
-        appLog('[LoadingScreen] Keeping API state as loading - check-in flow waiting for devotional');
-        setApiLoadingState('loading');
-      }
+      const isGpt5 = typeof modelName === 'string' && modelName.startsWith('gpt-5');
+      const isGpt4Mini = typeof modelName === 'string' && modelName.startsWith('gpt-4') && modelName.includes('mini');
+      setIsGpt5Model(isGpt5);
+      setIsGpt4MiniModel(isGpt4Mini);
+      appLog('[LoadingScreen] Detected GPT model:', modelName, 'isGpt5:', isGpt5, 'isGpt4Mini:', isGpt4Mini);
+    } catch (e) {
+      appLog('[LoadingScreen] Error detecting GPT model, defaulting to non-enforced timing:', e);
+      setIsGpt5Model(false);
+      setIsGpt4MiniModel(false);
     }
-  }, [isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, devotionalError, isCheckInFlow, customDevotional]);
+  }, []);
+
+  // Flow-aware step duration with model-based caps (GPT-4 mini max 5s total)
+  const STEP_DURATION = useMemo(() => {
+    const base = isOnboarding ? BASE_STEP_DURATION : BASE_STEP_DURATION * 3;
+    if (isGpt4MiniModel) {
+      const totalBudgetMs = 5000 - (isOnboarding ? FINAL_DELAY : 0);
+      const perStep = Math.floor(totalBudgetMs / Math.max(1, loadingPoints.length));
+      return Math.max(200, Math.min(base, perStep));
+    }
+    return base;
+  }, [isOnboarding, loadingPoints.length, isGpt4MiniModel]);
 
   // Animation values for checklist items
   const animValuesRef = useRef(
@@ -258,6 +237,22 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       progressAnim.removeListener(listenerId);
     };
   }, [progressAnim]);
+
+  function showDevotionalReader(){
+    if(!useUIStore.getState().devotionalReaderVisible){
+      useUIStore.getState().setDevotionalReaderVisible(true);
+    }
+  }
+
+  // Add loading state for API call
+  const [apiLoadingState, setApiLoadingState] = useState<'idle' | 'loading' | 'completed' | 'error'>('idle');
+  
+  // Track if paywall has been shown to prevent duplicate calls
+  const [paywallShown, setPaywallShown] = useState(false);
+
+  // Add navigation guard to prevent multiple navigations
+  const hasNavigated = useRef(false);
+  const hasScheduledPostWaitRef = useRef(false);
 
   // Add timeout effect for custom devotional creation - starts 60 seconds AFTER reaching 100%
   useEffect(() => {
@@ -392,6 +387,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       
       const startTimer = setTimeout(() => {
         setHasStarted(true);
+        startTimeRef.current = Date.now();
         // Don't set currentStep here - let it stay at 0
       }, 100);
       return () => clearTimeout(startTimer);
@@ -505,7 +501,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
     // Calculate animation duration to match step progression
     // Animation should be smooth and match the step duration
-    const animationDuration = STEP_DURATION - 200; // Slightly less than step duration for smooth transition
+    const animationDuration = Math.max(50, STEP_DURATION - 200); // Slightly less than step duration for smooth transition
     
     Animated.timing(progressAnim, {
       toValue: progress,
@@ -668,49 +664,72 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       });
 
       if (canNavigate) {
+        const minTotalMs = isGpt5Model ? 12000 : 0;
+        const start = startTimeRef.current || Date.now();
+        const elapsedMs = Date.now() - start;
+        const remainingMs = Math.max(0, minTotalMs - elapsedMs);
+
         // Clear timeout if navigation is successful
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
         }
 
-        // For check-in flow OR pro users - always navigate to devotional reader with custom devotional
-        if ((isCheckInFlow && customDevotional) || (isProMember && (customDevotional || devotionalStoreCurrentDevotional))) {
+        const doNavigateToDevotional = () => {
           const isFromCheckIn = isCheckInFlow && customDevotional;
-          
           appLog(`[LoadingScreen] All conditions met - ${isFromCheckIn ? 'check-in' : 'pro user'} devotional ready, navigating to DevotionalReader`);
-
           analytics.logEvent(isFromCheckIn ? 'LoadingScreen_CheckIn_Devotional_Ready' : 'LoadingScreen_Custom_Devotional_Created', {
             isProMember: isProMember,
             verseText: verseText || 'unknown',
             reference: reference || 'unknown',
             totalLoadingTime: loadingPoints.length * STEP_DURATION,
           });
-
-          // Check navigation guard before navigating
           if (!hasNavigated.current) {
             hasNavigated.current = true;
             const timer = setTimeout(() => {
               showDevotionalReader();
-             if(IS_ANDROID){
-            router.replace({
-              pathname: '/(tabs)',
-              params: { showDevotional: 'true' }
-            });
-           }else{
-            router.navigate({
-              pathname: '/(tabs)',
-              params: { showDevotional: 'true' }
-            });
-           }
+              if (IS_ANDROID) {
+                router.replace({ pathname: '/(tabs)', params: { showDevotional: 'true' } });
+              } else {
+                router.navigate({ pathname: '/(tabs)', params: { showDevotional: 'true' } });
+              }
             }, 500);
             return () => clearTimeout(timer);
           }
+        };
+
+        const doShowPaywall = () => {
+          appLog('[LoadingScreen] All conditions met - non-pro user, showing paywall');
+          showPaywallForNonProUser();
+        };
+
+        const scheduleAfterWait = (fn: () => any) => {
+          if (remainingMs > 0) {
+            if (!hasScheduledPostWaitRef.current) {
+              hasScheduledPostWaitRef.current = true;
+              const t = setTimeout(() => {
+                fn();
+              }, remainingMs);
+              return () => clearTimeout(t);
+            }
+            return;
+          }
+          fn();
+        };
+
+        // For check-in flow OR pro users - always navigate to devotional reader with custom devotional
+        if ((isCheckInFlow && customDevotional) || (isProMember && (customDevotional || devotionalStoreCurrentDevotional))) {
+          const cleanup = scheduleAfterWait(doNavigateToDevotional);
+          if (cleanup) return cleanup;
         } 
         // For non-pro users NOT in check-in flow - show paywall
         else if (!isProMember && !isCheckInFlow && !paywallShown) {
-          appLog('[LoadingScreen] All conditions met - non-pro user, showing paywall');
-          showPaywallForNonProUser();
+          // Prevent duplicate scheduling before actual call sets paywallShown
+          if (remainingMs > 0 && !hasScheduledPostWaitRef.current) {
+            setPaywallShown(true);
+          }
+          const cleanup = scheduleAfterWait(doShowPaywall);
+          if (cleanup) return cleanup;
         }
         // Additional safety: if it's a check-in flow but we somehow don't have customDevotional
         else if (isCheckInFlow && !customDevotional) {

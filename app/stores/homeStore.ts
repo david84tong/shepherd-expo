@@ -88,6 +88,20 @@ export const isBonusAvailable = (state: HomeState) => {
   return state.readingCompleted && state.prayerCompleted && state.reflectionCompleted && isFirstReadingOfDay && !state.sawDailyBonus;
 };
 
+export const shouldShowStreakWithExperiment = (state: HomeState, streakAfterAllTasks: boolean) => {
+  if (state.sawStreakToday) {
+    return false; // Never show streak if already shown today
+  }
+  
+  if (streakAfterAllTasks) {
+    // Test group: Only show streak after all 3 tasks are completed
+    return state.readingCompleted && state.prayerCompleted && state.reflectionCompleted;
+  } else {
+    // Control group: Show streak after reading completion (current behavior)
+    return state.readingCompleted;
+  }
+};
+
 /**
  * Zustand store to manage the current operational mode of the Home screen.
  * Uses persist middleware to save completion states in AsyncStorage.

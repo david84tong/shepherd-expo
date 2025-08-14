@@ -484,6 +484,11 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
   const { experiment: prayerGenExperiment } = useStatsigExperiment('prayer_gen_on');
   const generatePrayerForUser = prayerGenExperiment?.get?.('generate_prayer_for_user', false) ?? false;
   
+  // Get experiment data for streak timing
+  const { experiment: streakExperiment } = useStatsigExperiment('exp_streak_after_daily_reading');
+  const streakAfterReadingFlag = streakExperiment?.get?.('streak_after_reading_flag', false) ?? false;
+  const streakAfterAllTasks = !streakAfterReadingFlag;
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const [skipTyping, setSkipTyping] = useState(false);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
@@ -1275,17 +1280,30 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
                 }
                 onClose({});
               }
-              // // Check streak trigger conditions when user presses "Go Home" from prayer success
+              // Check streak trigger conditions when user presses "Go Home" from prayer success
               const homeStore = useHomeStore.getState();
               
               // First check and reset streak flag if it's a new day
               homeStore.checkAndResetStreakIfNeeded();
               
-              const { readingCompleted, sawStreakToday } = homeStore;
+              const { readingCompleted, prayerCompleted, reflectionCompleted, sawStreakToday } = homeStore;
 
-              // Only trigger if reading is completed and streak hasn't been shown today
-              if (readingCompleted && !sawStreakToday) {
+              // Determine streak logic based on experiment
+              const shouldShowStreak = () => {
+                if (sawStreakToday) {
+                  return false; // Never show streak if already shown today
+                }
+                
+                if (streakAfterAllTasks) {
+                  // Test group: Only show streak after all 3 tasks are completed
+                  return readingCompleted && prayerCompleted && reflectionCompleted;
+                } else {
+                  // Control group: Show streak if reading is completed (current behavior)
+                  return readingCompleted;
+                }
+              };
 
+              if (shouldShowStreak()) {
                 // Mark that we've shown the streak screen today
                 homeStore.setSawStreakToday(true);
 
@@ -1293,7 +1311,10 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
                 router.push('/streak');
 
                 analytics.logEvent('WaterPrayerView_StreakTriggered_FromGoHome', {
+                  experimentVariant: streakAfterAllTasks ? 'test' : 'control',
                   readingCompleted,
+                  prayerCompleted,
+                  reflectionCompleted,
                   sawStreakToday: false,
                   timestamp: new Date().toISOString()
                 });
