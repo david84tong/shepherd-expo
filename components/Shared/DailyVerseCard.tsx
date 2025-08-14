@@ -221,7 +221,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
     */
     if (onShare) {
       hapticLight();
-      analytics.logEvent('DailyVerseCard_Tapped_Share_To_Expand', {
+      analytics.logEvent('DailyVerseCard_Tapped_Share', {
         isShareCard: share,
         bibleReference: devotional.bibleReference,
       });

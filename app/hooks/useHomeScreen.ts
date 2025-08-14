@@ -448,6 +448,11 @@ export const useHomeScreen = () => {
 
   useEffect(() => {
     if (devotionalReaderVisible) {
+      // Ensure bottom sheet snaps to first index (60%) when devotional reader opens
+      if (bottomSheetRef.current) {
+        bottomSheetRef.current.snapToIndex(0);
+      }
+      
       Animated.parallel([
         Animated.timing(devotionalBgOpacityAnim, {
           toValue: 0.3,
@@ -1797,7 +1802,7 @@ export const useHomeScreen = () => {
     resetRiveToDefaultState,
 
     // Statsig experiments - always show for early users (joined on/before Aug 13) or experiment users
-    showCustomPathButton: isEarlyUser || Boolean(pathFeatureExperiment?.value),
+    showCustomPathButton: isEarlyUser || Boolean(pathFeatureExperiment?.get?.('path_shown', false)),
   };
 };
 

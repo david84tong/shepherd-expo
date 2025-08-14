@@ -259,6 +259,8 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
     switch (experimentName) {
       case 'path_feature':
         return 'Controls custom path button visibility in home screen';
+      case 'generate_prayer_for_user':
+        return 'Controls prayer generation feature for users';
       default:
         return 'Experiment configuration';
     }
@@ -1313,6 +1315,9 @@ export function DebugButton() {
                   
                   {/* Path Feature Experiment */}
                   <ExperimentCard experimentName="path_feature" />
+                  
+                  {/* Prayer Generation Experiment */}
+                  <ExperimentCard experimentName="generate_prayer_for_user" />
                 </View>
 
                 {/* Feature Gates */}

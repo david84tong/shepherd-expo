@@ -279,18 +279,37 @@ const BreathingAnimation: React.FC<{
       />
 
       {/* Center circle with yellow glow */}
-      <Reanimated.View style={[
-        { pointerEvents: 'none' },
-        {
-          width: circleSize,
-          height: circleSize,
-          borderRadius: circleSize / 2,
-          backgroundColor: '#FFD700',
-          position: 'absolute',
-          opacity: guidedPrayerEnabled ? 0.1 : 1,
-        },
-        centerCircleStyle
-      ]} />
+      {guidedPrayerEnabled ? (
+        <TouchableWithoutFeedback
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+        >
+          <Reanimated.View style={[
+            {
+              width: circleSize,
+              height: circleSize,
+              borderRadius: circleSize / 2,
+              backgroundColor: '#FFD700',
+              position: 'absolute',
+              opacity: 0.1,
+            },
+            centerCircleStyle
+          ]} />
+        </TouchableWithoutFeedback>
+      ) : (
+        <Reanimated.View style={[
+          { pointerEvents: 'none' },
+          {
+            width: circleSize,
+            height: circleSize,
+            borderRadius: circleSize / 2,
+            backgroundColor: '#FFD700',
+            position: 'absolute',
+            opacity: 1,
+          },
+          centerCircleStyle
+        ]} />
+      )}
 
       {/* Breathing instruction text */}
       <Reanimated.View
@@ -328,7 +347,7 @@ const BreathingAnimation: React.FC<{
                 lineHeight: 28,
               }}
             >
-              {i18n.t('press_and_hold_to_pray')}
+              {i18n.t('press_and_hold_to_pray') || 'Press and hold to pray'}
             </Text>
           )
         ) : (
@@ -539,6 +558,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
         if (savedGuidedMode !== null) {
           setGuidedPrayerEnabled(savedGuidedMode === 'true');
+        } else {
+          // Default to true if no saved setting
+          setGuidedPrayerEnabled(true);
         }
 
         appLog('🙏 Loaded prayer settings from AsyncStorage');
@@ -613,6 +635,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       }
       if (completePrayerTimerRef.current) {
         clearTimeout(completePrayerTimerRef.current);
+      }
+      if (pressHoldTimer.current) {
+        clearTimeout(pressHoldTimer.current);
       }
     };
   }, []);
@@ -798,6 +823,46 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       console.error('🙏 Error saving guided prayer setting:', error);
     }
   }, []);
+
+  // Press and hold handlers
+  const handlePressIn = useCallback(() => {
+    if (!guidedPrayerEnabled) return;
+    
+    setIsPressHeld(true);
+    if (hapticsEnabled) {
+      hapticLight();
+    }
+    
+    // Start 1-second timer before showing guided prayer
+    pressHoldTimer.current = setTimeout(() => {
+      setShowGuidedPrayer(true);
+    }, 1000);
+  }, [guidedPrayerEnabled, hapticsEnabled]);
+
+  const handlePressOut = useCallback(() => {
+    if (!guidedPrayerEnabled) return;
+    
+    setIsPressHeld(false);
+    
+    // Clear timer if user releases before 1 second
+    if (pressHoldTimer.current) {
+      clearTimeout(pressHoldTimer.current);
+      pressHoldTimer.current = null;
+    }
+  }, [guidedPrayerEnabled]);
+
+  // Ensure guided prayer does not start typing until user has held for 1s
+  // Reset any prior guided state when view becomes visible or when guided mode is toggled on
+  useEffect(() => {
+    if (visible && guidedPrayerEnabled) {
+      // Clear any pending timers and require a fresh 1s hold
+      if (pressHoldTimer.current) {
+        clearTimeout(pressHoldTimer.current);
+        pressHoldTimer.current = null;
+      }
+      setShowGuidedPrayer(false);
+    }
+  }, [visible, guidedPrayerEnabled]);
 
   const animatedProgressStyle = useAnimatedStyle(() => {
     return { width: `${progressValue.value * 100}%` };
@@ -1303,7 +1368,16 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
           {showBreathingAnimation && (
             <TouchableWithoutFeedback onPress={toggleControlRow}>
               <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -SCREEN_HEIGHT * 0.5 }}>
-                <BreathingAnimation isActive={showBreathingAnimation} breathingProgress={breathingProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} />
+                <BreathingAnimation 
+                  isActive={showBreathingAnimation} 
+                  breathingProgress={breathingProgress} 
+                  hapticsEnabled={hapticsEnabled} 
+                  guidedPrayerEnabled={guidedPrayerEnabled} 
+                  currentDevotional={currentDevotional}
+                  showGuidedPrayer={showGuidedPrayer}
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
+                />
               </View>
             </TouchableWithoutFeedback>
           )}

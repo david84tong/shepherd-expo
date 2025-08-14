@@ -1261,7 +1261,7 @@ export default function HomeScreen() {
                                 // If only one devotional, render it directly without CardStack
                                 if (finalDevotionals.length === 1) {
                                   return (
-                                    <View className="mt-4 mb-8">
+                                    <View className="-mt-2 mb-8">
                                       <DailyVerseCard
                                         devotional={finalDevotionals[0]}
                                         share={true}
@@ -1361,7 +1361,7 @@ export default function HomeScreen() {
 
                         {/* Show completed tasks when reading is completed */}
                         {readingCompleted && (
-                          <View style={{ marginTop: responsiveHeight(0) }}>
+                          <View style={{ marginTop: responsiveHeight(-4) }}>
                             <View
                               className="flex-row items-center"
                               style={{ marginBottom: responsiveHeight(2) }}>

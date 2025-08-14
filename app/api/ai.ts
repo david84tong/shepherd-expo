@@ -25,7 +25,7 @@ interface CheckInData {
   mood: string;
   focus: string;
   struggle: string;
-  prayer?: string;
+  reflection?: string;
 }
 
 interface JournalReflectionData {
@@ -58,7 +58,7 @@ export async function getBibleVerseAIResponse(
 
     const languageInstruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
 
-    const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-4.1-mini', {
+    const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5', {
       method: 'POST',
       headers: {
         "Content-Type": "application/json",
@@ -176,7 +176,7 @@ export async function createDevotionalFromVerse(
         userContext += ` They primarily speak ${languageName}.`;
       }
 
-      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-4.1-mini', {
+      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5', {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
@@ -408,8 +408,8 @@ export async function createDevotionalFromCheckIn(
         promptContext += ` They are currently struggling with ${checkInData.struggle.toLowerCase()}.`;
       }
 
-      if (checkInData.prayer && checkInData.prayer.trim()) {
-        promptContext += ` They have shared this prayer with God: "${checkInData.prayer.trim()}".`;
+      if (checkInData.reflection && checkInData.reflection.trim()) {
+        promptContext += ` They have shared this reflection/prayer with God: "${checkInData.reflection.trim()}".`;
       }
 
       // Add user profile context
@@ -442,7 +442,7 @@ export async function createDevotionalFromCheckIn(
         userContext += ` They primarily speak ${languageName}.`;
       }
 
-      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-4.1-mini', {
+      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5', {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
@@ -456,21 +456,21 @@ export async function createDevotionalFromCheckIn(
 
 ${promptContext}${userContext}
 
-Create a meaningful devotional that specifically addresses their current emotional state${checkInData.focus ? ', area of focus' : ''}${checkInData.struggle ? ', and struggle' : ''}${checkInData.prayer ? ', and personal prayer' : ''}, while being mindful of their spiritual background and experience level.
+Create a meaningful devotional that specifically addresses their current emotional state${checkInData.focus ? ', area of focus' : ''}${checkInData.struggle ? ', and struggle' : ''}${checkInData.reflection ? ', and personal reflection/prayer' : ''}, while being mindful of their spiritual background and experience level.
 
 Please respond with a JSON object containing exactly these fields:
-- "title": A compelling, short title (3-6 words) that relates to their mood${checkInData.focus ? ' and focus area' : ''}${checkInData.prayer ? ' and prayer request' : ''}
-- "context": 4-5 sentences that acknowledge their feelings${checkInData.prayer ? ' and prayer' : ''} and provide biblical wisdom specific to their situation, written at an appropriate level for their Bible familiarity
+- "title": A compelling, short title (3-6 words) that relates to their mood${checkInData.focus ? ' and focus area' : ''}${checkInData.reflection ? ' and reflection/prayer' : ''}
+- "context": 4-5 sentences that acknowledge their feelings${checkInData.reflection ? ' and reflection/prayer' : ''} and provide biblical wisdom specific to their situation, written at an appropriate level for their Bible familiarity
 - "verse": The actual Bible verse text (not the reference, but the full verse text)
 - "bibleReference": The Bible reference (e.g., "Philippians 4:13" or "Romans 8:28")
-- "prayer": A heartfelt prayer (2-3 sentences) that specifically addresses their mood${checkInData.focus ? ', focus area' : ''}${checkInData.struggle ? ', struggle' : ''}${checkInData.prayer ? ', and builds upon their personal prayer' : ''}
+- "prayer": A heartfelt prayer (2-3 sentences) that specifically addresses their mood${checkInData.focus ? ', focus area' : ''}${checkInData.struggle ? ', struggle' : ''}${checkInData.reflection ? ', and builds upon their personal reflection/prayer' : ''}
 - "reflectionPrompt": A thoughtful question or prompt (1-2 sentences) to help them process their emotions and find God's guidance
 
 Make sure your response is valid JSON format and is deeply personalized to their specific situation. The verse should be particularly relevant to their current emotional state and needs. Consider their denomination and Bible familiarity when choosing language and theological depth.`
             },
             {
               "role": "user",
-              "content": `Create a personalized devotional for someone who is feeling ${checkInData.mood.toLowerCase()}${checkInData.focus ? `, wants to focus on ${checkInData.focus.toLowerCase()}` : ''}${checkInData.struggle ? `, and is struggling with ${checkInData.struggle.toLowerCase()}` : ''}${checkInData.prayer ? `, and has prayed: "${checkInData.prayer.trim()}"` : ''}.`
+              "content": `Create a personalized devotional for someone who is feeling ${checkInData.mood.toLowerCase()}${checkInData.focus ? `, wants to focus on ${checkInData.focus.toLowerCase()}` : ''}${checkInData.struggle ? `, and is struggling with ${checkInData.struggle.toLowerCase()}` : ''}${checkInData.reflection ? `, and has shared this reflection/prayer: "${checkInData.reflection.trim()}"` : ''}.`
             }
           ]
         }),
@@ -671,11 +671,11 @@ function createCheckInFallbackDevotional(checkInData: CheckInData): DevotionalAI
     baseDevotional.prayer = baseDevotional.prayer?.replace('Amen.', `Give me victory over ${checkInData.struggle.toLowerCase()}. Amen.`);
   }
 
-  // Add prayer-specific content if provided
-  if (checkInData.prayer && checkInData.prayer.trim()) {
-    const userPrayer = checkInData.prayer.trim();
-    baseDevotional.context += ` I hear your prayer: "${userPrayer.length > 100 ? userPrayer.substring(0, 100) + '...' : userPrayer}" Know that I am listening and responding to your heart.`;
-    baseDevotional.prayer = `Lord, I join with this prayer: "${userPrayer.length > 50 ? userPrayer.substring(0, 50) + '...' : userPrayer}" ${baseDevotional.prayer?.replace('Lord, ', '') || 'Amen.'}`;
+  // Add reflection/prayer-specific content if provided
+  if (checkInData.reflection && checkInData.reflection.trim()) {
+    const userReflection = checkInData.reflection.trim();
+    baseDevotional.context += ` I hear your reflection: "${userReflection.length > 100 ? userReflection.substring(0, 100) + '...' : userReflection}" Know that I am listening and responding to your heart.`;
+    baseDevotional.prayer = `Lord, I join with this reflection: "${userReflection.length > 50 ? userReflection.substring(0, 50) + '...' : userReflection}" ${baseDevotional.prayer?.replace('Lord, ', '') || 'Amen.'}`;
   }
   
   const result = {
@@ -790,7 +790,7 @@ export async function createJournalResponse(
         userContext += ` They primarily speak ${languageName}.`;
       }
 
-      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-4.1-mini', {
+      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5', {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",

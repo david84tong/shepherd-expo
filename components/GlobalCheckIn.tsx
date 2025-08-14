@@ -37,10 +37,10 @@ import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { useRouter } from 'expo-router';
 import { Devotional, devotionalBackgrounds } from '~/app/models/Devotional';
 import auth from '@react-native-firebase/auth';
-import { useHomeStore } from '~/app/stores/homeStore';
+// import { useHomeStore } from '~/app/stores/homeStore';
 import { useUserStore } from '~/app/stores/userStore';
 import { Timestamp } from '@react-native-firebase/firestore';
-import { IS_ANDROID, IS_IOS } from '~/app/utils/utils';
+import { IS_ANDROID } from '~/app/utils/utils';
 import { useSoundStore } from '~/app/stores/soundStore';
 import useSubscriptionStore, { safelyPresentPaywall } from '~/app/stores/subscriptionStore';
 import dayjs from 'dayjs';
@@ -135,7 +135,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   const router = useRouter();
   const { setCustomDevotional, setIsFromCheckIn, createCustomDevotionalFromCheckIn } =
     useDevotionalStore();
-  const { readingCompleted } = useHomeStore();
   const { addCheckIn, getGens, setGens, customDevotionalsLeft } = useUserStore();
   const { playChestOpeningSound, playButtonSound } = useSoundStore();
 
@@ -171,7 +170,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
     setFocus,
     setStruggle,
     setReflection,
-    skipFocus,
     skipStruggle,
     completeCheckIn,
     clearCurrentSession,
@@ -193,7 +191,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   const [showRewardAnimation, setShowRewardAnimation] = useState(false);
 
   // Animation shared values for screen transitions
-  const screenOpacity = useSharedValue(1);
+  const _screenOpacity = useSharedValue(1);
   const contentOpacity = useSharedValue(0);
   const contentTranslateY = useSharedValue(20);
 
@@ -419,7 +417,36 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   const handleCustomDevotionalPurchase = useCallback(async () => {
     appLog('[GlobalCheckIn] handleCustomDevotionalPurchase started');
 
-    const { customDevotionalsLeft, setCustomDevotionalsLeft } = useUserStore.getState();
+    const { customDevotionalsLeft, setCustomDevotionalsLeft, getUser, proStatus } =
+      useUserStore.getState();
+    const { isProMember } = useSubscriptionStore.getState();
+    const user = getUser?.();
+    const isPro = Boolean(
+      isProMember || user?.isPro || user?.isProWithReferral || proStatus === 'pro'
+    );
+    appLog('[GlobalCheckIn] handleCustomDevotionalPurchase - customDevotionalsLeft:', customDevotionalsLeft, 'isPro:', isPro);
+
+    // Pro users should always be allowed to generate immediately
+    if (isPro) {
+      appLog('[GlobalCheckIn] Pro user – skipping quota check and generating');
+
+      // Prevent check-in from showing during navigation
+      const { setIsNavigating } = useCheckInStore.getState();
+      setIsNavigating(true);
+
+      // Close the sheet immediately
+      bottomSheetRef.current?.close();
+
+      // Navigate immediately to loading screen
+      setTimeout(() => {
+        navigateToPath('/devotionalLoading');
+
+        // Generate in background
+        handleGenerateCustomDevotionalInBackground();
+      }, 100);
+
+      return;
+    }
 
     // Check if user has any custom devotionals left
     if (customDevotionalsLeft > 0) {
@@ -432,18 +459,16 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       const { setIsNavigating } = useCheckInStore.getState();
       setIsNavigating(true);
 
-      // Close the sheet immediately without showing success screen
+      // Close the sheet immediately
       bottomSheetRef.current?.close();
 
-      // Navigate immediately to loading screen without delay
+      // Navigate immediately to loading screen
       setTimeout(() => {
         navigateToPath('/devotionalLoading');
-      }, 100);
-
-      // Generate the custom devotional in the background
-      setTimeout(() => {
+        
+        // Generate the custom devotional in the background immediately after navigation
         handleGenerateCustomDevotionalInBackground();
-      }, 200);
+      }, 100);
 
       return;
     }
@@ -480,6 +505,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       };
 
       appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
+      appLog('[GlobalCheckIn] PAYLOAD BEING SENT TO API:', {
+        checkInData,
+        journalText: journalText.trim(),
+        hasJournalEntry: !!journalText.trim(),
+        journalLength: journalText.length
+      });
 
       // Generate the custom devotional
       const customDevotional = await createDevotionalFromCheckIn(checkInData, idToken);
@@ -527,11 +558,11 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       // Set check-in flag
       setIsFromCheckIn(true);
 
-      // Reset navigation flag
+      // Reset navigation flag immediately after generation starts
       setTimeout(() => {
         const { setIsNavigating } = useCheckInStore.getState();
         setIsNavigating(false);
-      }, 1000);
+      }, 100);
 
       // Reset state after generation
       setTimeout(() => {
@@ -566,7 +597,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   ]);
 
   // Handle custom devotional generation
-  const handleGenerateCustomDevotional = useCallback(
+  const _handleGenerateCustomDevotional = useCallback(
     async (skipProCheck = false) => {
       appLog('[GlobalCheckIn] handleGenerateCustomDevotional started, skipProCheck:', skipProCheck);
       const currentUser = auth().currentUser;
@@ -628,6 +659,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         };
 
         appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
+        appLog('[GlobalCheckIn] PAYLOAD BEING SENT TO API:', {
+          checkInData,
+          journalText: journalText.trim(),
+          hasJournalEntry: !!journalText.trim(),
+          journalLength: journalText.length
+        });
 
         // Generate the custom devotional
         const customDevotional = await createDevotionalFromCheckIn(checkInData, idToken);
@@ -1549,7 +1586,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
                 </View>
                 <View className="ml-3 flex-1">
                   <Text className="font-din text-sm text-gray-500">Reflection</Text>
-                  <Text className="font-din text-base text-textPrimary italic">"{snippet}"</Text>
+                  <Text className="font-din text-base text-textPrimary italic">{`"${snippet}"`}</Text>
                 </View>
               </View>
             );
@@ -1584,28 +1621,36 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
               : i18n.t('checkin_start_todays_devotional')
           }
           onPress={async () => {
+            appLog('[GlobalCheckIn] Generate Custom Devotional button pressed!');
             if (currentFocus !== '' || currentStruggle !== '' || journalText.trim()) {
               // Check if user is pro or has custom devotionals left
               const { isProMember } = useSubscriptionStore.getState();
-              const { getUser, customDevotionalsLeft, setCustomDevotionalsLeft } = useUserStore.getState();
+              const { getUser, customDevotionalsLeft } = useUserStore.getState();
               const user = getUser();
+
+              appLog('[GlobalCheckIn] Button press debug:', {
+                isProMember,
+                userIsPro: user?.isPro,
+                userIsProWithReferral: user?.isProWithReferral,
+                customDevotionalsLeft,
+                proStatus: user?.proStatus,
+              });
 
               // Check if user is pro
               const isPro = isProMember || user?.isPro || user?.isProWithReferral;
 
               if (isPro) {
-                // Pro user - generate custom devotional directly (skip pro check)
-                appLog('[GlobalCheckIn] Pro user generating custom devotional');
-                await handleGenerateCustomDevotional(true);
+                // Pro user - use immediate navigation flow
+                appLog('[GlobalCheckIn] Pro user using immediate navigation');
+                await handleCustomDevotionalPurchase();
                 return;
               }
 
               // Non-pro user - check if they have custom devotionals left
               if (customDevotionalsLeft > 0) {
-                // User has custom devotionals left - generate directly (skip pro check)
-                setCustomDevotionalsLeft(customDevotionalsLeft - 1);
-                appLog('[GlobalCheckIn] User has custom devotionals left, generating');
-                await handleGenerateCustomDevotional(true);
+                // User has custom devotionals left - use immediate navigation flow like purchase
+                appLog('[GlobalCheckIn] User has custom devotionals left, using immediate navigation');
+                await handleCustomDevotionalPurchase();
                 return;
               }
 

@@ -21,11 +21,14 @@ import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, {
   FadeInUp,
+  FadeOutUp,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  withRepeat,
   Layout,
   runOnJS,
+  Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
@@ -40,6 +43,7 @@ import { appLog, RPH } from '~/app/helper/helper';
 import { router } from 'expo-router';
 import { useLanguageStore } from '~/app/stores/languageStore';
 import i18n from '~/app/utils/i18n';
+import { useStatsigExperiment } from '~/app/hooks/useStatsig';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -109,13 +113,16 @@ const WaterWaveAnimation: React.FC<{
   animationTriggered: boolean;
   totalHoldTime: number;
   prayerText: string;
+  showGuidedPrayer: boolean;
   onPressIn?: () => void;
   onPressOut?: () => void;
   onPress?: () => void;
-}> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional, isHolding, animationTriggered, totalHoldTime, prayerText, onPressIn, onPressOut, onPress }) => {
+}> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional, isHolding, animationTriggered, totalHoldTime, prayerText, showGuidedPrayer, onPressIn, onPressOut, onPress }) => {
   const [waveOffset, setWaveOffset] = useState(0);
   const [waterLevel, setWaterLevel] = useState(SCREEN_HEIGHT);
   const textOpacity = useSharedValue(1);
+  const pulseOpacity = useSharedValue(0.8);
+  const glowScale = useSharedValue(1);
 
   // Smooth opacity animation for text visibility (only when guided prayer is OFF)
   useEffect(() => {
@@ -127,9 +134,38 @@ const WaterWaveAnimation: React.FC<{
     }
   }, [isHolding, guidedPrayerEnabled]);
 
+  // Pulsing animation for the "tap and hold to begin" text
+  useEffect(() => {
+    if (guidedPrayerEnabled && !showGuidedPrayer && !animationTriggered && totalHoldTime <= 1000) {
+      // Start subtle pulsing animation - more noticeable opacity range
+      pulseOpacity.value = withRepeat(
+        withTiming(0.4, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+        -1, // infinite
+        true // reverse
+      );
+      glowScale.value = withRepeat(
+        withTiming(1.1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+        -1, // infinite
+        true // reverse
+      );
+    } else {
+      // Stop pulsing animation
+      pulseOpacity.value = withTiming(0.8, { duration: 500 });
+      glowScale.value = withTiming(1, { duration: 500 });
+    }
+  }, [guidedPrayerEnabled, showGuidedPrayer, animationTriggered, totalHoldTime]);
+
   const animatedTextStyle = useAnimatedStyle(() => {
     return {
       opacity: textOpacity.value,
+    };
+  });
+
+  // Animated style for pulsing text
+  const pulseTextStyle = useAnimatedStyle(() => {
+    return {
+      opacity: pulseOpacity.value,
+      transform: [{ scale: glowScale.value }],
     };
   });
 
@@ -280,30 +316,57 @@ const WaterWaveAnimation: React.FC<{
           }, animatedTextStyle]}
         >
           {guidedPrayerEnabled ? (
-            <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
-              <View style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                borderRadius: 16,
-                padding: 20,
-                marginHorizontal: 24,
-                // marginTop: 150,
-                // backgroundColor: 'red'
-              }}>
-                <TypingText
-                  text={prayerText}
-                  className="text-blue-700 font-feather text-xl text-center"
-                  baseTextStyle={{
-                    color: '#1E40AF',
-                    fontSize: 20,
-                    fontFamily: 'Nunito-Black',
-                    textAlign: 'center',
-                    lineHeight: 28,
-                  }}
-                  speed={50}
-                  skipAnimation={false}
-                />
+            showGuidedPrayer ? (
+              <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  borderRadius: 16,
+                  padding: 20,
+                  marginHorizontal: 24,
+                  // marginTop: 150,
+                  // backgroundColor: 'red'
+                }}>
+                  <TypingText
+                    text={prayerText}
+                    className="text-blue-700 font-feather text-xl text-center"
+                    baseTextStyle={{
+                      color: '#1E40AF',
+                      fontSize: 20,
+                      fontFamily: 'Nunito-Black',
+                      textAlign: 'center',
+                      lineHeight: 28,
+                    }}
+                    speed={50}
+                    skipAnimation={false}
+                  />
+                </View>
               </View>
-            </View>
+            ) : (
+              <Reanimated.View style={[{ alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }, animatedTextStyle]}>
+                {/* <Text className='text-blue font-feather text-center text-3xl' style={{
+                  textAlign: 'center',
+                  marginBottom: 4,
+                  fontFamily: 'Nunito-Black',
+                }}>
+                  {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : i18n.t('pour_out_your_heart'))}
+                </Text>
+                <Text className=' text-textPrimary ' style={{
+                  fontFamily: 'DIN Next Rounded LT W01 Regular',
+                  textAlign: 'center',
+                  fontSize: 16,
+                  color: `${totalHoldTime > 10000 ? 'white' : "#0369a1"}`,
+                }}>
+                  {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : i18n.t('let_your_prayers_fill_your_cup'))}
+                </Text> */}
+                <Reanimated.Text className='font-feather text-textPrimary' style={[{
+                  textAlign: 'center',
+                  fontSize: 20,
+                  marginTop: -12,
+                }, pulseTextStyle]}>
+                  {animationTriggered ? '' : (totalHoldTime > 1000 ? '' : i18n.t('tap_and_hold_to_begin'))}
+                </Reanimated.Text>
+              </Reanimated.View>
+            )
           ) : (
             <Reanimated.View style={[{ alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }, animatedTextStyle]}>
               <Text className='text-blue font-feather text-center text-3xl' style={{
@@ -416,6 +479,11 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
   const { customDevotional, currentDevotional } = useDevotionalStore();
   const devotionalToUse = customDevotional || currentDevotional;
   const { language } = useLanguageStore();
+  
+  // Get experiment data for prayer generation
+  const { experiment: prayerGenExperiment } = useStatsigExperiment('prayer_gen_on');
+  const generatePrayerForUser = prayerGenExperiment?.get?.('generate_prayer_for_user', false) ?? false;
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const [skipTyping, setSkipTyping] = useState(false);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
@@ -427,14 +495,18 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
-  const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(false);
+  const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(generatePrayerForUser);
   const [prayerDuration, setPrayerDuration] = useState(20000); // Default 20s
   const [buttonsEnabled, setButtonsEnabled] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const [animationTriggered, setAnimationTriggered] = useState(false);
   const [totalHoldTime, setTotalHoldTime] = useState(0);
+  const [showGuidedPrayer, setShowGuidedPrayer] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   const holdStartTimeRef = useRef<number | null>(null);
   const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const guidedPrayerTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Animation values
   const progressValue = useSharedValue(0);
@@ -539,6 +611,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
 
         if (savedGuidedMode !== null) {
           setGuidedPrayerEnabled(savedGuidedMode === 'true');
+        } else {
+          // Default based on experiment value if no saved setting
+          setGuidedPrayerEnabled(generatePrayerForUser);
         }
 
         if (savedDuration !== null) {
@@ -620,6 +695,12 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
       }
       if (holdTimerRef.current) {
         clearInterval(holdTimerRef.current);
+      }
+      if (guidedPrayerTimerRef.current) {
+        clearTimeout(guidedPrayerTimerRef.current);
+      }
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
       }
     };
   }, []);
@@ -880,6 +961,19 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
     appLog('🎯 State changed - isHolding:', isHolding, 'animationTriggered:', animationTriggered);
   }, [isHolding, animationTriggered]);
 
+  // Reset guided prayer state when view becomes visible or when guided mode is toggled on
+  useEffect(() => {
+    if (visible && guidedPrayerEnabled) {
+      // Clear any pending timers and require a fresh 1s hold
+      if (guidedPrayerTimerRef.current) {
+        clearTimeout(guidedPrayerTimerRef.current);
+        guidedPrayerTimerRef.current = null;
+      }
+      setShowGuidedPrayer(false);
+      appLog('🎯 Reset guided prayer state for fresh interaction');
+    }
+  }, [visible, guidedPrayerEnabled]);
+
   // Trigger success state when water animation is complete
   useEffect(() => {
     if (animationTriggered) {
@@ -912,6 +1006,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
     setIsHolding(true);
     holdStartTimeRef.current = startTime;
     appLog('🎯 Started holding, water will fill continuously');
+
+    // Start 1-second timer for guided prayer mode
+    if (guidedPrayerEnabled && !showGuidedPrayer) {
+      guidedPrayerTimerRef.current = setTimeout(() => {
+        setShowGuidedPrayer(true);
+        appLog('🎯 1-second timer complete, showing guided prayer');
+      }, 1000);
+    }
 
     // Keep track of last haptic time for 1000ms intervals
     let lastHapticTime = startTime;
@@ -949,12 +1051,28 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
 
     // Update water every 50ms while holding
     holdTimerRef.current = setInterval(updateWater, 50);
-  }, [totalHoldTime, waterProgress, hapticsEnabled, animationTriggered, prayerDuration]);
+  }, [totalHoldTime, waterProgress, hapticsEnabled, animationTriggered, prayerDuration, guidedPrayerEnabled, showGuidedPrayer]);
 
   // Handle press end for water animation
   const handlePressOut = useCallback(() => {
     appLog('🎯 handlePressOut called');
     setIsHolding(false);
+
+    // Clear guided prayer timer if user releases before 1 second
+    if (guidedPrayerTimerRef.current) {
+      clearTimeout(guidedPrayerTimerRef.current);
+      guidedPrayerTimerRef.current = null;
+      appLog('🎯 Cleared guided prayer timer - user released before 1 second');
+      
+      // Show toast message for guided prayer mode if user released early
+      if (guidedPrayerEnabled && !showGuidedPrayer) {
+        setShowToast(true);
+        // Hide toast after 2 seconds
+        toastTimerRef.current = setTimeout(() => {
+          setShowToast(false);
+        }, 2000);
+      }
+    }
 
     // Calculate total hold time
     let newTotalHoldTime = totalHoldTime;
@@ -989,7 +1107,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
     } else {
       appLog('🎯 Water stays at current level, threshold not reached');
     }
-  }, [totalHoldTime, animationTriggered, hapticsEnabled, prayerDuration]);
+  }, [totalHoldTime, animationTriggered, hapticsEnabled, prayerDuration, guidedPrayerEnabled]);
 
   // Expose functions through ref
   useImperativeHandle(ref, () => ({
@@ -1258,6 +1376,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
                 animationTriggered={animationTriggered}
                 totalHoldTime={totalHoldTime}
                 prayerText={generatePrayerContent()}
+                showGuidedPrayer={showGuidedPrayer}
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
                 onPress={toggleControlRow}
@@ -1430,6 +1549,40 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
         guidedPrayerEnabled={guidedPrayerEnabled}
         saveGuidedPrayerEnabled={saveGuidedPrayerEnabled}
       />
+
+      {/* Toast Message */}
+      {showToast && (
+        <Reanimated.View
+          entering={FadeInUp.duration(400).springify()}
+          exiting={FadeOutUp.duration(400).springify()}
+          style={{
+            position: 'absolute',
+            top: 100,
+            left: 0,
+            right: 0,
+            alignItems: 'center',
+            zIndex: 1000,
+            pointerEvents: 'none',
+          }}
+        >
+          <View style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            paddingHorizontal: 20,
+            paddingVertical: 12,
+            borderRadius: 25,
+            marginHorizontal: 24,
+          }}>
+            <Text style={{
+              color: 'white',
+              fontSize: 16,
+              fontFamily: 'Nunito-Black',
+              textAlign: 'center',
+            }}>
+              {i18n.t('keep_holding')}
+            </Text>
+          </View>
+        </Reanimated.View>
+      )}
     </Reanimated.View>
   );
 });

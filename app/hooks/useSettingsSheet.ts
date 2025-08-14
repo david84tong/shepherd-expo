@@ -897,6 +897,76 @@ export const useSettingSheet = (settingsSheetRef: React.RefObject<any>) => {
   const handleReferralSubmit = async (selectedCode: string) => {
     setIsSubmittingReferral(true);
     try {
+      // Check if user entered "WXES4A" to grant lifetime pro subscription
+      if (selectedCode.toUpperCase() === 'WXES4A') {
+        appLog('🌟 User entered WXES4A code, granting lifetime pro subscription');
+        
+        const userStore = useUserStore.getState();
+        const currentUser = auth().currentUser;
+        
+        if (!currentUser) {
+          Alert.alert('Error', 'You must be signed in to use this referral code.', [
+            { text: 'OK', onPress: () => setReferralModalVisible(false) },
+          ]);
+          setIsSubmittingReferral(false);
+          return;
+        }
+        
+        // Check if user is already pro
+        if (userStore.isPro || userStore.isProWithReferral || userStore.proStatus === 'pro') {
+          Alert.alert('Already Pro', 'You already have a pro subscription!', [
+            { text: 'OK', onPress: () => setReferralModalVisible(false) },
+          ]);
+          setIsSubmittingReferral(false);
+          return;
+        }
+        
+        try {
+          // Set user as pro with referral (lifetime) in local store
+          userStore.setProStatus('pro');
+          userStore.setUser({
+            isPro: true,
+            isProWithReferral: true,
+          });
+          
+          // Save to Firestore
+          await firestore().collection('users').doc(currentUser.uid).update({
+            isPro: true,
+            isProWithReferral: true,
+            proStatus: 'pro',
+            referralCodeUsed: 'WXES4A',
+            proUpgradedAt: firestore.FieldValue.serverTimestamp(),
+            updatedAt: firestore.FieldValue.serverTimestamp(),
+          });
+          
+          // Log analytics
+          analytics.logEvent('Referral_Code_Lifetime_Pro_Granted', {
+            userId: currentUser.uid,
+            referralCode: 'WXES4A',
+            timestamp: new Date().toISOString(),
+          });
+          
+          hapticSuccess();
+          
+          Alert.alert(
+            '🎉 Lifetime Pro Unlocked!',
+            'Congratulations! You now have lifetime access to all premium features.',
+            [{ text: 'Amazing!', onPress: () => setReferralModalVisible(false) }]
+          );
+          
+          appLog('✅ Successfully granted lifetime pro subscription with WXES4A code');
+          
+        } catch (firestoreError) {
+          console.error('Error saving pro status to Firestore:', firestoreError);
+          Alert.alert('Error', 'Failed to save pro status. Please try again.', [
+            { text: 'OK', onPress: () => setReferralModalVisible(false) },
+          ]);
+        }
+        
+        setIsSubmittingReferral(false);
+        return;
+      }
+      
       // Check if user entered "PINKKK" to unlock the Pink skin
       if (selectedCode.toUpperCase() === 'PINKKK') {
         appLog('🎀 User entered PINKKK code, unlocking Pink skin');
