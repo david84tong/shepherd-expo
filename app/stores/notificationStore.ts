@@ -316,8 +316,8 @@ export const useNotificationStore = create<NotificationState>()(
             (scheduledTime.getTime() - now.getTime()) / (1000 * 60 * 60);
           appLog(`📱 Daily reminder will fire in ${hoursUntilNotification.toFixed(1)} hours`);
 
-          // Schedule daily notification
-          await Notifications.scheduleNotificationAsync({
+          // Schedule daily notification and capture identifier returned by Expo
+          const scheduledId = await Notifications.scheduleNotificationAsync({
             content: {
               title: 'Your lamb is bleating 🐑',
               body: 'Lead it to green pastures — tap for today’s Word.',
@@ -329,13 +329,12 @@ export const useNotificationStore = create<NotificationState>()(
               hour,
               minute,
             },
-            identifier: NOTIFICATION_IDS.DAILY_REMINDER,
           });
 
           appLog(
             `📱 Daily reminder notification scheduled for ${hour}:${minute?.toString?.().padStart(2, '0')}`
           );
-          appLog(`📱 Notification ID: ${NOTIFICATION_IDS.DAILY_REMINDER}`);
+          appLog(`📱 Notification ID (returned): ${scheduledId}`);
           appLog(`📱 Notification trigger type: DAILY`);
 
           // Save the selected time preference
@@ -344,7 +343,10 @@ export const useNotificationStore = create<NotificationState>()(
           // Verify the notification was scheduled
           const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
           const dailyReminder = scheduledNotifications.find(
-            (n) => n.identifier === NOTIFICATION_IDS.DAILY_REMINDER
+            (n) =>
+              n.identifier === scheduledId ||
+              // Fallback: match by content data type in case IDs differ
+              (n.content && (n as any).content?.data?.type === 'daily-reminder')
           );
 
           if (!dailyReminder) {
@@ -360,8 +362,23 @@ export const useNotificationStore = create<NotificationState>()(
       // Cancel daily reminder notification
       cancelDailyReminder: async () => {
         try {
-          await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.DAILY_REMINDER);
-          appLog('Daily reminder notification canceled');
+          // Find any scheduled daily reminder(s) by data.type and cancel them
+          const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+          const dailyIds = scheduled
+            .filter((n) => (n as any).content?.data?.type === 'daily-reminder')
+            .map((n) => n.identifier);
+
+          if (dailyIds.length === 0) {
+            // Also try canceling by the legacy constant, just in case
+            await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.DAILY_REMINDER);
+            appLog('Daily reminder notification canceled (legacy identifier attempt)');
+            return;
+          }
+
+          for (const id of dailyIds) {
+            await Notifications.cancelScheduledNotificationAsync(id);
+          }
+          appLog('Daily reminder notification(s) canceled');
         } catch (error) {
           console.error('Failed to cancel daily reminder notification:', error);
         }

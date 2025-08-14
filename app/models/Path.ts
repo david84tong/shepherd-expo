@@ -2008,7 +2008,6 @@ const chunk = <T,>(arr: T[], size: number): T[][] => {
  * suffix added to the title & id.
  */
 const splitUnit = (unit: Unit, chaptersPerUnit = 2): Unit[] => {
-  appLog("splitting unit", unit.id, "with chaptersPerUnit:", chaptersPerUnit);
   
   // Handle array of references
   if (Array.isArray(unit.reference)) {
@@ -2085,20 +2084,15 @@ export const generateShorterBiblePaths = (
   paths: Path[],
   chaptersPerUnit = 2
 ): Path[] => {
-  appLog('generating shorter bible paths with chaptersPerUnit:', chaptersPerUnit);
   
   return paths.map((p) => {
-    appLog(`Processing path: ${p.id} with ${p.units.length} units`);
     
     const newUnits: Unit[] = p.units.flatMap((u) => {
       const splitUnits = splitUnit(u, chaptersPerUnit);
-      if (splitUnits.length > 1) {
-        appLog(`Split unit ${u.id} into ${splitUnits.length} parts`);
-      }
+   
       return splitUnits;
     });
     
-    appLog(`Path ${p.id}: ${p.units.length} original units → ${newUnits.length} new units`);
     return { ...p, units: newUnits };
   });
 };

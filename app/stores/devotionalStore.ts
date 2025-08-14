@@ -224,7 +224,6 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
       // Get the document data
       const devotionalData = snapshot.data() as Devotional;
-      appLog('FETCHING devotionalData ====>', devotionalData);
 
       if (!devotionalData) {
         appLog('No devotional data found');
@@ -1041,19 +1040,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         })
       );
 
-      appLog(`📚 Processed ${processedDevotionals.filter(Boolean).length} recent devotionals`);
-      appLog(
-        '🔍 Final processed devotionals:',
-        processedDevotionals.map((d, i) => ({
-          index: i,
-          isNull: d === null,
-          id: d?.id,
-          date: d?.date,
-          bibleReference: d?.bibleReference,
-          likedBy: d?.likedBy,
-          likes: d?.likes,
-        }))
-      );
+     
       
       // Update global state with recent devotionals
       set({ recentDevotionals: processedDevotionals });
@@ -1190,7 +1177,6 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
       // Update both the single verse data for today AND the 5-day timeline
       const todaysData = processedDevotionals?.[0];
-      appLog('todaysData ==>', todaysData);
 
       if (!todaysData) {
         await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');

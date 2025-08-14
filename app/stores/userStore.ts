@@ -280,7 +280,6 @@ export const useUserStore = create<UserStore>()(
           await cleanupStoreMethodsFromFirestore(firestoreData.id, firestoreData);
         }
         
-        appLog('Syncing filtered Firestore data to local store:', filteredData);
         set((state) => {
           // Ensure we keep local data if Firestore data is undefined
           return {

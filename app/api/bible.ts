@@ -360,7 +360,6 @@ export const fetchFirst10GenesisChapters = async (
 
   try {
     const results = await Promise.all(chapterPromises);
-    appLog(`Successfully fetched ${results.filter((r) => !('error' in r)).length} chapters.`);
     results.forEach((result, index) => {
       if ('error' in result) {
         console.warn(`Error fetching chapter ${index + 1}: ${result.message}`);

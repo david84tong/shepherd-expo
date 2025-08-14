@@ -129,6 +129,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   const [checkInSaved, setCheckInSaved] = useState(false);
   const [isSheetVisible, setIsSheetVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [isGeneratingCustomDevotional, setIsGeneratingCustomDevotional] = useState(false);
   const expandAttempts = useRef(0);
 
   // Hooks
@@ -256,13 +257,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
 
   // Direct screen navigation - no longer using indices
 
-  // Log when component mounts/unmounts
-  useEffect(() => {
-    appLog('[GlobalCheckIn] Component mounted at:', new Date().toISOString());
-    return () => {
-      appLog('[GlobalCheckIn] Component unmounted at:', new Date().toISOString());
-    };
-  }, []);
+
 
   // Auto-focus journal input when journal screen becomes active
   useEffect(() => {
@@ -337,11 +332,15 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       completeCheckIn();
 
       // Save to userStore for Firestore sync
+      const processedReflection = journalText.trim() 
+        ? `I want to ask God for/to ${journalText.trim()}`
+        : '';
+      
       const checkInData = {
         mood: currentMood,
         focus: currentFocus,
         struggles: currentStruggle,
-        reflection: journalText.trim() || '', // Only include if not empty
+        reflection: processedReflection, // Prepend the prefix if not empty
         timeStamp: Timestamp.now(),
       };
 
@@ -417,6 +416,20 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   const handleCustomDevotionalPurchase = useCallback(async () => {
     appLog('[GlobalCheckIn] handleCustomDevotionalPurchase started');
 
+    // CAPTURE CHECK-IN DATA IMMEDIATELY before any async operations
+    // Pull the freshest values from the store to avoid stale closures
+    const checkInState = useCheckInStore.getState();
+    const capturedCheckInData = {
+      mood: checkInState.currentMood,
+      focus: checkInState.currentFocus,
+      struggle: checkInState.currentStruggle,
+      reflection: checkInState.currentReflection,
+      // Prefer the store reflection (kept in sync on change), fallback to local state
+      journalText: (checkInState.currentReflection || journalText).trim()
+    };
+    
+    appLog('[GlobalCheckIn] CAPTURED CHECK-IN DATA:', capturedCheckInData);
+
     const { customDevotionalsLeft, setCustomDevotionalsLeft, getUser, proStatus } =
       useUserStore.getState();
     const { isProMember } = useSubscriptionStore.getState();
@@ -430,6 +443,9 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
     if (isPro) {
       appLog('[GlobalCheckIn] Pro user – skipping quota check and generating');
 
+      // Set flag to prevent clearing session when sheet closes
+      setIsGeneratingCustomDevotional(true);
+
       // Prevent check-in from showing during navigation
       const { setIsNavigating } = useCheckInStore.getState();
       setIsNavigating(true);
@@ -437,12 +453,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       // Close the sheet immediately
       bottomSheetRef.current?.close();
 
-      // Navigate immediately to loading screen
+      // Navigate immediately to loading screen with check-in flag
       setTimeout(() => {
-        navigateToPath('/devotionalLoading');
+        navigateToPath('/devotionalLoading?isCheckInFlow=true&fromCheckIn=true');
 
-        // Generate in background
-        handleGenerateCustomDevotionalInBackground();
+        // Generate in background with captured data
+        handleGenerateCustomDevotionalInBackground(capturedCheckInData);
       }, 100);
 
       return;
@@ -451,6 +467,9 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
     // Check if user has any custom devotionals left
     if (customDevotionalsLeft > 0) {
       appLog('[GlobalCheckIn] User has custom devotionals left, generating');
+
+      // Set flag to prevent clearing session when sheet closes
+      setIsGeneratingCustomDevotional(true);
 
       // Deduct the custom devotional immediately
       setCustomDevotionalsLeft(customDevotionalsLeft - 1);
@@ -462,12 +481,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       // Close the sheet immediately
       bottomSheetRef.current?.close();
 
-      // Navigate immediately to loading screen
+      // Navigate immediately to loading screen with check-in flag
       setTimeout(() => {
-        navigateToPath('/devotionalLoading');
+        navigateToPath('/devotionalLoading?isCheckInFlow=true&fromCheckIn=true');
         
         // Generate the custom devotional in the background immediately after navigation
-        handleGenerateCustomDevotionalInBackground();
+        handleGenerateCustomDevotionalInBackground(capturedCheckInData);
       }, 100);
 
       return;
@@ -484,8 +503,20 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
   }, []);
 
   // Handle custom devotional generation in background (for immediate navigation after gem purchase)
-  const handleGenerateCustomDevotionalInBackground = useCallback(async () => {
+  const handleGenerateCustomDevotionalInBackground = useCallback(async (capturedData?: any) => {
     appLog('[GlobalCheckIn] handleGenerateCustomDevotionalInBackground started');
+    
+    // Use captured data if provided, otherwise fall back to current values
+    const dataToUse = capturedData || {
+      mood: currentMood,
+      focus: currentFocus,
+      struggle: currentStruggle,
+      reflection: currentReflection,
+      journalText: journalText.trim()
+    };
+    
+    appLog('[GlobalCheckIn] USING DATA FOR GENERATION:', dataToUse);
+    
     const currentUser = auth().currentUser;
     if (!currentUser) {
       console.error('No authenticated user available for generating devotional');
@@ -496,20 +527,30 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
       // Get the user's ID token
       const idToken = await currentUser.getIdToken();
 
-      // Create the check-in data
+      // Create the check-in data using captured data
+    // Prefer explicit reflection if provided; otherwise fall back to journalText
+    const rawReflection = (dataToUse.reflection && String(dataToUse.reflection).trim())
+      ? String(dataToUse.reflection).trim()
+      : (dataToUse.journalText && String(dataToUse.journalText).trim())
+        ? String(dataToUse.journalText).trim()
+        : '';
+    const processedReflection = rawReflection
+      ? `I want to ask God for/to ${rawReflection}`
+      : undefined;
+      
       const checkInData = {
-        mood: currentMood,
-        focus: currentFocus,
-        struggle: currentStruggle,
-        reflection: journalText.trim() || undefined,
+        mood: dataToUse.mood,
+        focus: dataToUse.focus,
+        struggle: dataToUse.struggle,
+        reflection: processedReflection,
       };
 
       appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
       appLog('[GlobalCheckIn] PAYLOAD BEING SENT TO API:', {
         checkInData,
-        journalText: journalText.trim(),
-        hasJournalEntry: !!journalText.trim(),
-        journalLength: journalText.length
+        journalText: dataToUse.journalText,
+        hasJournalEntry: !!dataToUse.journalText,
+        journalLength: dataToUse.journalText.length
       });
 
       // Generate the custom devotional
@@ -549,10 +590,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
 
       // Log analytics
       analytics.logEvent('checkin_custom_devotional_generated', {
-        mood: currentMood,
-        focus: currentFocus,
-        struggle: currentStruggle,
-        reflection: journalText.trim(),
+        mood: dataToUse.mood,
+        focus: dataToUse.focus,
+        struggle: dataToUse.struggle,
+        reflection: dataToUse.journalText,
       });
 
       // Set check-in flag
@@ -564,25 +605,27 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         setIsNavigating(false);
       }, 100);
 
-      // Reset state after generation
-      setTimeout(() => {
-        setCurrentScreen('mood');
-        clearCurrentSession();
-        setIsGenerating(false);
-        setCheckInSaved(false);
-        setGemsAwarded(false);
-        setShowRewardAnimation(false);
-        setJournalText('');
-        // Note: No longer using scroll position since we removed horizontal scrolling
-        rewardCardOpacity.setValue(0);
-        rewardCardScale.setValue(0.8);
-        gemTextOpacity.setValue(0);
-      }, 100);
+      // Reset state after generation - MOVED AFTER API SUCCESS
+      appLog('[GlobalCheckIn] Clearing session after successful API call');
+      setCurrentScreen('mood');
+      clearCurrentSession();
+      setIsGenerating(false);
+      setCheckInSaved(false);
+      setGemsAwarded(false);
+      setShowRewardAnimation(false);
+      setJournalText('');
+      setIsGeneratingCustomDevotional(false); // Clear the flag
+      // Note: No longer using scroll position since we removed horizontal scrolling
+      rewardCardOpacity.setValue(0);
+      rewardCardScale.setValue(0.8);
+      gemTextOpacity.setValue(0);
     } catch (error) {
       appLog('Error generating custom devotional in background:', error);
       // Reset navigation flag on error
       const { setIsNavigating } = useCheckInStore.getState();
       setIsNavigating(false);
+      // Clear the flag on error too
+      setIsGeneratingCustomDevotional(false);
     }
   }, [
     currentMood,
@@ -651,11 +694,15 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
         const idToken = await currentUser.getIdToken();
 
         // Create the check-in data
+        const processedReflection = journalText.trim() 
+          ? `I want to ask God for/to ${journalText.trim()}`
+          : undefined;
+        
         const checkInData = {
           mood: currentMood,
           focus: currentFocus,
           struggle: currentStruggle,
-          reflection: journalText.trim() || undefined,
+          reflection: processedReflection,
         };
 
         appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
@@ -723,28 +770,27 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
 
         // Navigate after sheet closes
         setTimeout(() => {
-          navigateToPath('/devotionalLoading');
+          navigateToPath('/devotionalLoading?isCheckInFlow=true&fromCheckIn=true');
 
           // Reset navigation flag after a delay
           setTimeout(() => {
             setIsNavigating(false);
           }, 3000); // 3 seconds should be enough for navigation to complete
-
-          // Reset state after navigation
-          setTimeout(() => {
-            setCurrentScreen('mood');
-            clearCurrentSession();
-            setIsGenerating(false);
-            setCheckInSaved(false);
-            setGemsAwarded(false);
-            setShowRewardAnimation(false);
-            setJournalText('');
-            // Note: No longer using scroll position since we removed horizontal scrolling
-            rewardCardOpacity.setValue(0);
-            rewardCardScale.setValue(0.8);
-            gemTextOpacity.setValue(0);
-          }, 100);
         }, 300);
+
+        // Reset state after API success - MOVED AFTER API SUCCESS  
+        appLog('[GlobalCheckIn] Clearing session after successful API call in _handleGenerateCustomDevotional');
+        setCurrentScreen('mood');
+        clearCurrentSession();
+        setIsGenerating(false);
+        setCheckInSaved(false);
+        setGemsAwarded(false);
+        setShowRewardAnimation(false);
+        setJournalText('');
+        // Note: No longer using scroll position since we removed horizontal scrolling
+        rewardCardOpacity.setValue(0);
+        rewardCardScale.setValue(0.8);
+        gemTextOpacity.setValue(0);
       } catch (error) {
         appLog('Error generating custom devotional:', error);
         setIsGenerating(false);
@@ -1076,7 +1122,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           paddingHorizontal: 20,
           paddingTop: RPH(2),
         }}>
-        <View className="flex-1 w-full flex-row flex-wrap justify-center items-center gap-3 px-4">
+        <View className="flex-1 w-full flex-row flex-wrap justify-center items-center gap-3 px-4 mt-24">
           {moods.map((mood) => (
             <Pressable
               key={mood.value}
@@ -1822,20 +1868,26 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef, onNavigate })
           appLog('[GlobalCheckIn] Sheet closed, marking as not closing');
           setIsClosing(false);
 
-          // Reset states after close
-          setTimeout(() => {
-            setCurrentScreen('mood');
-            clearCurrentSession();
-            setIsGenerating(false);
-            setCheckInSaved(false);
-            setGemsAwarded(false);
-            setShowRewardAnimation(false);
-            setJournalText('');
-            // Note: No longer using scroll position since we removed horizontal scrolling
-            rewardCardOpacity.setValue(0);
-            rewardCardScale.setValue(0.8);
-            gemTextOpacity.setValue(0);
-          }, 300);
+          // Only reset states if we're not generating a custom devotional
+          if (!isGeneratingCustomDevotional) {
+            appLog('[GlobalCheckIn] Normal sheet close - clearing session');
+            // Reset states after close
+            setTimeout(() => {
+              setCurrentScreen('mood');
+              clearCurrentSession();
+              setIsGenerating(false);
+              setCheckInSaved(false);
+              setGemsAwarded(false);
+              setShowRewardAnimation(false);
+              setJournalText('');
+              // Note: No longer using scroll position since we removed horizontal scrolling
+              rewardCardOpacity.setValue(0);
+              rewardCardScale.setValue(0.8);
+              gemTextOpacity.setValue(0);
+            }, 300);
+          } else {
+            appLog('[GlobalCheckIn] Custom devotional generation in progress - preserving session data');
+          }
         }
       }}>
       <BottomSheetView

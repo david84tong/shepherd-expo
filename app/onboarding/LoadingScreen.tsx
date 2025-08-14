@@ -60,7 +60,7 @@ interface LoadingScreenProps {
 }
 
 // Optimize loading points timing
-const STEP_DURATION = 1500; // Duration for each step
+const BASE_STEP_DURATION = 1500; // Base duration for each step
 const FINAL_DELAY = 500; // Reduced from 600ms
 
 export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseText: propVerseText, reference: propReference }: LoadingScreenProps) {
@@ -167,6 +167,11 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     return DEVOTIONAL_LOADING_POINTS;
   }, [isOnboarding, isCheckInFlow]);
 
+  // Flow-aware step duration: 3x longer for custom devotional/check-in flows
+  const STEP_DURATION = useMemo(() => {
+    return isOnboarding ? BASE_STEP_DURATION : BASE_STEP_DURATION * 3;
+  }, [isOnboarding]);
+
   // Add loading state for API call
   const [apiLoadingState, setApiLoadingState] = useState<'idle' | 'loading' | 'completed' | 'error'>('idle');
   
@@ -254,18 +259,18 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     };
   }, [progressAnim]);
 
-  // Add timeout effect for custom devotional creation - starts 30 seconds AFTER reaching 100%
+  // Add timeout effect for custom devotional creation - starts 60 seconds AFTER reaching 100%
   useEffect(() => {
     // Set timeout for non-onboarding flows (custom devotional creation AND check-in flows)
     if (!isOnboarding) {
       const currentProgress = Math.round(progressValue * 100);
       
-      // Only start the 30-second timer when we reach 100%
+      // Only start the 60-second timer when we reach 100%
       if (currentProgress === 100 && !timeoutRef.current) {
-        appLog('[LoadingScreen] Progress reached 100%, starting 30-second timeout for devotional creation');
+        appLog('[LoadingScreen] Progress reached 100%, starting 60-second timeout for devotional creation');
         
         timeoutRef.current = setTimeout(() => {
-          appLog('[LoadingScreen] 30-second timeout triggered after reaching 100%');
+          appLog('[LoadingScreen] 60-second timeout triggered after reaching 100%');
           setTimeoutTriggered(true);
           
           // Track timeout event
@@ -278,7 +283,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             isCreatingDevotional,
             hasCustomDevotional: !!customDevotional,
             hasCurrentDevotional: !!devotionalStoreCurrentDevotional,
-            timeStuckAt100: 20000, // 20 seconds
+            timeStuckAt100: 60000, // 60 seconds
           });
 
           // Show error toast
@@ -302,7 +307,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
               }
             }
           }, 4000); // Wait for full toast duration before navigating
-        }, 20000); // 30 seconds after reaching 100%
+        }, 60000); // 60 seconds after reaching 100%
       }
 
       return () => {
@@ -448,7 +453,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     } else {
       // For custom devotional creation - consistent timing
       if (currentStep < loadingPoints.length) {
-        // Match the step duration with onboarding for consistency
+        // Use flow-aware duration (3x for custom devotional)
         timer = setTimeout(() => {
           setCurrentStep(prev => prev + 1);
         }, delay);
@@ -636,12 +641,15 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       });
 
       // CRITICAL: Only navigate when ALL conditions are met AND timeout hasn't triggered
+      // For check-in flows, we must wait specifically for customDevotional, not just any devotional
+      const hasRequiredDevotional = isCheckInFlow ? customDevotional : (customDevotional || devotionalStoreCurrentDevotional);
+      
       const canNavigate = 
         !timeoutTriggered &&
         currentStep >= loadingPoints.length && 
         animationComplete && 
         apiLoadingState === 'completed' &&
-        (customDevotional || devotionalStoreCurrentDevotional) &&
+        hasRequiredDevotional &&
         !isCreatingDevotional &&
         !devotionalError; // Additional safety check
 
@@ -649,7 +657,10 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         stepsComplete: currentStep >= loadingPoints.length,
         animationComplete,
         apiCompleted: apiLoadingState === 'completed',
-        hasDevotional: !!(customDevotional || devotionalStoreCurrentDevotional),
+        hasRequiredDevotional: !!hasRequiredDevotional,
+        hasCustomDevotional: !!customDevotional,
+        hasCurrentDevotional: !!devotionalStoreCurrentDevotional,
+        isCheckInFlow,
         notCreating: !isCreatingDevotional,
         noError: !devotionalError,
         noTimeout: !timeoutTriggered,
@@ -663,11 +674,16 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           timeoutRef.current = null;
         }
 
-        // For check-in flow
-        if (isCheckInFlow && customDevotional) {
-          appLog('[LoadingScreen] All conditions met - check-in devotional ready, navigating to DevotionalReader');
+        // For check-in flow OR pro users - always navigate to devotional reader with custom devotional
+        if ((isCheckInFlow && customDevotional) || (isProMember && (customDevotional || devotionalStoreCurrentDevotional))) {
+          const isFromCheckIn = isCheckInFlow && customDevotional;
+          
+          appLog(`[LoadingScreen] All conditions met - ${isFromCheckIn ? 'check-in' : 'pro user'} devotional ready, navigating to DevotionalReader`);
 
-          analytics.logEvent('LoadingScreen_CheckIn_Devotional_Ready', {
+          analytics.logEvent(isFromCheckIn ? 'LoadingScreen_CheckIn_Devotional_Ready' : 'LoadingScreen_Custom_Devotional_Created', {
+            isProMember: isProMember,
+            verseText: verseText || 'unknown',
+            reference: reference || 'unknown',
             totalLoadingTime: loadingPoints.length * STEP_DURATION,
           });
 
@@ -691,41 +707,19 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             return () => clearTimeout(timer);
           }
         } 
-        // For pro users with custom devotional
-        else if (isProMember && !isCheckInFlow) {
-          appLog('[LoadingScreen] All conditions met - pro user devotional ready, navigating to home');
-
-          analytics.logEvent('LoadingScreen_Custom_Devotional_Created', {
-            isProMember: true,
-            verseText: verseText || 'unknown',
-            reference: reference || 'unknown',
-            totalLoadingTime: loadingPoints.length * STEP_DURATION,
-          });
-
-          // Check navigation guard before navigating
-          if (!hasNavigated.current) {
-            hasNavigated.current = true;
-            const timer = setTimeout(() => {
-              showDevotionalReader();
-              if(IS_ANDROID){
-                router.replace({
-                  pathname: '/(tabs)',
-                  params: { showDevotional: 'true' }
-                });
-               }else{
-                router.navigate({
-                  pathname: '/(tabs)',
-                  params: { showDevotional: 'true' }
-                });
-               }
-            }, 500);
-            return () => clearTimeout(timer);
-          }
-        } 
-        // For non-pro users - show paywall
+        // For non-pro users NOT in check-in flow - show paywall
         else if (!isProMember && !isCheckInFlow && !paywallShown) {
           appLog('[LoadingScreen] All conditions met - non-pro user, showing paywall');
           showPaywallForNonProUser();
+        }
+        // Additional safety: if it's a check-in flow but we somehow don't have customDevotional
+        else if (isCheckInFlow && !customDevotional) {
+          appLog('[LoadingScreen] Check-in flow detected but no custom devotional - this should not happen');
+          // Navigate back to home as fallback
+          if (!hasNavigated.current) {
+            hasNavigated.current = true;
+            router.replace('/(tabs)');
+          }
         }
       }
       

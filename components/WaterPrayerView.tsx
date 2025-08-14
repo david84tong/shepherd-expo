@@ -1065,7 +1065,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(
       appLog('🎯 Cleared guided prayer timer - user released before 1 second');
       
       // Show toast message for guided prayer mode if user released early
-      if (guidedPrayerEnabled && !showGuidedPrayer) {
+      // Only show if progress is less than 90%
+      const currentProgress = waterProgress.value;
+      if (guidedPrayerEnabled && !showGuidedPrayer && currentProgress <= 0.90) {
         setShowToast(true);
         // Hide toast after 2 seconds
         toastTimerRef.current = setTimeout(() => {

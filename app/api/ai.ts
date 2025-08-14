@@ -58,7 +58,7 @@ export async function getBibleVerseAIResponse(
 
     const languageInstruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
 
-    const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5', {
+    const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5-nano', {
       method: 'POST',
       headers: {
         "Content-Type": "application/json",
@@ -139,9 +139,9 @@ export async function createDevotionalFromVerse(
     // Create an AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      appLog('[AI API] Request timeout after 30 seconds');
+      appLog('[AI API] Request timeout after 60 seconds');
       controller.abort();
-    }, 30000); // 30 second timeout
+    }, 60000); // 60 second timeout
 
     try {
       appLog('[AI API] Making fetch request to API...');
@@ -176,7 +176,7 @@ export async function createDevotionalFromVerse(
         userContext += ` They primarily speak ${languageName}.`;
       }
 
-      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5', {
+      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5-nano', {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
@@ -442,7 +442,7 @@ export async function createDevotionalFromCheckIn(
         userContext += ` They primarily speak ${languageName}.`;
       }
 
-      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5', {
+      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5-nano', {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
@@ -790,7 +790,7 @@ export async function createJournalResponse(
         userContext += ` They primarily speak ${languageName}.`;
       }
 
-      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5', {
+      const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-5-nano', {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
@@ -809,11 +809,11 @@ Respond as if God is speaking through you with compassion, wisdom, and biblical 
 4. Be warm, personal, and pastorally sensitive
 
 Please respond with a JSON object containing exactly these fields:
-- "response": A compassionate, biblical response (3-4 sentences) that directly addresses their prayer and emotional state
+- "response": A compassionate, biblical response (4-5 sentences) that directly addresses their prayer and emotional state, with the final sentence as a call to action for them / pep talk of some sort to make them ready to tackle the day.
 - "verse": The actual Bible verse text (not the reference, but the full verse text)
 - "bibleReference": The Bible reference (e.g., "Philippians 4:13" or "Matthew 11:28")
 
-Make sure your response feels personal and directly relevant to their specific prayer and mood. Consider their denomination and Bible familiarity when choosing language and theological depth.`
+Make sure your response feels personal and directly relevant to their specific prayer and mood. Keep in mind their age as well. If they are under 24, make sure to use Gen Z language. Consider their denomination and Bible familiarity when choosing language and theological depth.`
             },
             {
               "role": "user",

@@ -1218,44 +1218,7 @@ export default function HomeScreen() {
                               // Ensure maximum 2 cards
                               const finalDevotionals = devotionalsToShow.slice(0, 2);
 
-                              appLog('📚 Devotionals Debug:', {
-                                recentDevotionalsCount: recentDevotionals.length,
-                                recentDevotionals: recentDevotionals.map((d) => ({
-                                  id: d?.id,
-                                  date: d?.date,
-                                  createdAt: d?.createdAt,
-                                  type:
-                                    d?.id?.startsWith('custom-') || d?.id?.startsWith('ai-')
-                                      ? 'custom'
-                                      : 'daily',
-                                })),
-                                todaysCustomDevotional: todaysCustomDevotional
-                                  ? {
-                                      id: todaysCustomDevotional.id,
-                                      date: todaysCustomDevotional.date,
-                                      createdAt: todaysCustomDevotional.createdAt,
-                                    }
-                                  : null,
-                                customDevotionalFromStore: customDevotional
-                                  ? {
-                                      id: customDevotional.id,
-                                      date: customDevotional.date,
-                                      createdAt: customDevotional.createdAt,
-                                    }
-                                  : null,
-                                dailyDevotional: dailyDevotional
-                                  ? {
-                                      id: dailyDevotional.id,
-                                      date: dailyDevotional.date,
-                                    }
-                                  : null,
-                                devotionalsToShow: devotionalsToShow.map((d) => ({
-                                  id: d.id,
-                                  date: d.date,
-                                  type: d.id === dailyDevotional?.id ? 'daily' : 'custom',
-                                })),
-                                finalDevotionalsCount: finalDevotionals.length,
-                              });
+                             
 
                               if (finalDevotionals.length > 0) {
                                 // If only one devotional, render it directly without CardStack
@@ -1361,7 +1324,7 @@ export default function HomeScreen() {
 
                         {/* Show completed tasks when reading is completed */}
                         {readingCompleted && (
-                          <View style={{ marginTop: responsiveHeight(-4) }}>
+                          <View style={{ marginTop: responsiveHeight(0) }}>
                             <View
                               className="flex-row items-center"
                               style={{ marginBottom: responsiveHeight(2) }}>
@@ -1549,7 +1512,7 @@ export default function HomeScreen() {
                         )}
 
                         {/* PRAYER AND REFLECT BUTTONS - Always show below daily bread/custom devotional and above custom path */}
-                        <View style={{ marginTop: responsiveHeight(2) }}>
+                        <View style={{ marginTop: responsiveHeight(0) }}>
                           {/* Prayer Button */}
                           <View
                             className="flex-row items-center"
