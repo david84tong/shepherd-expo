@@ -9,7 +9,6 @@ import {
   reset as amplitudeReset,
 } from '@amplitude/analytics-react-native';
 import { Platform } from 'react-native';
-import { adapty } from 'react-native-adapty';
 
 // Import Statsig event logging
 let statsigClient: any = null;
@@ -142,13 +141,7 @@ class Analytics {
         amplitudeIdentify(identify);
       }
 
-      // Adapty integration with Mixpanel user ID
-      try {
-        await adapty.updateAttribution({ mixpanel_user_id: userId }, 'custom');
-        console.log('✅ Adapty integration with Mixpanel user ID set successfully');
-      } catch (adaptyError) {
-        console.error('❌ Error setting Adapty integration identifier:', adaptyError);
-      }
+      // Removed Adapty integration
 
       // Statsig user identification
       try {

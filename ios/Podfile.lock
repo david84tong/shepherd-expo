@@ -1188,9 +1188,6 @@ PODS:
     - abseil/meta/type_traits
     - abseil/xcprivacy
   - abseil/xcprivacy (1.20240722.0)
-  - Adapty (3.1.0)
-  - AdaptyUI (3.1.0):
-    - Adapty (= 3.1.0)
   - amplitude-react-native (1.4.11):
     - React-Core
   - AppAuth (1.7.6):
@@ -3090,15 +3087,6 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-adapty-sdk (3.1.0):
-    - Adapty (= 3.1.0)
-    - AdaptyUI (= 3.1.0)
-    - React
-  - react-native-adapty-ui (3.1.0):
-    - Adapty (>= 3.1.0)
-    - AdaptyUI (= 3.1.0)
-    - React-Core
-    - react-native-adapty-sdk (>= 3.1.0)
   - react-native-blur (4.4.1):
     - DoubleConversion
     - glog
@@ -3516,8 +3504,6 @@ PODS:
     - Yoga
   - RNDateTimePicker (8.2.0):
     - React-Core
-  - RNDeviceInfo (10.14.0):
-    - React-Core
   - RNFBAnalytics (21.14.0):
     - Firebase/Analytics (= 11.11.0)
     - React-Core
@@ -3736,6 +3722,12 @@ PODS:
     - SDWebImage/Core (~> 5.6)
   - Sentry/HybridSDK (8.53.1)
   - SocketRocket (0.7.1)
+  - Superscript (0.2.8)
+  - SuperwallExpo (0.2.6):
+    - ExpoModulesCore
+    - SuperwallKit (= 4.5.2)
+  - SuperwallKit (4.5.2):
+    - Superscript (= 0.2.8)
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -3816,8 +3808,6 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
-  - react-native-adapty-sdk (from `../node_modules/react-native-adapty`)
-  - "react-native-adapty-ui (from `../node_modules/@adapty/react-native-ui`)"
   - "react-native-blur (from `../node_modules/@react-native-community/blur`)"
   - react-native-mmkv-storage (from `../node_modules/react-native-mmkv-storage`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
@@ -3856,7 +3846,6 @@ DEPENDENCIES:
   - "RNCClipboard (from `../node_modules/@react-native-clipboard/clipboard`)"
   - "RNCMaskedView (from `../node_modules/@react-native-masked-view/masked-view`)"
   - "RNDateTimePicker (from `../node_modules/@react-native-community/datetimepicker`)"
-  - RNDeviceInfo (from `../node_modules/react-native-device-info`)
   - "RNFBAnalytics (from `../node_modules/@react-native-firebase/analytics`)"
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
   - "RNFBAuth (from `../node_modules/@react-native-firebase/auth`)"
@@ -3872,13 +3861,12 @@ DEPENDENCIES:
   - "RNSentry (from `../node_modules/@sentry/react-native`)"
   - RNShare (from `../node_modules/react-native-share`)
   - RNSVG (from `../node_modules/react-native-svg`)
+  - SuperwallExpo (from `../node_modules/expo-superwall/ios`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
   trunk:
     - abseil
-    - Adapty
-    - AdaptyUI
     - AppAuth
     - BoringSSL-GRPC
     - Firebase
@@ -3925,6 +3913,8 @@ SPEC REPOS:
     - SDWebImageSVGCoder
     - Sentry
     - SocketRocket
+    - Superscript
+    - SuperwallKit
 
 EXTERNAL SOURCES:
   amplitude-react-native:
@@ -4078,10 +4068,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
-  react-native-adapty-sdk:
-    :path: "../node_modules/react-native-adapty"
-  react-native-adapty-ui:
-    :path: "../node_modules/@adapty/react-native-ui"
   react-native-blur:
     :path: "../node_modules/@react-native-community/blur"
   react-native-mmkv-storage:
@@ -4158,8 +4144,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-masked-view/masked-view"
   RNDateTimePicker:
     :path: "../node_modules/@react-native-community/datetimepicker"
-  RNDeviceInfo:
-    :path: "../node_modules/react-native-device-info"
   RNFBAnalytics:
     :path: "../node_modules/@react-native-firebase/analytics"
   RNFBApp:
@@ -4190,13 +4174,13 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-share"
   RNSVG:
     :path: "../node_modules/react-native-svg"
+  SuperwallExpo:
+    :path: "../node_modules/expo-superwall/ios"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
   abseil: a05cc83bf02079535e17169a73c5be5ba47f714b
-  Adapty: c2245830c811b0156b12b617956904ed06966638
-  AdaptyUI: 7ac79ee12f71ca92370f1a8ad3d9dd1748ac6129
   amplitude-react-native: 9d57e1bcc4175039e36283390aa3daeaea9441a5
   AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
   boost: 1dca942403ed9342f98334bf4c3621f011aa7946
@@ -4309,8 +4293,6 @@ SPEC CHECKSUMS:
   React-logger: dbca7bdfd4aa5ef69431362bde6b36d49403cb20
   React-Mapbuffer: 129fa9634f42d88a0c3761d2829db85175b985ee
   React-microtasksnativemodule: 5aeec323cb452dba293815d82bf08d7076e295d0
-  react-native-adapty-sdk: 7bf88d070fb7b6a2d240894b7e6dd2155d9a637a
-  react-native-adapty-ui: 51d3797d65e8799a94969a8808d889bbc4d0cc70
   react-native-blur: 89fca766002a2cf738ff37cca82a9776700841e6
   react-native-mmkv-storage: c65409cc4e0c3c71ca190cbacae069e9fe8b84b6
   react-native-safe-area-context: 142fade490cbebbe428640b8cbdb09daf17e8191
@@ -4353,7 +4335,6 @@ SPEC CHECKSUMS:
   RNCClipboard: 4411a880506f11fbcbdc03b5093eb8ffb246d900
   RNCMaskedView: affff96123106435ddc9799a57a8ba8edf17fe27
   RNDateTimePicker: 40ffda97d071a98a10fdca4fa97e3977102ccd14
-  RNDeviceInfo: 59344c19152c4b2b32283005f9737c5c64b42fba
   RNFBAnalytics: f78787fc57b14f5bd1ca885fd31586fc837f83db
   RNFBApp: b67ded6e4b0a6c0fee5e4f8e75e3a31567949a08
   RNFBAuth: 6aabe6440ba66c82b3c87fc8ebf70d921e5156dd
@@ -4374,8 +4355,11 @@ SPEC CHECKSUMS:
   SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c
   Sentry: 1e4e974d45f09d153af4b30b42acfb1c79e957d3
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
+  Superscript: 82dbb40f502823160e75503ebc1b6bac756a503d
+  SuperwallExpo: 2f883c0f3f56d4adfab075f796f5957a72f807e5
+  SuperwallKit: 520fd9dff39358c9708d88cc69c1f4fbd32b3008
   Yoga: 1259c7a8cbaccf7b4c3ddf8ee36ca11be9dee407
 
-PODFILE CHECKSUM: 7cfbd7d80f623775223c322cdf7c7cf2ffa20073
+PODFILE CHECKSUM: 5dd9c3e7cdb61a35c7e389798a3c69eac0e970db
 
 COCOAPODS: 1.16.2

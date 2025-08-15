@@ -32,7 +32,7 @@ import Rive, { Fit, Alignment } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
 import Toast from 'react-native-toast-message';
 import { useUIStore } from '../stores/uiStore';
-import { adapty } from 'react-native-adapty';
+import Purchases from 'react-native-purchases';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import { UserDoc } from '../models/User';
 import firestore from '@react-native-firebase/firestore';
@@ -49,12 +49,11 @@ import { COVENANT_STATES } from '../hooks/streakHook';
 
 // Add this near the top of the file, after imports
 
-// Helper function to check premium status from Adapty
+// Helper function to check premium status via RevenueCat
 const checkPremiumStatus = async () => {
   try {
-    const profile = await adapty.getProfile();
-    const accessLevel = profile.accessLevels?.['premium'];
-    return accessLevel?.isActive || false;
+    const info = await Purchases.getCustomerInfo();
+    return !!info.entitlements.active['Super Shepherd'];
   } catch (error) {
     console.error('Error checking premium status:', error);
     return false;
@@ -436,16 +435,16 @@ export default function SaveProgressScreen() {
 
       // Identify user in Adapty
       try {
-        await adapty.identify(uid);
+        // await adapty.identify(uid); // Removed Adapty identify
 
         // Prepare custom attributes, filtering out undefined/null values
         const customAttributes: Record<string, string | number | boolean> = {};
 
         if (userData.ageRange) customAttributes.age_range = userData.ageRange;
 
-        await adapty.updateProfile({
-          codableCustomAttributes: customAttributes,
-        });
+        // await adapty.updateProfile({ // Removed Adapty updateProfile
+        //   codableCustomAttributes: customAttributes,
+        // });
       } catch (adaptyError) {
         console.error('Error identifying user in Adapty:', adaptyError);
       }

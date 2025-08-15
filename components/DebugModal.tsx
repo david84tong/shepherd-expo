@@ -20,6 +20,7 @@ import dayjs from 'dayjs';
 import { appLog } from '~/app/helper/helper';
 import EvolutionScreen from './EvolutionScreen';
 import { getStatsigClient } from '../utils/analytics';
+import { getExperimentParamFromRC } from '../app/utils/statsig';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -76,7 +77,7 @@ interface ExperimentCardProps {
 
 function ExperimentCard({ experimentName }: ExperimentCardProps) {
   // Initialize experiment data with proper error handling
-  const [experimentData, setExperimentData] = useState({
+  const [experimentData, setExperimentData] = useState<any>({
     value: null,
     groupName: 'unknown',
     allocated: false,
@@ -116,18 +117,31 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
             if (statsigExperiment) {
               // Check what methods are available on the experiment object
               appLog(`🧪 [STATSIG] Experiment object methods:`, Object.getOwnPropertyNames(statsigExperiment));
+              appLog(`🧪 [STATSIG] Full experiment object:`, JSON.stringify(statsigExperiment));
               
               // Try different ways to get the value
               if (typeof statsigExperiment.getValue === 'function') {
                 experimentValue = statsigExperiment.getValue();
-              } else if (typeof statsigExperiment.get === 'function') {
+                appLog(`🧪 [STATSIG] getValue() returned:`, experimentValue);
+                
+                // For gpt-model, extract the gptModel parameter if getValue returns an object
+                if (experimentName === 'gpt-model' && experimentValue && typeof experimentValue === 'object') {
+                  if (experimentValue.gptModel) {
+                    appLog(`🧪 [STATSIG] gpt-model from getValue: ${experimentValue.gptModel}`);
+                  }
+                }
+              } 
+              
+              if (typeof statsigExperiment.get === 'function') {
                 // Try .get() method instead - for specific experiments, get the specific parameter
                 if (experimentName === 'path_feature') {
-                  experimentValue = statsigExperiment.get('path_shown', false);
+                  experimentValue = statsigExperiment.get('path_feature_enabled', false);
                 } else if (experimentName === 'gpt-model') {
-                  experimentValue = { gptModel: statsigExperiment.get('gptModel', 'gpt-5-nano') };
+                  const gptModelValue = statsigExperiment.get('gptModel', 'unknown');
+                  experimentValue = { gptModel: gptModelValue };
+                  appLog(`🧪 [STATSIG] gpt-model experiment - gptModel param from get(): ${gptModelValue}`);
                 } else if (experimentName === 'prayer_gen_on') {
-                  experimentValue = statsigExperiment.get('generate_prayer_for_user', false);
+                  experimentValue = statsigExperiment.get('prayer_gen_on', false);
                 } else if (experimentName === 'exp_streak_after_daily_reading') {
                   experimentValue = statsigExperiment.get('streak_after_reading_flag', false);
                 } else {
@@ -135,12 +149,12 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
                 }
               } else if (statsigExperiment.value !== undefined) {
                 // Direct value property - for specific experiments, extract specific parameters
-                if (experimentName === 'path_feature' && statsigExperiment.value.path_shown !== undefined) {
-                  experimentValue = statsigExperiment.value.path_shown;
+                if (experimentName === 'path_feature' && (statsigExperiment.value.path_feature_enabled !== undefined || statsigExperiment.value.path_shown !== undefined)) {
+                  experimentValue = (statsigExperiment.value.path_feature_enabled ?? statsigExperiment.value.path_shown);
                 } else if (experimentName === 'gpt-model' && statsigExperiment.value.gptModel !== undefined) {
                   experimentValue = { gptModel: statsigExperiment.value.gptModel };
                 } else if (experimentName === 'prayer_gen_on' && statsigExperiment.value.generate_prayer_for_user !== undefined) {
-                  experimentValue = statsigExperiment.value.generate_prayer_for_user;
+                  experimentValue = (statsigExperiment.value.prayer_gen_on ?? statsigExperiment.value.generate_prayer_for_user);
                 } else if (experimentName === 'exp_streak_after_daily_reading' && statsigExperiment.value.streak_after_reading_flag !== undefined) {
                   experimentValue = statsigExperiment.value.streak_after_reading_flag;
                 } else {
@@ -149,11 +163,11 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
               } else {
                 // For specific experiments, try to get the specific parameter
                 if (experimentName === 'path_feature') {
-                  experimentValue = statsigExperiment.path_shown ?? null;
+                  experimentValue = (statsigExperiment.path_feature_enabled ?? statsigExperiment.path_shown ?? null);
                 } else if (experimentName === 'gpt-model') {
-                  experimentValue = { gptModel: statsigExperiment.gptModel ?? 'gpt-5-nano' };
+                  experimentValue = { gptModel: statsigExperiment.gptModel ?? 'unknown' };
                 } else if (experimentName === 'prayer_gen_on') {
-                  experimentValue = statsigExperiment.generate_prayer_for_user ?? false;
+                  experimentValue = (statsigExperiment.prayer_gen_on ?? statsigExperiment.generate_prayer_for_user ?? false);
                 } else if (experimentName === 'exp_streak_after_daily_reading') {
                   experimentValue = statsigExperiment.streak_after_reading_flag ?? false;
                 }
@@ -166,6 +180,9 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
                 groupName = statsigExperiment.groupName;
               } else if (statsigExperiment.allocation) {
                 groupName = statsigExperiment.allocation;
+              } else if (experimentName === 'gpt-model' && experimentValue?.gptModel) {
+                // For gpt-model, use the model name as the group name if available
+                groupName = experimentValue.gptModel;
               }
               
               ruleID = statsigExperiment.getRuleID?.() || statsigExperiment.ruleID || null;
@@ -184,6 +201,12 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
         
         // If we found experiment data, set it
         if (experimentValue !== null || groupName !== 'unknown') {
+          // Special handling for gpt-model experiment
+          if (experimentName === 'gpt-model' && typeof experimentValue === 'string') {
+            // If experimentValue is just a string (the model name), wrap it in an object
+            experimentValue = { gptModel: experimentValue };
+          }
+          
           setExperimentData({
             value: experimentValue,
             groupName,
@@ -205,26 +228,39 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
         }
         
         // Fallback to hardcoded experiment data for known experiments
-        if (experimentName === 'path_feature') {
-          // For path_feature, we know it's implemented but can't access the value directly
-          setExperimentData({
-            value: null,
-            groupName: 'unknown_check_needed',
-            allocated: true,
-            error: null
-          });
-        } else {
-          // Unknown experiment
-          setExperimentData({
-            value: null,
-            groupName: 'unknown',
-            allocated: false,
-            error: 'Experiment not found in Statsig'
-          });
-        }
+        const defaultValues: Record<string, any> = {
+          'path_feature': false,
+          'prayer_gen_on': false,
+          'gpt-model': 'gpt-4o-mini', // Control group default
+          'exp_streak_after_daily_reading': false
+        };
+        
+        const paramKey = experimentName === 'path_feature' ? 'path_feature_enabled'
+          : experimentName === 'prayer_gen_on' ? 'prayer_gen_on'
+          : experimentName === 'gpt-model' ? 'gptModel'
+          : 'streak_after_reading_flag';
+          
+        const rcFallback = getExperimentParamFromRC(
+          experimentName,
+          paramKey,
+          defaultValues[experimentName]
+        );
+        
+        // For gpt-model, ensure we have a valid default
+        const finalValue = experimentName === 'gpt-model' 
+          ? { gptModel: rcFallback || 'gpt-4o-mini' }
+          : rcFallback;
+        
+        // If we're falling back, that means Statsig isn't working properly
+        setExperimentData({
+          value: finalValue,
+          groupName: 'error',
+          allocated: false,
+          error: 'Statsig not available - using fallback',
+        });
       } catch (error) {
         appLog('❌ Error in getExperimentData:', error);
-        setExperimentData(prev => ({ 
+        setExperimentData((prev: any) => ({ 
           ...prev, 
           error: error instanceof Error ? error.message : 'Component error' 
         }));
@@ -242,6 +278,11 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
       // For path_feature: Control = path_shown:true (green), Test = path_shown:false (blue)
       if (experimentData.value === true) return 'bg-[#E8F5E8]'; // Light green for control group (keep path)
       if (experimentData.value === false) return 'bg-[#E3F2FD]'; // Light blue for test group (remove path)
+    } else if (experimentName === 'gpt-model') {
+      const gptModel = experimentData.value?.gptModel;
+      if (gptModel === 'gpt-4o-mini') return 'bg-[#E8F5E8]'; // Light green for control group
+      if (gptModel && gptModel.startsWith('gpt-5')) return 'bg-[#E3F2FD]'; // Light blue for test groups
+      if (gptModel === 'gpt-4') return 'bg-[#E3F2FD]'; // Light blue for gpt-4
     } else {
       // Generic experiment handling
       if (experimentData.value === true) return 'bg-[#E3F2FD]'; // Light blue for test group
@@ -253,7 +294,7 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
   };
 
   const getStatusText = () => {
-    if (experimentData.error) return '⚠️ Not Available';
+    if (experimentData.error) return '❌ Statsig Error';
     
     // Handle specific experiment logic based on Statsig configuration
     if (experimentName === 'path_feature') {
@@ -263,10 +304,21 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
       if (experimentData.groupName === 'unknown_check_needed') return '🔍 Check Home Screen';
     }
     
+    // For gpt-model experiment
+    if (experimentName === 'gpt-model') {
+      const gptModel = experimentData.value?.gptModel;
+      if (gptModel === 'gpt-4o-mini') return '🔄 Control Group';
+      if (gptModel && gptModel.startsWith('gpt-5')) return '✅ Test Group';
+      if (gptModel === 'gpt-4') return '✅ gpt-4';
+      if (experimentData.groupName && experimentData.groupName !== 'unknown' && experimentData.groupName !== 'fallback' && experimentData.groupName !== 'error') {
+        return `📋 ${experimentData.groupName}`;
+      }
+    }
+    
     // Generic experiment handling
     if (experimentData.value === true) return '✅ Test Group';
     if (experimentData.value === false) return '🔄 Control Group';
-    if (experimentData.groupName && experimentData.groupName !== 'unknown') {
+    if (experimentData.groupName && experimentData.groupName !== 'unknown' && experimentData.groupName !== 'error') {
       return `📋 ${experimentData.groupName}`;
     }
     if (!experimentData.allocated) return '🚫 Not Allocated';
@@ -296,8 +348,16 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
           appLog(`🧪 [EXPERIMENT] ${experimentName} details:`, experimentData);
           appLog(`  - Description: ${getDescription()}`);
           appLog(`  - Group: ${experimentData.groupName}`);
-          appLog(`  - Value: ${experimentData.value}`);
+          appLog(`  - Value:`, experimentData.value);
           appLog(`  - Allocated: ${experimentData.allocated}`);
+          
+          if (experimentName === 'gpt-model') {
+            appLog(`  - Raw value type: ${typeof experimentData.value}`);
+            if (experimentData.value && typeof experimentData.value === 'object') {
+              appLog(`  - Value keys:`, Object.keys(experimentData.value));
+              appLog(`  - gptModel property:`, (experimentData.value as any).gptModel);
+            }
+          }
           
           if (experimentName === 'path_feature') {
             appLog(`  - To see the actual experiment value, check the useHomeScreen hook`);
@@ -340,7 +400,8 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
           {getStatusText()}
         </Text>
         <Text className="font-din text-xs text-[#6A8A94]">
-          {experimentData.allocated ? `Allocated: ✅` : `Allocated: ❌`}
+          {experimentData.error ? 'Check Statsig Init' : 
+           experimentData.allocated ? 'Allocated ✅' : 'Not Allocated ❌'}
         </Text>
       </View>
       
@@ -350,7 +411,18 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
           {experimentName === 'path_feature' ? 
             `path_shown: ${experimentData.value === null ? 'unknown' : experimentData.value}` :
             experimentName === 'gpt-model' ?
-            `gptModel: ${experimentData.value?.gptModel || 'unknown'}` :
+            `gptModel: ${(() => {
+              if (experimentData.value && typeof experimentData.value === 'object' && 'gptModel' in experimentData.value) {
+                return experimentData.value.gptModel;
+              }
+              if (typeof experimentData.value === 'string') {
+                return experimentData.value;
+              }
+              if (experimentData.groupName && experimentData.groupName !== 'unknown' && experimentData.groupName !== 'fallback') {
+                return experimentData.groupName; // Use group name as fallback
+              }
+              return 'unknown';
+            })()}` :
             experimentName === 'prayer_gen_on' ?
             `generate_prayer_for_user: ${experimentData.value === null ? 'unknown' : experimentData.value}` :
             experimentName === 'exp_streak_after_daily_reading' ?
@@ -360,7 +432,26 @@ function ExperimentCard({ experimentName }: ExperimentCardProps) {
         </Text>
       </View>
 
-      {/* Special instruction for path_feature */}
+      {/* Error message if Statsig is not working */}
+      {experimentData.error && (
+        <View className="mt-2 bg-red-100 p-2 rounded border border-red-300">
+          <Text className="font-din text-xs text-red-700 font-semibold">
+            {experimentData.error}
+          </Text>
+          <Text className="font-din text-xs text-red-600 mt-1">
+            Statsig should be initialized. Check:
+          </Text>
+          <Text className="font-din text-xs text-red-600">
+            • Is Statsig.initialize() being called?
+          </Text>
+          <Text className="font-din text-xs text-red-600">
+            • Is the user ID being set correctly?
+          </Text>
+          <Text className="font-din text-xs text-red-600">
+            • Check console for Statsig errors
+          </Text>
+        </View>
+      )}
    
     </TouchableOpacity>
   );
@@ -1838,7 +1929,7 @@ export function DebugButton() {
                             try {
                               const userStore = useUserStore.getState();
                               const now = new Date();
-                              const timestamp = require('@react-native-firebase/firestore').Timestamp.fromDate(now);
+                              const timestamp = firestore.Timestamp.fromDate(now);
                               
                               userStore.setLastReadingDate(timestamp);
                               userStore.setLastActivityDate(timestamp);

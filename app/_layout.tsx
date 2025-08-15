@@ -14,12 +14,8 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases from 'react-native-purchases';
-import Rive from 'rive-react-native';
+import Rive, { RiveRef } from 'rive-react-native';
 import '../global.css';
-import { StatsigProviderRN, STATSIG_CLIENT_KEY } from './utils/statsig';
-import auth from '@react-native-firebase/auth';
-import { shallow } from 'zustand/shallow';
-import StatsigAnalyticsInitializer from './components/StatsigAnalyticsInitializer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppLoading from '../components/AppLoading';
 import { DebugButton } from '../components/DebugModal';
@@ -50,7 +46,9 @@ import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
 import StreakFreezeBottomSheet, { StreakFreezeBottomSheetRef } from '~/components/StreakFreezeBottomSheet';
 import { disableFontScaling } from './helper/disableFontScaling';
-import { adapty } from 'react-native-adapty';
+// Superwall
+import { SuperwallProvider } from 'expo-superwall';
+import SuperwallHandler from '~/app/components/SuperwallHandler';
 import './stores/userStore';
 import { IS_ANDROID } from './utils/utils';
 import { initializeQuickActions } from './utils/quickActions';
@@ -68,7 +66,13 @@ import { COVENANT_STATES } from './hooks/streakHook';
 import { useUserStore } from './stores/userStore';
 import CovenantSuccessSheet, { CovenantSuccessSheetRef } from '../components/CovenantSuccessSheet';
 import * as Sentry from '@sentry/react-native';
-import { performanceMonitor, trackOperation, trackRive } from './utils/performanceMonitor';
+import { trackOperation, trackRive } from './utils/performanceMonitor';
+import { StatsigProviderRN } from './utils/statsig';
+import StatsigAnalyticsInitializer from './components/StatsigAnalyticsInitializer';
+import auth from '@react-native-firebase/auth';
+
+// Temporary gate for the Rive splash
+const ENABLE_RIVE_SPLASH = true as const;
 
 Sentry.init({
   dsn: 'https://c9b3a3c9ed0846a755ee7175b07982f8@o4509279727321088.ingest.us.sentry.io/4509279728828416',
@@ -165,7 +169,9 @@ export default Sentry.wrap(function RootLayout() {
     'Nunito-Regular': require('../assets/fonts/Nunito-Regular.ttf'),
     'Nunito-BlackItalic': require('../assets/fonts/Nunito-BlackItalic.ttf'),
   });
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/shepherd_splash_screen.riv')]);
+  const [riveAssets] = useAssets(
+    ENABLE_RIVE_SPLASH ? [require('../assets/riveAnimations/shepherd_splash_screen.riv')] : []
+  );
 
   // Loading states
   const [appReady, setAppReady] = useState(false);
@@ -176,10 +182,10 @@ export default Sentry.wrap(function RootLayout() {
   const [showRiveAnimation, setShowRiveAnimation] = useState(false);
   const [isRiveReady, setIsRiveReady] = useState(false);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
-  const [authUid, setAuthUid] = useState<string>(auth().currentUser?.uid || 'anonymous');
-  const [authEmail, setAuthEmail] = useState<string | undefined>(auth().currentUser?.email || undefined);
-  const [authIsAnonymous, setAuthIsAnonymous] = useState<boolean>(!!auth().currentUser?.isAnonymous);
   const [pendingDiscountDeepLink, setPendingDiscountDeepLink] = useState(false);
+  // Track startup timers and the splash Rive ref for cleanup
+  const timersRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> | undefined }>({});
+  const splashRiveRef = useRef<RiveRef>(null);
 
   // Global modal state
   const isModalDimActive = useUIStore((state) => state.isModalDimActive);
@@ -212,46 +218,6 @@ export default Sentry.wrap(function RootLayout() {
   const covenantSuccessSheetRef = useRef<CovenantSuccessSheetRef>(null);
   const streakFreezeSheetRef = useRef<StreakFreezeBottomSheetRef>(null);
   const streakFreezes = useUserStore((state) => state.streakFreezes);
-  const statsigUserFields = useUserStore(
-    (state) => ({
-      proStatus: (state as any).proStatus || state.getProStatus?.() || 'free',
-      streak: (state as any).streak || state.getStreakCount?.() || 0,
-      xp: (state as any).xp || 0,
-      hearts: (state as any).hearts || state.getLambHearts?.() || 0,
-      level: (state as any).level || 1,
-      hasCompletedOnboarding: (state as any).hasCompletedOnboarding || false,
-      selectedPathId: (state as any).selectedPathId || null,
-      lambLevel: (state as any).lambLevel || 1,
-    }),
-    (a, b) =>
-      a.proStatus === b.proStatus &&
-      a.streak === b.streak &&
-      a.xp === b.xp &&
-      a.hearts === b.hearts &&
-      a.level === b.level &&
-      a.hasCompletedOnboarding === b.hasCompletedOnboarding &&
-      a.selectedPathId === b.selectedPathId &&
-      a.lambLevel === b.lambLevel
-  );
-
-  const statsigUser = useMemo(
-    () => ({
-      userID: authUid || 'anonymous',
-      email: authEmail || undefined,
-      custom: {
-        isAnonymous: authIsAnonymous,
-        proStatus: statsigUserFields.proStatus,
-        streakDays: statsigUserFields.streak,
-        totalXP: statsigUserFields.xp,
-        hearts: statsigUserFields.hearts,
-        currentLevel: statsigUserFields.level,
-        hasCompletedOnboarding: statsigUserFields.hasCompletedOnboarding,
-        selectedPathId: statsigUserFields.selectedPathId,
-        lambLevel: statsigUserFields.lambLevel,
-      },
-    }),
-    [authUid, authEmail, authIsAnonymous, statsigUserFields]
-  );
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
@@ -272,6 +238,7 @@ export default Sentry.wrap(function RootLayout() {
   const appState = useRef(AppState.currentState);
 
   usePreloadAssets(); // Garante preload global dos assets
+  // Optionally preload Rive assets; keep enabled since this is unrelated to splash
   usePreloadRiveAssets(); // Preload Rive assets during splash screen
   useRemoteConfig();
 
@@ -286,7 +253,7 @@ export default Sentry.wrap(function RootLayout() {
       onAppForegroundOrInit();
       // Check and show check-in after a delay to ensure everything is ready
       // But only if hearts lost modal is not scheduled to show
-      setTimeout(() => {
+      timersRef.current.checkInDelay = setTimeout(() => {
         if (!isHeartsLostModalVisible.current) {
           checkAndShowCheckInIfNeeded();
         }
@@ -344,7 +311,7 @@ export default Sentry.wrap(function RootLayout() {
       if (result && 'streakFreezeUsed' in result && result.streakFreezeUsed) {
         // Show streak freeze bottom sheet with "used" notification
         appLog('❄️ Showing streak freeze modal from app startup - freeze was used');
-        setTimeout(() => {
+        timersRef.current.streakFreeze = setTimeout(() => {
           if (typeof global !== 'undefined' && (global as any).streakFreezeSheetRef) {
             appLog('🧪 [DEBUG TEST] Showing freeze modal with remaining:', result.freezesRemaining);
             (global as any).streakFreezeSheetRef.current?.show(true);
@@ -376,7 +343,7 @@ export default Sentry.wrap(function RootLayout() {
         // Set flag to indicate hearts lost modal is visible
         isHeartsLostModalVisible.current = true;
         // Show the half modal with a delay
-        setTimeout(() => {
+        timersRef.current.heartsPenalty = setTimeout(() => {
           showHalfModal(params);
         }, 3000);
       }
@@ -393,7 +360,6 @@ export default Sentry.wrap(function RootLayout() {
   // Check if one hour has passed since last check-in AND today's check-in is not complete
   const checkAndShowCheckInIfNeeded = () => {
     // Import auth to check if user is logged in
-    const auth = require('@react-native-firebase/auth').default;
     const currentUser = auth().currentUser;
     
     appLog('[CheckIn] checkAndShowCheckInIfNeeded called');
@@ -463,7 +429,7 @@ export default Sentry.wrap(function RootLayout() {
     checkInScheduledRef.current = true;
     
     // Show check-in with a delay to ensure app is ready
-    setTimeout(() => {
+    timersRef.current.checkInShow = setTimeout(() => {
       appLog('[CheckIn] Calling showCheckIn() now...');
       showCheckIn();
       // Reset the flag after showing
@@ -497,18 +463,11 @@ export default Sentry.wrap(function RootLayout() {
     appLog('[showCheckIn] Function called at:', new Date().toISOString());
     
     // Import auth to check if user is logged in
-    const auth = require('@react-native-firebase/auth').default;
     const currentUser = auth().currentUser;
     
     // Don't show check-in if user is not logged in at all
     if (!currentUser) {
       appLog('[showCheckIn] Not showing check-in: User not logged in');
-      return;
-    }
-    
-    // Don't show check-in if the isUserLoggedIn state is false (component not rendered)
-    if (!isUserLoggedIn) {
-      appLog('[showCheckIn] Not showing check-in: isUserLoggedIn state is false, component not rendered');
       return;
     }
     
@@ -528,32 +487,25 @@ export default Sentry.wrap(function RootLayout() {
       }
     } else {
       console.error('[showCheckIn] checkInRef.current is null, cannot show check-in');
-      appLog('[showCheckIn] Component may not be rendered yet. isUserLoggedIn:', isUserLoggedIn);
+      appLog('[showCheckIn] Attempting to retry in 500ms...');
       
-      // Only retry if user is logged in (component should be rendered)
-      if (isUserLoggedIn) {
-        appLog('[showCheckIn] Attempting to retry in 500ms...');
-        setTimeout(() => {
-          if (checkInRef.current) {
-            appLog('[showCheckIn] Retry successful, calling forceShow()');
-            checkInRef.current.forceShow();
-          } else {
-            console.error('[showCheckIn] Retry failed, checkInRef still null');
-          }
-        }, 500);
-      }
+      // Retry after a short delay
+      setTimeout(() => {
+        if (checkInRef.current) {
+          appLog('[showCheckIn] Retry successful, calling forceShow()');
+          checkInRef.current.forceShow();
+        } else {
+          console.error('[showCheckIn] Retry failed, checkInRef still null');
+        }
+      }, 500);
     }
   };
 
   // Monitor auth state changes
   useEffect(() => {
-    const auth = require('@react-native-firebase/auth').default;
     const unsubscribe = auth().onAuthStateChanged((user: any) => {
       const isLoggedIn = !!user; // Include anonymous users as logged in
       setIsUserLoggedIn(isLoggedIn);
-      setAuthUid(user?.uid || 'anonymous');
-      setAuthEmail(user?.email || undefined);
-      setAuthIsAnonymous(!!user?.isAnonymous);
       appLog('[Auth] User auth state changed:', { 
         isLoggedIn, 
         isAnonymous: user?.isAnonymous,
@@ -659,15 +611,17 @@ export default Sentry.wrap(function RootLayout() {
       //   return;
       // }
 
-      // Wait for Rive assets to be ready (both splash and preloaded)
-      if (!riveAssets?.[0]?.uri || !riveAssetsLoaded) {
-        appLog('Waiting for Rive assets to load...', { 
-          splashRive: !!riveAssets?.[0]?.uri, 
-          preloadedRive: riveAssetsLoaded 
-        });
-        return;
+      // If splash is enabled, ensure assets are ready; otherwise continue immediately
+      if (ENABLE_RIVE_SPLASH) {
+        if (!riveAssets?.[0]?.uri || !riveAssetsLoaded) {
+          appLog('Waiting for Rive assets to load...', {
+            splashRive: !!riveAssets?.[0]?.uri,
+            preloadedRive: riveAssetsLoaded,
+          });
+          return;
+        }
+        appLog('🎬 All Rive assets loaded successfully');
       }
-      appLog('🎬 All Rive assets loaded successfully');
 
       try {
         // Initialize app components
@@ -681,14 +635,16 @@ export default Sentry.wrap(function RootLayout() {
         Sentry.captureException(error);
       }
       
-      // Set Rive ready
+      // Set Rive ready and optionally show splash animation
       setIsRiveReady(true);
-      trackRive('splash_screen', 'start');
-      setShowRiveAnimation(true);
+      if (ENABLE_RIVE_SPLASH) {
+        trackRive('splash_screen', 'start');
+        setShowRiveAnimation(true);
+      }
       setAppReady(true);
 
       // Hide splash screen after a small delay to ensure Rive is ready
-      setTimeout(() => {
+      timersRef.current.hideSplash = setTimeout(() => {
         SplashScreen.hideAsync();
       }, 100);
       
@@ -703,30 +659,16 @@ export default Sentry.wrap(function RootLayout() {
     }
   };
 
-  // Call initializeApp when fonts and Rive assets are ready
+  // Call initializeApp when ready. If splash disabled, don't wait for Rive assets.
   useEffect(() => {
-    if (riveAssets?.[0]?.uri && riveAssetsLoaded && !appReady) {
-      appLog('🎬 All assets ready, initializing app...');
+    const ready = ENABLE_RIVE_SPLASH ? (riveAssets?.[0]?.uri && riveAssetsLoaded) : true;
+    if (ready && !appReady) {
+      appLog('🎬 Assets ready (splash enabled? ' + ENABLE_RIVE_SPLASH + '), initializing app...');
       initializeApp();
     }
   }, [fontsLoaded, riveAssets, riveAssetsLoaded, appReady]);
 
-  const activateAdapty = async () => {
-    try {
-      const isActivated = await adapty.isActivated();
-      appLog('isActivated ==>', isActivated);
-      if (isActivated) return;
-      // if(adapty){
-      //   appLog("adapty ==>",adapty?.isActivated());
-      // }
-      await adapty.activate('public_live_6JQmP6iR.y5BUrJSqvfMEVYQBPBLz', {
-        lockMethodsUntilReady: true,
-      });
-      appLog('Adapty activated');
-    } catch (error) {
-      appLog('Error activating Adapty:', error);
-    }
-  };
+  // Adapty removed
 
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
@@ -744,7 +686,7 @@ export default Sentry.wrap(function RootLayout() {
     };
     appLog('Activating Adapty');
 
-    activateAdapty();
+    // Adapty removed
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     const quickActionsSubscription = initializeQuickActions();
@@ -752,6 +694,10 @@ export default Sentry.wrap(function RootLayout() {
     return () => {
       subscription.remove();
       quickActionsSubscription?.remove();
+      // Clear any pending startup timers, and reset splash Rive
+      Object.values(timersRef.current).forEach((id) => id && clearTimeout(id));
+      timersRef.current = {};
+      splashRiveRef.current?.reset?.();
     };
   }, []);
 
@@ -768,31 +714,12 @@ export default Sentry.wrap(function RootLayout() {
     if (appReady && pendingDiscountDeepLink) {
       appLog('App is ready, handling pending discount deep link...');
       setPendingDiscountDeepLink(false);
-      
-      // Add a delay to ensure everything is fully loaded
-      setTimeout(async () => {
+      timersRef.current.discountPaywall = setTimeout(async () => {
         try {
-          appLog('Triggering discount paywall from pending deep link...');
-          
-          // Check if Adapty is activated
-          const isActivated = await adapty.isActivated();
-          if (!isActivated) {
-            appLog('Adapty not activated yet, waiting...');
-            return;
-          }
-          
-          // Check user pro status
           const userProStatus = useUserStore.getState().proStatus;
           const subscriptionProStatus = useSubscriptionStore.getState().isProMember;
-          appLog('User pro status check:', { userProStatus, subscriptionProStatus });
-          
-          if (userProStatus === 'pro' || subscriptionProStatus) {
-            appLog('User is already pro, skipping paywall');
-            return;
-          }
-          
-          const result = await useSubscriptionStore.getState().presentHalfOffPaywall();
-          appLog('Discount paywall result:', result);
+          if (userProStatus === 'pro' || subscriptionProStatus) return;
+          await useSubscriptionStore.getState().presentHalfOffPaywall();
         } catch (error) {
           appLog('Error triggering discount paywall:', error);
         }
@@ -918,11 +845,12 @@ export default Sentry.wrap(function RootLayout() {
   }, [showCovenantSuccessModal]);
 
   // Show Rive animation
-  if (showRiveAnimation && riveAssets?.[0]?.uri) {
+  if (ENABLE_RIVE_SPLASH && showRiveAnimation && riveAssets?.[0]?.uri) {
     return (
       <View style={[styles.riveContainer, { backgroundColor: '#FFF4D9' }]}>
         {IS_ANDROID ? (
           <Rive
+            ref={splashRiveRef}
             resourceName={'shepherd_splash_screen'}
             style={styles.riveAnimation}
             autoplay={true}
@@ -930,21 +858,25 @@ export default Sentry.wrap(function RootLayout() {
               appLog('Rive animation paused');
               trackRive('splash_screen', 'end');
               setShowRiveAnimation(false);
+              splashRiveRef.current?.reset?.();
             }}
             onStop={() => {
               appLog('Rive animation stopped');
               trackRive('splash_screen', 'end');
               setShowRiveAnimation(false);
+              splashRiveRef.current?.reset?.();
             }}
             onError={(error) => {
               appLog('Rive animation error:', error);
               trackRive('splash_screen', 'error');
               Sentry.captureException(error);
               setShowRiveAnimation(false);
+              splashRiveRef.current?.reset?.();
             }}
             />
           ) : (
             <Rive
+            ref={splashRiveRef}
             resourceName={'shepherd_splash_screen'}
             style={styles.riveAnimation}
             autoplay={true}
@@ -952,17 +884,20 @@ export default Sentry.wrap(function RootLayout() {
               appLog('Rive animation paused');
               trackRive('splash_screen', 'end');
               setShowRiveAnimation(false);
+              splashRiveRef.current?.reset?.();
             }}
             onStop={() => {
               appLog('Rive animation stopped');
               trackRive('splash_screen', 'end');
               setShowRiveAnimation(false);
+              splashRiveRef.current?.reset?.();
             }}
             onError={(error) => {
               appLog('Rive animation error:', error);
               trackRive('splash_screen', 'error');
               Sentry.captureException(error);
               setShowRiveAnimation(false);
+              splashRiveRef.current?.reset?.();
             }}
           />
         )}
@@ -984,115 +919,112 @@ export default Sentry.wrap(function RootLayout() {
   appLog(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
-      <StatsigProviderRN 
-        sdkKey={STATSIG_CLIENT_KEY}
-        user={statsigUser}
-        loadingComponent={<View />}
-      >
-        <StatsigAnalyticsInitializer>
-          <BottomSheetModalProvider>
-        {visibleForceUpdate ? (
-          <ForceUpdateModal visible={visibleForceUpdate} />
-        ) : (
-          <>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: 'fade',
-                animationDuration: 200,
-                contentStyle: { backgroundColor: '#FDEBB8' },
-              }}
-            />
-
-            {/* Half Modal Sheet for penalties, popups, etc. */}
-            <HalfModalSheet
-              halfModalRef={halfModalRef}
-              snapPoints={halfModalSnapPoints}
-              params={{
-                type: halfModalParams.type,
-                message: halfModalParams.message,
-                subMessage: halfModalParams.subMessage,
-                penalty: halfModalParams.penalty,
-                daysMissed: halfModalParams.daysMissed,
-              }}
-              onDismiss={() => {
-                // If this was a hearts lost modal, clear the flag and check if we need to show check-in
-                if (halfModalParams.type === HalfModalType.HEART_PENALTY) {
-                  isHeartsLostModalVisible.current = false;
-                  // Check if we should show check-in after hearts lost modal is dismissed
-                  setTimeout(() => {
-                    checkAndShowCheckInIfNeeded();
-                  }, 500);
-                }
-              }}
-            />
-
-            {/* Settings Sheet */}
-            <SettingsSheet settingsSheetRef={settingsSheetRef} snapPoints={settingsSnapPoints} />
-
-            {/* Global Prayer Sheet (available from anywhere in the app) */}
-            <GlobalPrayerSheet
-              prayerSheetRef={prayerSheetRef}
-              onPrayerGenerated={useUIStore.getState().prayerGeneratedCallback || undefined}
-            />
-
-            {/* Global Store Sheet */}
-            <GlobalStoreSheet storeSheetRef={storeSheetRef} />
-
-            {/* Global Stats Sheet */}
-            <GlobalStatsSheet statsSheetRef={statsSheetRef} />
-
-            {/* Book/Chapter Selector Sheet */}
-            {Boolean(showBookChapterSelector) && <GlobalBookChapterSelectorSheet />}
-
-            {/* Old Reflection Sheet */}
-            {Boolean(showOldReflectionSheet) && <OldReflectionSheet />}
-
-            {/* Global Check-In Sheet - Only show for logged-in users */}
-            {isUserLoggedIn && <GlobalCheckIn checkInRef={checkInRef} />}
-
-            {/* Global Devotionals Sheet */}
-            <GlobalDevotionalsSheet devotionalsSheetRef={devotionalsSheetRef} />
-
-            {/* Global Covenant Success Sheet */}
-            <CovenantSuccessSheet
-              covenantSheetRef={covenantSuccessSheetRef}
-              completedDays={completedCovenantDays}
-              onSelectNextCovenant={handleNextCovenant}
-            />
-
-            {/* Streak Freeze Bottom Sheet */}
-            <StreakFreezeBottomSheet
-              freezeSheetRef={streakFreezeSheetRef}
-            />
-
-
-
-            {/* Dimmed background for modal overlays */}
-            {isModalDimActive && (
-              <View
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: 'rgba(0,0,0,0.5)',
-                  zIndex: 50,
+    <StatsigProviderRN>
+    <StatsigAnalyticsInitializer>
+    <SuperwallProvider apiKeys={{ ios: 'pk_c805a222445436a84d083a803fdb5c09254d1a405a603c54' }}>
+      <SuperwallHandler />
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
+        <BottomSheetModalProvider>
+          {visibleForceUpdate ? (
+            <ForceUpdateModal visible={visibleForceUpdate} />
+          ) : (
+            <>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: 'fade',
+                  animationDuration: 200,
+                  contentStyle: { backgroundColor: '#FDEBB8' },
                 }}
               />
-            )}
 
-            {/* Debug button (visible only when CREATE code has been entered) */}
-            {(hasEnteredCreateCode || __DEV__) && <DebugButton />}
-          </>
-        )}
-          </BottomSheetModalProvider>
-        </StatsigAnalyticsInitializer>
-      </StatsigProviderRN>
-      {visibleForceUpdate && isInitialized ? (
-        <ForceUpdateModal visible={visibleForceUpdate} />
-      ) : null}
-    </GestureHandlerRootView>
+              {/* Half Modal Sheet for penalties, popups, etc. */}
+              <HalfModalSheet
+                halfModalRef={halfModalRef}
+                snapPoints={halfModalSnapPoints}
+                params={{
+                  type: halfModalParams.type,
+                  message: halfModalParams.message,
+                  subMessage: halfModalParams.subMessage,
+                  penalty: halfModalParams.penalty,
+                  daysMissed: halfModalParams.daysMissed,
+                }}
+                onDismiss={() => {
+                  // If this was a hearts lost modal, clear the flag and check if we need to show check-in
+                  if (halfModalParams.type === HalfModalType.HEART_PENALTY) {
+                    isHeartsLostModalVisible.current = false;
+                    // Check if we should show check-in after hearts lost modal is dismissed
+                    timersRef.current.afterPenalty = setTimeout(() => {
+                      checkAndShowCheckInIfNeeded();
+                    }, 500);
+                  }
+                }}
+              />
+
+              {/* Settings Sheet */}
+              <SettingsSheet settingsSheetRef={settingsSheetRef} snapPoints={settingsSnapPoints} />
+
+              {/* Global Prayer Sheet (available from anywhere in the app) */}
+              <GlobalPrayerSheet
+                prayerSheetRef={prayerSheetRef}
+                onPrayerGenerated={useUIStore.getState().prayerGeneratedCallback || undefined}
+              />
+
+              {/* Global Store Sheet */}
+              <GlobalStoreSheet storeSheetRef={storeSheetRef} />
+
+              {/* Global Stats Sheet */}
+              <GlobalStatsSheet statsSheetRef={statsSheetRef} />
+
+              {/* Book/Chapter Selector Sheet */}
+              {Boolean(showBookChapterSelector) && <GlobalBookChapterSelectorSheet />}
+
+              {/* Old Reflection Sheet */}
+              {Boolean(showOldReflectionSheet) && <OldReflectionSheet />}
+
+              {/* Global Check-In Sheet - Only show for logged-in users */}
+              {isUserLoggedIn && <GlobalCheckIn checkInRef={checkInRef} />}
+
+              {/* Global Devotionals Sheet */}
+              <GlobalDevotionalsSheet devotionalsSheetRef={devotionalsSheetRef} />
+
+              {/* Global Covenant Success Sheet */}
+              <CovenantSuccessSheet
+                covenantSheetRef={covenantSuccessSheetRef}
+                completedDays={completedCovenantDays}
+                onSelectNextCovenant={handleNextCovenant}
+              />
+
+              {/* Streak Freeze Bottom Sheet */}
+              <StreakFreezeBottomSheet
+                freezeSheetRef={streakFreezeSheetRef}
+              />
+
+
+
+              {/* Developer debug tools */}
+              <DebugButton />
+
+              {/* Dimmed background for modal overlays */}
+              {isModalDimActive && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    backgroundColor: 'rgba(0,0,0,0.4)',
+                  }}
+                />
+              )}
+            </>
+          )}
+        </BottomSheetModalProvider>
+      </GestureHandlerRootView>
+    </SuperwallProvider>
+    </StatsigAnalyticsInitializer>
+    </StatsigProviderRN>
   );
 });
 

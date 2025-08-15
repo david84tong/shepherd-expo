@@ -9,7 +9,7 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import { adapty } from 'react-native-adapty';
+import { setSuperwallUserAttributes } from '~/app/utils/superwallBridge';
 import PrimaryButton from '../../components/PrimaryButton';
 import { OnboardingResponses } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
@@ -107,15 +107,11 @@ export default function OnboardingAgeRangeScreen() {
       setResponse('ageRange', ageRange);
 
       // Save to user store
-      setUser({ ageRange });
-      adapty.updateProfile({
-        codableCustomAttributes: {
-          age_range: ageRange,
-        },
-      });
+      await setUser({ ageRange });
+      await setSuperwallUserAttributes({ age_range: ageRange });
 
       // Navigate to next screen immediately
-      router.push('/onboarding/8' as any);
+      router.push('/onboardring/8' as any);
     } catch (error) {
       console.error('Error processing selection:', error);
     }

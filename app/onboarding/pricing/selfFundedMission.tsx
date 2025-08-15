@@ -7,7 +7,7 @@ import { useAssets } from 'expo-asset';
 import Rive, { RiveRef } from 'rive-react-native';
 import { IS_ANDROID } from '~/app/utils/utils';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
-import { adapty } from 'react-native-adapty';
+import { presentSuperwallPlacement } from '~/app/utils/superwallBridge';
 import i18n from '~/app/utils/i18n';
 
 import Animated, {
@@ -84,63 +84,9 @@ export default function SelfFundedMissionScreen() {
     });
 
     try {
-      // Get the weekly product and make direct purchase
-      const paywall = await adapty.getPaywall('noFreeTrial');
-      appLog('Fetched paywall ID:', paywall.placementId);
-
-      const products = await adapty.getPaywallProducts(paywall);
-      appLog('Available products:', products.map(p => ({
-        vendorProductId: p.vendorProductId,
-        localizedTitle: p.localizedTitle,
-        price: p.price
-      })));
-
-      // Find the weekly product
-      const weeklyProduct = products.find(product => {
-        // Check for weekly in the product ID
-        const isWeekly = product.vendorProductId.toLowerCase().includes('weekly') ||
-          product.vendorProductId === 'second.round.shepherd.Weekly' ||
-          product.vendorProductId === 'second.round.shepherd';
-
-        appLog(`Checking product ${product.vendorProductId}: isWeekly=${isWeekly}`);
-        return isWeekly;
-      });
-
-      appLog('Looking for weekly product, found:', weeklyProduct?.vendorProductId);
-
-      if (weeklyProduct) {
-        analytics.logEvent('SelfFundedMission_Purchase_Started', {
-          productId: weeklyProduct.vendorProductId,
-          timestamp: new Date().toISOString()
-        });
-
-        // Make direct purchase
-        const result = await adapty.makePurchase(weeklyProduct);
-
-        if (result) {
-          analytics.logEvent('SelfFundedMission_Purchase_Success', {
-            productId: weeklyProduct.vendorProductId,
-            timestamp: new Date().toISOString()
-          });
-
-          // Update user to pro status
-          useSubscriptionStore.getState().getCustomerInfo();
-
-          // Navigate to tabs or complete onboarding
-          router.replace('/(tabs)');
-        }
-      } else {
-        console.error('Weekly product not found in products:', products.map(p => p.vendorProductId));
-        // Fallback to pricing screen
-        router.push('/PricingScreen');
-      }
+      await presentSuperwallPlacement('main_paywall');
     } catch (error) {
-      console.error('Error making direct purchase:', error);
-      analytics.logEvent('SelfFundedMission_Purchase_Error', {
-        error: (error as Error)?.message || 'Unknown error',
-        timestamp: new Date().toISOString()
-      });
-      // Fallback to pricing screen if purchase fails
+      console.error('Error presenting paywall:', error);
       router.push('/PricingScreen');
     }
   };

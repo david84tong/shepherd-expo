@@ -6,24 +6,21 @@ import { appLog } from '../helper/helper';
  * Hook for feature gates with automatic re-evaluation
  */
 export const useStatsigGate = (gateName: string) => {
-  const [isEnabled, setIsEnabled] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // Call the real hook at the top level to respect Rules of Hooks
+  const gateResult = useFeatureGate(gateName);
+  const [isEnabled, setIsEnabled] = useState<boolean>(!!gateResult);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const checkGate = () => {
-      try {
-        const enabled = useFeatureGate(gateName);
-        setIsEnabled(enabled);
-        setIsLoading(false);
-      } catch (error) {
-        appLog(`Error checking gate ${gateName}:`, error);
-        setIsEnabled(false);
-        setIsLoading(false);
-      }
-    };
-
-    checkGate();
-  }, [gateName]);
+    try {
+      setIsEnabled(!!gateResult);
+    } catch (error) {
+      appLog(`Error checking gate ${gateName}:`, error);
+      setIsEnabled(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [gateResult, gateName]);
 
   return { isEnabled, isLoading };
 };
@@ -32,24 +29,20 @@ export const useStatsigGate = (gateName: string) => {
  * Hook for dynamic configs with automatic re-evaluation
  */
 export const useStatsigConfig = (configName: string) => {
-  const [config, setConfig] = useState<any>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const configValue = useConfig(configName);
+  const [config, setConfig] = useState<any>(configValue ?? {});
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const getConfig = () => {
-      try {
-        const configValue = useConfig(configName);
-        setConfig(configValue);
-        setIsLoading(false);
-      } catch (error) {
-        appLog(`Error getting config ${configName}:`, error);
-        setConfig({});
-        setIsLoading(false);
-      }
-    };
-
-    getConfig();
-  }, [configName]);
+    try {
+      setConfig(configValue ?? {});
+    } catch (error) {
+      appLog(`Error getting config ${configName}:`, error);
+      setConfig({});
+    } finally {
+      setIsLoading(false);
+    }
+  }, [configValue, configName]);
 
   return { config, isLoading };
 };
@@ -58,24 +51,28 @@ export const useStatsigConfig = (configName: string) => {
  * Hook for experiments with automatic re-evaluation
  */
 export const useStatsigExperiment = (experimentName: string) => {
-  const [experiment, setExperiment] = useState<any>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const expValue = useExperiment(experimentName);
+  const [experiment, setExperiment] = useState<any>(expValue ?? {});
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Only update local state when the underlying value actually changes.
+  // Our Statsig shim returns a new object each call, which would otherwise
+  // retrigger this effect on every render and cause a render loop.
   useEffect(() => {
-    const getExperiment = () => {
-      try {
-        const experimentValue = useExperiment(experimentName);
-        setExperiment(experimentValue);
-        setIsLoading(false);
-      } catch (error) {
-        appLog(`Error getting experiment ${experimentName}:`, error);
-        setExperiment({});
-        setIsLoading(false);
+    try {
+      const nextValue = expValue?.value;
+      const prevValue = (experiment as any)?.value;
+      if (nextValue !== prevValue) {
+        setExperiment(expValue ?? {});
       }
-    };
-
-    getExperiment();
-  }, [experimentName]);
+    } catch (error) {
+      appLog(`Error getting experiment ${experimentName}:`, error);
+      setExperiment({});
+    } finally {
+      setIsLoading(false);
+    }
+    // Depend only on the primitive/serializable value to avoid ref churn
+  }, [expValue?.value, experimentName]);
 
   return { experiment, isLoading };
 };

@@ -35,9 +35,21 @@ import i18n from '../utils/i18n';
 import { useSoundStore } from '../stores/soundStore';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
 import { appLog } from '../helper/helper';
-import { useExperiment } from '@statsig/react-native-bindings';
+// Use our Expo-safe shim instead of native bindings
+import { useExperiment } from '../utils/statsig';
 import { useStatsigExperiment } from './useStatsig';
 import { shouldShowStreakWithExperiment } from '../stores/homeStore';
+
+/**
+ * MEMORY-LEAK REVIEW (startup → home):
+ * - This hook orchestrates many animations and setTimeouts (search for setTimeout below) and holds refs to
+ *   heavy native-backed components (Rive, BottomSheet, readers). If timers are not centrally tracked/cleared
+ *   on unmount (including during hot reload), queued callbacks can reference stale refs and retain memory.
+ * - Consider consolidating timer IDs in a single ref (Set<NodeJS.Timeout>) to cancel on unmount, and avoid
+ *   storing component refs in global stores unless necessary; retained refs can keep whole subtrees alive.
+ * - AppState/gesture responders added elsewhere should be paired with remove() in cleanup to avoid accumulating
+ *   listeners when home remounts.
+ */
 
 // Constants
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -93,16 +105,15 @@ export const useHomeScreen = () => {
     return isEarly;
   }, [createdAt]);
 
-  // Debug the experiment value
+  // Debug the experiment value (log only when value actually changes)
   useEffect(() => {
-    appLog('🧪 [PATH_FEATURE] pathFeatureExperiment:', pathFeatureExperiment);
     appLog('🧪 [PATH_FEATURE] pathFeatureExperiment.value:', pathFeatureExperiment?.value);
     appLog('🧪 [PATH_FEATURE] isEarlyUser:', isEarlyUser);
     appLog(
       '🧪 [PATH_FEATURE] showCustomPathButton (final):',
       isEarlyUser || Boolean(pathFeatureExperiment?.value)
     );
-  }, [pathFeatureExperiment, isEarlyUser]);
+  }, [pathFeatureExperiment?.value, isEarlyUser]);
 
   // Refs
   const devotionalReaderRef = useRef<any>(null);
@@ -1736,11 +1747,11 @@ export const useHomeScreen = () => {
     nextUnitPreview,
 
     // Refs
+    riveRef,
     devotionalReaderRef,
     prayerViewRef,
     journalRef,
     bottomSheetRef,
-    riveRef,
 
     // Animation refs and values
     lambSizeAnim,

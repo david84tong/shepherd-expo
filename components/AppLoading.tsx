@@ -33,6 +33,10 @@ const AppLoading: React.FC<AppLoadingProps> = ({ progress = 0, loadingMessage = 
 
     return () => {
       pulse.stop();
+      /**
+       * NOTE: On fast navigation/hot-reload during splash, leaving an Animated.loop() running would leak.
+       * We stop it on cleanup, which should avoid accumulating native animation drivers.
+       */
     };
   }, [pulseAnim]);
 

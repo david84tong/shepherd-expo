@@ -49,6 +49,8 @@ export default function OnboardingWelcomeScreen() {
   const { setResponse } = useOnboardingStore();
   const insets = useSafeAreaInsets();
   const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
+  const liveTimers = useRef<Set<NodeJS.Timeout>>(new Set());
+  const liveIntervals = useRef<Set<NodeJS.Timeout>>(new Set());
 
   // Initialize analytics - removed useAnalytics hook
 
@@ -99,7 +101,8 @@ export default function OnboardingWelcomeScreen() {
       });
     };
 
-    initializeAnalytics();
+    const t = setTimeout(initializeAnalytics, 100);
+    liveTimers.current.add(t);
 
     // Start entrance animation
     const startEntranceAnimation = () => {
@@ -130,7 +133,8 @@ export default function OnboardingWelcomeScreen() {
     };
 
     // Slight delay to ensure smooth transition from previous screen
-    setTimeout(startEntranceAnimation, 100);
+    const t2 = setTimeout(startEntranceAnimation, 100);
+    liveTimers.current.add(t2);
   }, []);
 
   // State for UI and flow
@@ -265,6 +269,10 @@ export default function OnboardingWelcomeScreen() {
       return () => {
         clearTimeout(typingTimeout);
         clearInterval(typingInterval);
+        /**
+         * NOTE: This screen runs multiple timers/intervals in quick succession. If users skip ahead fast,
+         * leftover intervals can continue running; this cleanup prevents that and reduces leak signals on splash.
+         */
       };
     } else {
       // For first and second welcome texts
@@ -303,6 +311,16 @@ export default function OnboardingWelcomeScreen() {
       return () => clearInterval(typingInterval);
     }
   }, [textPhase, secondStageActive]);
+
+  // Global cleanup on unmount for any stray timers/intervals on this screen
+  useEffect(() => {
+    return () => {
+      liveTimers.current.forEach((id) => clearTimeout(id));
+      liveTimers.current.clear();
+      liveIntervals.current.forEach((id) => clearInterval(id));
+      liveIntervals.current.clear();
+    };
+  }, []);
   useEffect(() => {
     return () => {
       // Cleanup Rive resources

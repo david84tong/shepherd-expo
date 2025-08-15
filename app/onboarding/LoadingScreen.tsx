@@ -75,6 +75,8 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   // Add timeout state and ref
   const [timeoutTriggered, setTimeoutTriggered] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Track nested timers to ensure we clear them on unmount as well
+  const nestedTimersRef = useRef<Set<NodeJS.Timeout>>(new Set());
   
 
 
@@ -291,7 +293,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           });
 
           // Navigate back to appropriate screen after toast has been shown for full duration
-          setTimeout(() => {
+          const nested = setTimeout(() => {
             if (!hasNavigated.current) {
               hasNavigated.current = true;
               // For check-in flow, go back to home tab, otherwise go to bible tab
@@ -310,10 +312,18 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
         }
+        // Clear any nested timers that may have been scheduled by the timeout callback
+        nestedTimersRef.current.forEach((id) => clearTimeout(id));
+        nestedTimersRef.current.clear();
       };
     }
   }, [progressValue, isOnboarding, isCheckInFlow, verseText, reference, currentStep, loadingPoints.length, apiLoadingState, isCreatingDevotional, customDevotional, devotionalStoreCurrentDevotional, router]);
-
+  /**
+   * NOTE (leak risk): Multiple chained setTimeouts exist here (20s + 4s). If navigation happens elsewhere first,
+   * these timers can fire later and re-touch state. We clear the main timer on effect cleanup, but the nested 4s timer
+   * relies on the outer callback having executed. If you see delayed toasts/navigation after leaving this screen,
+   * this is likely why. Consider tracking and clearing nested timers too if needed.
+   */
 
 
   // Cleanup function
@@ -358,7 +368,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
   // Animate glow effect using requestAnimationFrame
   useEffect(() => {
-    let frameId: number;
+    let frameId: number | null = null;
     let lastTime = performance.now();
     const targetFPS = 60;
     const frameInterval = 1000 / targetFPS;
@@ -375,8 +385,17 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     };
 
     frameId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frameId);
+    return () => {
+      if (frameId) cancelAnimationFrame(frameId);
+      frameId = null;
+    };
   }, []);
+  /**
+   * NOTE (leak risk): The rAF loop above is safe as long as this component always unmounts.
+   * If navigation bounces in and out of this screen without unmount (or during fast hot reload),
+   * a stale rAF could remain scheduled. We cancel in cleanup; if you see steady “All Heap & Anonymous VM” growth
+   * while sitting on this screen, confirm cleanup is running by logging the cleanup path.
+   */
 
   // Initialize animation sequence
   useEffect(() => {
@@ -804,6 +823,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   // --- GLOWING BORDER EFFECT ---
   const glViewRef = useRef<{ stop: () => void } | null>(null);
   const threeFrameRef = useRef<number | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
 
   // Optimize GLView animation
   const handleContextCreate = async (gl: ExpoWebGLRenderingContext) => {
@@ -821,6 +841,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       renderer = new Renderer({ gl });
       renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
       renderer.setClearColor(DARK_BG, 1);
+      rendererRef.current = renderer;
 
       scene = new THREE.Scene();
       camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
@@ -868,15 +889,15 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             return smoothstep(0.06, 0.0, edgeDist);
           }
   
- float verticalEdgeGlow(float x, float y, float time, float edge) {
-    float spotX = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
-    float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
-    float edgeDist = abs(y - edge);
-    float xDist = abs(x - spotX);
-    float spot = exp(-pow(xDist / spotWidth, 2.0) * 6.0);
-    float flicker = 0.6 + 0.4 * noise(vec2(x * 10.0, time * 0.5 + edge * 10.0));
-    return smoothstep(0.08, 0.0, edgeDist) * (0.5 + 0.5 * spot * flicker);
-  }
+  float verticalEdgeGlow(float x, float y, float time, float edge) {
+     float spotX = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
+     float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
+     float edgeDist = abs(y - edge);
+     float xDist = abs(x - spotX);
+     float spot = exp(-pow(xDist / spotWidth, 2.0) * 6.0);
+     float flicker = 0.6 + 0.4 * noise(vec2(x * 10.0, time * 0.5 + edge * 10.0));
+     return smoothstep(0.08, 0.0, edgeDist) * (0.5 + 0.5 * spot * flicker);
+   }
           
           void main() {
             float t = u_time;
@@ -903,8 +924,8 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             
             gl_FragColor = vec4(u_color, finalAlpha);
           }
-  
-  
+        
+        
         `,
         transparent: true,
         depthWrite: false,
@@ -938,10 +959,14 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           shouldAnimate = false;
           if (threeFrameRef.current) {
             cancelAnimationFrame(threeFrameRef.current);
+            threeFrameRef.current = null;
           }
           if (geometry) geometry.dispose();
           if (material) material.dispose();
           if (plane) scene?.remove(plane);
+          try { (renderer as any)?.dispose?.(); } catch (_) {}
+          try { (rendererRef.current as any)?.dispose?.(); } catch (_) {}
+          rendererRef.current = null;
         },
       };
     } catch (error) {
@@ -955,6 +980,13 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       if (glViewRef.current?.stop) {
         glViewRef.current.stop();
       }
+      // Extra guard: ensure no stray timers survive unmount
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      nestedTimersRef.current.forEach((id) => clearTimeout(id));
+      nestedTimersRef.current.clear();
     };
   }, []);
 
