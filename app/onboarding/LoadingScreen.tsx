@@ -1,12 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  Animated,
-  Easing,
-  Dimensions,
-  StatusBar,
-} from 'react-native';
+import { View, Text, Animated, Easing, Dimensions, StatusBar } from 'react-native';
 import { GLView, ExpoWebGLRenderingContext } from 'expo-gl';
 import { Renderer } from 'expo-three';
 // @ts-expect-error: If you get type errors for 'three', install @types/three for type support
@@ -62,7 +55,11 @@ interface LoadingScreenProps {
 const BASE_STEP_DURATION = 1500; // Base duration for each step
 const FINAL_DELAY = 500; // Reduced from 600ms
 
-export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseText: propVerseText, reference: propReference }: LoadingScreenProps) {
+export default function LoadingScreen({
+  isOnboarding: propIsOnboarding,
+  verseText: propVerseText,
+  reference: propReference,
+}: LoadingScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const animRef = useRef(0);
   const router = useRouter();
@@ -77,8 +74,6 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Track nested timers to ensure we clear them on unmount as well
   const nestedTimersRef = useRef<Set<NodeJS.Timeout>>(new Set());
-  
-
 
   // Get custom devotional from store FIRST - needs to be before useEffect
   const customDevotional = useDevotionalStore((s) => s.customDevotional);
@@ -94,7 +89,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           setOnboardingCompleted(true); // Treat as completed to prevent redirect
           return;
         }
-        
+
         const completed = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
         setOnboardingCompleted(completed === 'true');
         appLog('[LoadingScreen] Onboarding completed status:', completed === 'true');
@@ -138,18 +133,19 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       appLog('[LoadingScreen] isOnboarding:', result, '(based on completion status)');
       return result;
     }
-    const result = params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding;
+    const result =
+      params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding;
     appLog('[LoadingScreen] isOnboarding:', result, '(from params/props)');
     return result;
   }, [params.fromSwipe, params.isOnboarding, propIsOnboarding, onboardingCompleted, isCheckInFlow]);
 
-  const verseText = useMemo(() =>
-    (params.verseText as string | undefined) || propVerseText,
+  const verseText = useMemo(
+    () => (params.verseText as string | undefined) || propVerseText,
     [params.verseText, propVerseText]
   );
 
-  const reference = useMemo(() =>
-    (params.reference as string | undefined) || propReference,
+  const reference = useMemo(
+    () => (params.reference as string | undefined) || propReference,
     [params.reference, propReference]
   );
 
@@ -181,10 +177,20 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         modelName = exp?.get?.('gptModel', 'gpt-5-nano') || 'gpt-5-nano';
       }
       const isGpt5 = typeof modelName === 'string' && modelName.startsWith('gpt-5');
-      const isGpt4Mini = typeof modelName === 'string' && modelName.startsWith('gpt-4') && modelName.includes('mini');
+      const isGpt4Mini =
+        typeof modelName === 'string' &&
+        modelName.startsWith('gpt-4') &&
+        modelName.includes('mini');
       setIsGpt5Model(isGpt5);
       setIsGpt4MiniModel(isGpt4Mini);
-      appLog('[LoadingScreen] Detected GPT model:', modelName, 'isGpt5:', isGpt5, 'isGpt4Mini:', isGpt4Mini);
+      appLog(
+        '[LoadingScreen] Detected GPT model:',
+        modelName,
+        'isGpt5:',
+        isGpt5,
+        'isGpt4Mini:',
+        isGpt4Mini
+      );
     } catch (e) {
       appLog('[LoadingScreen] Error detecting GPT model, defaulting to non-enforced timing:', e);
       setIsGpt5Model(false);
@@ -225,7 +231,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const [progressValue, setProgressValue] = useState(0);
   const CIRCLE_RADIUS = 52;
   const CIRCLE_CIRCUM = 2 * Math.PI * CIRCLE_RADIUS;
-  
+
   // Track if we've started animating to prevent jumping to 100%
   const hasStartedAnimating = useRef(false);
   const [animationComplete, setAnimationComplete] = useState(false);
@@ -238,17 +244,19 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     return () => {
       progressAnim.removeListener(listenerId);
     };
-  }, [progressAnim]);
+  }, []); // Don't use dependency progressAnim because it is stable
 
-  function showDevotionalReader(){
-    if(!useUIStore.getState().devotionalReaderVisible){
+  function showDevotionalReader() {
+    if (!useUIStore.getState().devotionalReaderVisible) {
       useUIStore.getState().setDevotionalReaderVisible(true);
     }
   }
 
   // Add loading state for API call
-  const [apiLoadingState, setApiLoadingState] = useState<'idle' | 'loading' | 'completed' | 'error'>('idle');
-  
+  const [apiLoadingState, setApiLoadingState] = useState<
+    'idle' | 'loading' | 'completed' | 'error'
+  >('idle');
+
   // Track if paywall has been shown to prevent duplicate calls
   const [paywallShown, setPaywallShown] = useState(false);
 
@@ -261,15 +269,17 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     // Set timeout for non-onboarding flows (custom devotional creation AND check-in flows)
     if (!isOnboarding) {
       const currentProgress = Math.round(progressValue * 100);
-      
+
       // Only start the 60-second timer when we reach 100%
       if (currentProgress === 100 && !timeoutRef.current) {
-        appLog('[LoadingScreen] Progress reached 100%, starting 60-second timeout for devotional creation');
-        
+        appLog(
+          '[LoadingScreen] Progress reached 100%, starting 60-second timeout for devotional creation'
+        );
+
         timeoutRef.current = setTimeout(() => {
           appLog('[LoadingScreen] 60-second timeout triggered after reaching 100%');
           setTimeoutTriggered(true);
-          
+
           // Track timeout event
           analytics.logEvent('LoadingScreen_Custom_Devotional_Timeout_After_100', {
             verseText: verseText || 'unknown',
@@ -298,12 +308,13 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
               hasNavigated.current = true;
               // For check-in flow, go back to home tab, otherwise go to bible tab
               if (isCheckInFlow) {
-                router.back()
+                router.back();
               } else {
-                router.back()
+                router.back();
               }
             }
           }, 4000); // Wait for full toast duration before navigating
+          nestedTimersRef.current.add(nested);
         }, 60000); // 60 seconds after reaching 100%
       }
 
@@ -317,14 +328,26 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         nestedTimersRef.current.clear();
       };
     }
-  }, [progressValue, isOnboarding, isCheckInFlow, verseText, reference, currentStep, loadingPoints.length, apiLoadingState, isCreatingDevotional, customDevotional, devotionalStoreCurrentDevotional, router]);
+  }, [
+    progressValue,
+    isOnboarding,
+    isCheckInFlow,
+    verseText,
+    reference,
+    currentStep,
+    loadingPoints.length,
+    apiLoadingState,
+    isCreatingDevotional,
+    customDevotional,
+    devotionalStoreCurrentDevotional,
+    router,
+  ]);
   /**
    * NOTE (leak risk): Multiple chained setTimeouts exist here (20s + 4s). If navigation happens elsewhere first,
    * these timers can fire later and re-touch state. We clear the main timer on effect cleanup, but the nested 4s timer
    * relies on the outer callback having executed. If you see delayed toasts/navigation after leaving this screen,
    * this is likely why. Consider tracking and clearing nested timers too if needed.
    */
-
 
   // Cleanup function
   useEffect(() => {
@@ -339,7 +362,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       setPaywallShown(false); // Reset paywall shown state
       hasNavigated.current = false; // Reset navigation guard
       setTimeoutTriggered(false); // Reset timeout state
-      
+
       // Clear timeout on cleanup
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -367,8 +390,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   }, [currentStep, hasStarted, loadingPoints.length]);
 
   // Animate glow effect using requestAnimationFrame
+
+  /// Use useRef to keep stable and don't use frameId as local variable
+  /// It helps avoid re-run and leak memory.
+  const frameIdRef = useRef<number | null>(null);
+
   useEffect(() => {
-    let frameId: number | null = null;
     let lastTime = performance.now();
     const targetFPS = 60;
     const frameInterval = 1000 / targetFPS;
@@ -381,13 +408,13 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         lastTime = currentTime;
       }
 
-      frameId = requestAnimationFrame(animate);
+      frameIdRef.current = requestAnimationFrame(animate);
     };
 
-    frameId = requestAnimationFrame(animate);
+    frameIdRef.current = requestAnimationFrame(animate);
     return () => {
-      if (frameId) cancelAnimationFrame(frameId);
-      frameId = null;
+      if (frameIdRef.current) cancelAnimationFrame(frameIdRef.current);
+      frameIdRef.current = null;
     };
   }, []);
   /**
@@ -403,7 +430,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       // Ensure progress starts at 0
       progressAnim.setValue(0);
       setProgressValue(0);
-      
+
       const startTimer = setTimeout(() => {
         setHasStarted(true);
         startTimeRef.current = Date.now();
@@ -418,7 +445,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     if (!hasStarted) return;
 
     let timer: NodeJS.Timeout;
-    
+
     // Add initial delay for the first step to allow smooth start
     const delay = currentStep === 0 ? 300 : STEP_DURATION;
 
@@ -426,7 +453,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       // Onboarding flow - keep existing timer-based progress unchanged
       if (currentStep < loadingPoints.length) {
         timer = setTimeout(() => {
-          setCurrentStep(prev => prev + 1);
+          setCurrentStep((prev) => prev + 1);
         }, delay);
       } else {
         timer = setTimeout(async () => {
@@ -449,7 +476,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             totalSteps: loadingPoints.length,
             timeSpent: currentStep * STEP_DURATION + FINAL_DELAY,
             abTestGroup: abTestValue,
-            redirectTo: 'streakCommitment'
+            redirectTo: 'streakCommitment',
           });
 
           // Navigate to streak commitment screen
@@ -470,7 +497,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       if (currentStep < loadingPoints.length) {
         // Use flow-aware duration (3x for custom devotional)
         timer = setTimeout(() => {
-          setCurrentStep(prev => prev + 1);
+          setCurrentStep((prev) => prev + 1);
         }, delay);
       }
       // Note: The actual navigation is handled by the monitoring effect below
@@ -487,11 +514,15 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     if (currentStep < loadingPoints.length && !animatedStepsRef.current.has(currentStep)) {
       animatedStepsRef.current.add(currentStep);
       animValuesRef.current[currentStep].setValue(0);
-      Animated.timing(animValuesRef.current[currentStep], {
+      const animation = Animated.timing(animValuesRef.current[currentStep], {
         toValue: 1,
         duration: 300, // Consistent duration for both modes
         useNativeDriver: true,
-      }).start();
+      });
+
+      animation.start();
+      // Cleanup animation khi step thay đổi hoặc component unmount
+      return () => animation.stop();
     }
   }, [currentStep, hasStarted, loadingPoints.length]);
 
@@ -521,18 +552,21 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     // Calculate animation duration to match step progression
     // Animation should be smooth and match the step duration
     const animationDuration = Math.max(50, STEP_DURATION - 200); // Slightly less than step duration for smooth transition
-    
-    Animated.timing(progressAnim, {
+
+    const anim = Animated.timing(progressAnim, {
       toValue: progress,
       duration: animationDuration,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
-    }).start(() => {
+    });
+    anim.start(() => {
       // Mark animation as complete when progress reaches 100%
       if (progress >= 1) {
         setAnimationComplete(true);
       }
     });
+    // Cleanup: stop animation if component unmounts or deps change
+    return () => anim.stop();
   }, [currentStep, hasStarted, loadingPoints.length, progressAnim, isOnboarding]);
 
   // REMOVED: This effect was causing premature API completion
@@ -542,11 +576,13 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   // Build checklist state
   const checklist = useMemo(() => {
     // Use the same logic for both onboarding and devotional - show steps one by one
-    return loadingPoints.map((label, idx) => {
-      if (idx < currentStep) return { label, status: 'done' };
-      if (idx === currentStep) return { label, status: 'loading' };
-      return { label, status: 'pending' };
-    }).slice(0, Math.max(1, currentStep + 1));
+    return loadingPoints
+      .map((label, idx) => {
+        if (idx < currentStep) return { label, status: 'done' };
+        if (idx === currentStep) return { label, status: 'loading' };
+        return { label, status: 'pending' };
+      })
+      .slice(0, Math.max(1, currentStep + 1));
   }, [loadingPoints, currentStep]);
 
   // Helper function to show paywall for non-pro users
@@ -556,15 +592,15 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       appLog('[LoadingScreen] User is pro member, skipping paywall');
       return;
     }
-    
+
     // Prevent duplicate paywall calls
     if (paywallShown) {
       appLog('[LoadingScreen] Paywall already shown, skipping');
       return;
     }
-    
+
     setPaywallShown(true);
-    
+
     analytics.logEvent('LoadingScreen_Custom_Devotional_Paywalled', {
       isProMember: false,
       verseText: verseText || 'unknown',
@@ -590,22 +626,22 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             totalLoadingTime: currentStep * STEP_DURATION,
             upgradedFromPaywall: true,
           });
-          
+
           // Check navigation guard before navigating
           if (!hasNavigated.current) {
             hasNavigated.current = true;
             showDevotionalReader();
-           if(IS_ANDROID){
-            router.replace({
-              pathname: '/(tabs)',
-              params: { showDevotional: 'true' }
-            });
-           }else{
-            router.navigate({
-              pathname: '/(tabs)',
-              params: { showDevotional: 'true' }
-            });
-           }
+            if (IS_ANDROID) {
+              router.replace({
+                pathname: '/(tabs)',
+                params: { showDevotional: 'true' },
+              });
+            } else {
+              router.navigate({
+                pathname: '/(tabs)',
+                params: { showDevotional: 'true' },
+              });
+            }
           }
         } else {
           // User cancelled or error - go back to Bible tab
@@ -614,11 +650,11 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             verseText: verseText || 'unknown',
             reference: reference || 'unknown',
           });
-          
+
           // Check navigation guard before navigating
           if (!hasNavigated.current) {
             hasNavigated.current = true;
-            router.back()
+            router.back();
           }
         }
       } catch (error) {
@@ -631,12 +667,20 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         // Fallback - go to Bible tab
         if (!hasNavigated.current) {
           hasNavigated.current = true;
-          router.back()
+          router.back();
         }
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [presentFreeTrialPaywall, verseText, reference, currentStep, router, paywallShown, isProMember]);
+  }, [
+    presentFreeTrialPaywall,
+    verseText,
+    reference,
+    currentStep,
+    router,
+    paywallShown,
+    isProMember,
+  ]);
 
   // Monitor devotional creation progress - ENHANCED to prevent premature navigation
   useEffect(() => {
@@ -652,17 +696,19 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         totalSteps: loadingPoints.length,
         animationComplete,
         isCreatingDevotional,
-        timeoutTriggered
+        timeoutTriggered,
       });
 
       // CRITICAL: Only navigate when ALL conditions are met AND timeout hasn't triggered
       // For check-in flows, we must wait specifically for customDevotional, not just any devotional
-      const hasRequiredDevotional = isCheckInFlow ? customDevotional : (customDevotional || devotionalStoreCurrentDevotional);
-      
-      const canNavigate = 
+      const hasRequiredDevotional = isCheckInFlow
+        ? customDevotional
+        : customDevotional || devotionalStoreCurrentDevotional;
+
+      const canNavigate =
         !timeoutTriggered &&
-        currentStep >= loadingPoints.length && 
-        animationComplete && 
+        currentStep >= loadingPoints.length &&
+        animationComplete &&
         apiLoadingState === 'completed' &&
         hasRequiredDevotional &&
         !isCreatingDevotional &&
@@ -679,7 +725,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         notCreating: !isCreatingDevotional,
         noError: !devotionalError,
         noTimeout: !timeoutTriggered,
-        canNavigate
+        canNavigate,
       });
 
       if (canNavigate) {
@@ -696,13 +742,20 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
         const doNavigateToDevotional = () => {
           const isFromCheckIn = isCheckInFlow && customDevotional;
-          appLog(`[LoadingScreen] All conditions met - ${isFromCheckIn ? 'check-in' : 'pro user'} devotional ready, navigating to DevotionalReader`);
-          analytics.logEvent(isFromCheckIn ? 'LoadingScreen_CheckIn_Devotional_Ready' : 'LoadingScreen_Custom_Devotional_Created', {
-            isProMember: isProMember,
-            verseText: verseText || 'unknown',
-            reference: reference || 'unknown',
-            totalLoadingTime: loadingPoints.length * STEP_DURATION,
-          });
+          appLog(
+            `[LoadingScreen] All conditions met - ${isFromCheckIn ? 'check-in' : 'pro user'} devotional ready, navigating to DevotionalReader`
+          );
+          analytics.logEvent(
+            isFromCheckIn
+              ? 'LoadingScreen_CheckIn_Devotional_Ready'
+              : 'LoadingScreen_Custom_Devotional_Created',
+            {
+              isProMember: isProMember,
+              verseText: verseText || 'unknown',
+              reference: reference || 'unknown',
+              totalLoadingTime: loadingPoints.length * STEP_DURATION,
+            }
+          );
           if (!hasNavigated.current) {
             hasNavigated.current = true;
             const timer = setTimeout(() => {
@@ -737,10 +790,13 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         };
 
         // For check-in flow OR pro users - always navigate to devotional reader with custom devotional
-        if ((isCheckInFlow && customDevotional) || (isProMember && (customDevotional || devotionalStoreCurrentDevotional))) {
+        if (
+          (isCheckInFlow && customDevotional) ||
+          (isProMember && (customDevotional || devotionalStoreCurrentDevotional))
+        ) {
           const cleanup = scheduleAfterWait(doNavigateToDevotional);
           if (cleanup) return cleanup;
-        } 
+        }
         // For non-pro users NOT in check-in flow - show paywall
         else if (!isProMember && !isCheckInFlow && !paywallShown) {
           // Prevent duplicate scheduling before actual call sets paywallShown
@@ -752,7 +808,9 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         }
         // Additional safety: if it's a check-in flow but we somehow don't have customDevotional
         else if (isCheckInFlow && !customDevotional) {
-          appLog('[LoadingScreen] Check-in flow detected but no custom devotional - this should not happen');
+          appLog(
+            '[LoadingScreen] Check-in flow detected but no custom devotional - this should not happen'
+          );
           // Navigate back to home as fallback
           if (!hasNavigated.current) {
             hasNavigated.current = true;
@@ -760,17 +818,17 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           }
         }
       }
-      
+
       // Handle error case - navigate back only on actual error
       if (apiLoadingState === 'error' && devotionalError) {
         appLog('[LoadingScreen] API error occurred:', devotionalError);
-        
+
         // Clear timeout on error
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
           timeoutRef.current = null;
         }
-        
+
         // Check navigation guard before navigating
         if (!hasNavigated.current) {
           hasNavigated.current = true;
@@ -782,25 +840,25 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       }
     }
   }, [
-    isOnboarding, 
-    apiLoadingState, 
-    router, 
-    currentStep, 
-    loadingPoints.length, 
-    isProMember, 
-    verseText, 
-    reference, 
-    devotionalError, 
-    devotionalStoreCurrentDevotional, 
-    isCheckInFlow, 
-    customDevotional, 
-    showPaywallForNonProUser, 
-    animationComplete, 
+    isOnboarding,
+    apiLoadingState,
+    router,
+    currentStep,
+    loadingPoints.length,
+    isProMember,
+    verseText,
+    reference,
+    devotionalError,
+    devotionalStoreCurrentDevotional,
+    isCheckInFlow,
+    customDevotional,
+    showPaywallForNonProUser,
+    animationComplete,
     paywallShown,
     isCreatingDevotional,
-    timeoutTriggered
+    timeoutTriggered,
   ]);
-  
+
   // Clear the check-in flag when navigating away
   useEffect(() => {
     return () => {
@@ -964,8 +1022,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           if (geometry) geometry.dispose();
           if (material) material.dispose();
           if (plane) scene?.remove(plane);
-          try { (renderer as any)?.dispose?.(); } catch (_) {}
-          try { (rendererRef.current as any)?.dispose?.(); } catch (_) {}
+          try {
+            (renderer as any)?.dispose?.();
+          } catch (_) {}
+          try {
+            (rendererRef.current as any)?.dispose?.();
+          } catch (_) {}
           rendererRef.current = null;
         },
       };
@@ -1047,10 +1109,22 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
         {/* Headline and subheadline */}
         <Text className="text-3xl font-feather text-center mb-2" style={{ color: TEXT_PRIMARY }}>
-          {isOnboarding ? i18n.t('loading_just_a_moment') : isCheckInFlow ? 'Preparing Your Devotional' : devotionalError ? i18n.t('loading_something_wrong') : i18n.t('loading_creating_devotional')}
+          {isOnboarding
+            ? i18n.t('loading_just_a_moment')
+            : isCheckInFlow
+              ? 'Preparing Your Devotional'
+              : devotionalError
+                ? i18n.t('loading_something_wrong')
+                : i18n.t('loading_creating_devotional')}
         </Text>
         <Text className="text-lg font-din text-center mb-8" style={{ color: DESCRIPTION }}>
-          {isOnboarding ? i18n.t('loading_building_plan') : isCheckInFlow ? 'Crafting guidance based on your check-in...' : devotionalError ? i18n.t('loading_redirecting_back') : i18n.t('loading_preparing_meal')}
+          {isOnboarding
+            ? i18n.t('loading_building_plan')
+            : isCheckInFlow
+              ? 'Crafting guidance based on your check-in...'
+              : devotionalError
+                ? i18n.t('loading_redirecting_back')
+                : i18n.t('loading_preparing_meal')}
         </Text>
 
         {/* Checklist directly below */}
@@ -1064,10 +1138,13 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
                 opacity: hasStarted && idx > 0 ? animValuesRef.current[idx] : 1, // Hide until animation starts
                 transform: [
                   {
-                    translateY: idx > 0 ? animValuesRef.current[idx].interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [24, 0],
-                    }) : 0,
+                    translateY:
+                      idx > 0
+                        ? animValuesRef.current[idx].interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [24, 0],
+                          })
+                        : 0,
                   },
                 ],
               }}
@@ -1103,7 +1180,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           ))}
         </View>
       </View>
-      
+
       {/* Toast component for error messages */}
       <Toast />
     </View>
@@ -1111,5 +1188,5 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 }
 
 export const unstable_settings = {
-  safeAreaInsets: { top: 'never', bottom: 'never' }
+  safeAreaInsets: { top: 'never', bottom: 'never' },
 };
